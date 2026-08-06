@@ -1,1 +1,28 @@
-export default function BoardFilter({ category, keyword, onCategoryChange, onKeywordChange, onSubmit }) { return <form className="card board-filter" onSubmit={onSubmit}><select value={category} onChange={(e) => onCategoryChange(e.target.value)}><option>전체</option><option>점검 결과</option><option>수거 요청</option><option>공지</option></select><input className="input" value={keyword} onChange={(e) => onKeywordChange(e.target.value)} placeholder="제목 또는 내용 검색" /><button className="btn btn-primary">검색</button></form>; }
+export default function BoardFilter({
+  category,
+  keyword,
+  onCategoryChange,
+  onKeywordChange,
+  onSubmit,
+}) {
+  return (
+    <form className="card board-filter" onSubmit={onSubmit}>
+      <select
+        value={category}
+        onChange={(e) => onCategoryChange(e.target.value)}
+      >
+        <option>전체</option>
+        <option>점검 결과</option>
+        <option>수거 요청</option>
+        <option>공지</option>
+      </select>
+      <input
+        className="input"
+        value={keyword}
+        onChange={(e) => onKeywordChange(e.target.value)}
+        placeholder="제목 또는 내용 검색"
+      />
+      <button className="btn btn-primary">검색</button>
+    </form>
+  );
+}

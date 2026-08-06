@@ -1,7 +1,8 @@
-import axios from 'axios';
-import { tokenStorage } from '@/utils/tokenStorage';
+import axios from "axios";
+import { tokenStorage } from "@/utils/tokenStorage";
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
+const baseURL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 
 export const apiClient = axios.create({ baseURL, timeout: 10000 });
 
@@ -16,12 +17,15 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       tokenStorage.remove();
-      window.dispatchEvent(new Event('hawk-ai:unauthorized'));
+      window.dispatchEvent(new Event("hawk-ai:unauthorized"));
     }
     return Promise.reject(error);
   },
 );
 
-export function getApiErrorMessage(error, fallback = '요청을 처리하지 못했습니다.') {
+export function getApiErrorMessage(
+  error,
+  fallback = "요청을 처리하지 못했습니다.",
+) {
   return error.response?.data?.message || error.message || fallback;
 }

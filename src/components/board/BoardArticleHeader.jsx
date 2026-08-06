@@ -4,18 +4,26 @@ function calculateReadingTime(content) {
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(value));
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
 }
 
 export default function BoardArticleHeader({ post }) {
-  const authorName = post.author?.name || post.authorName || 'Hawk-AI';
+  const authorName = post.author?.name || post.authorName || "Hawk-AI";
   return (
     <header className="board-article-header">
-      <span className="article-category">{post.category || '프로젝트 기록'}</span>
+      <span className="article-category">
+        {post.category || "프로젝트 기록"}
+      </span>
       <h1>{post.title}</h1>
       {post.summary && <p className="article-summary">{post.summary}</p>}
       <div className="article-author-row">
-        <div className="article-avatar" aria-hidden="true">{authorName.charAt(0)}</div>
+        <div className="article-avatar" aria-hidden="true">
+          {authorName.charAt(0)}
+        </div>
         <div>
           <strong>{authorName}</strong>
           <p>
@@ -26,7 +34,13 @@ export default function BoardArticleHeader({ post }) {
           </p>
         </div>
       </div>
-      {post.tags?.length > 0 && <ul className="article-tags" aria-label="게시글 태그">{post.tags.map((tag) => <li key={tag}>#{tag}</li>)}</ul>}
+      {post.tags?.length > 0 && (
+        <ul className="article-tags" aria-label="게시글 태그">
+          {post.tags.map((tag) => (
+            <li key={tag}>#{tag}</li>
+          ))}
+        </ul>
+      )}
     </header>
   );
 }
