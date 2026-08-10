@@ -1,4 +1,10 @@
-const CATEGORIES = ["전체", "개발 기록", "점검 결과", "프로젝트 공지", "수거 요청"];
+const CATEGORIES = [
+  "전체",
+  "개발 기록",
+  "점검 결과",
+  "프로젝트 공지",
+  "수거 요청",
+];
 
 export default function BoardFilter({
   category,
@@ -9,8 +15,13 @@ export default function BoardFilter({
 }) {
   return (
     <form className="card board-filter" onSubmit={onSubmit}>
-      <select value={category} onChange={(event) => onCategoryChange(event.target.value)}>
-        {CATEGORIES.map((item) => <option key={item}>{item}</option>)}
+      <select
+        value={category}
+        onChange={(event) => onCategoryChange(event.target.value)}
+      >
+        {CATEGORIES.map((item) => (
+          <option key={item}>{item}</option>
+        ))}
       </select>
       <input
         className="input"

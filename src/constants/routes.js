@@ -7,6 +7,9 @@ export const ROUTES = Object.freeze({
   analytics: "/analytics",
   boards: "/boards",
   boardWrite: "/boards/write",
+  admin: "/admin",
+  adminUsers: "/admin/users",
+  adminSettings: "/admin/settings",
 });
 
 export const NAVIGATION = [
