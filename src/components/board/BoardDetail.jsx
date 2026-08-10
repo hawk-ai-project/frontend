@@ -43,7 +43,7 @@ export default function BoardDetail({ id }) {
   }
 
   const canEdit = Boolean(
-    user && (Number(user.id) === Number(post.author?.id) || user.role === "ADMIN"),
+    user && Number(user.id) === Number(post.author?.id),
   );
 
   return (

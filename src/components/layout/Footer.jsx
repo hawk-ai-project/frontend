@@ -51,7 +51,7 @@ export default function Footer() {
               <li key={member.name} title={member.details}>
                 <div className="footer-member-heading">
                   <strong>{member.name}</strong>
-                  {member.github ? (
+                  {member.github && (
                     <a
                       href={member.github}
                       target="_blank"
@@ -60,8 +60,6 @@ export default function Footer() {
                     >
                       GitHub ↗
                     </a>
-                  ) : (
-                    <span>GitHub 준비 중</span>
                   )}
                 </div>
                 <p>{member.role}</p>
