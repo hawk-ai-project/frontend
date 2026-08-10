@@ -4,7 +4,7 @@ import { ROUTES } from "@/constants/routes";
 
 export default function HistoriesPage() {
   return (
-    <div className="page-shell">
+    <div className="page-shell history-page">
       <div className="page-head">
         <div>
           <div className="eyebrow">History</div>
