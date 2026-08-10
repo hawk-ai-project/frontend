@@ -1909,6 +1909,8 @@ textarea:focus {
   margin-top: 28px;
 }
 .article-avatar {
+  position: relative;
+  overflow: hidden;
   width: 44px;
   height: 44px;
   flex: 0 0 auto;
@@ -1920,6 +1922,9 @@ textarea:focus {
   color: #fff;
   font-size: 15px;
   font-weight: 850;
+}
+.article-avatar img {
+  object-fit: cover;
 }
 .article-author-row strong {
   font-size: 14px;
@@ -2697,6 +2702,39 @@ textarea:focus {
 .markdown-tool:focus-visible {
   outline: 3px solid rgba(63, 111, 196, 0.25);
   outline-offset: 2px;
+}
+.markdown-tool:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.markdown-image-tool {
+  color: var(--primary-dark);
+  border-color: #aebfdf;
+  background: #edf3fc;
+}
+.markdown-image-input {
+  display: none;
+}
+.markdown-image-error {
+  margin: 0;
+  padding: 9px 14px;
+  border-bottom: 1px solid #fecaca;
+  color: #b42318;
+  background: #fff1f2;
+  font-size: 13px;
+  font-weight: 700;
+}
+.markdown-preview img,
+.article-markdown img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 720px;
+  margin: 24px auto;
+  border-radius: 14px;
+  object-fit: contain;
+  background: #f4f6fa;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 .markdown-preview details {
   margin: 26px 0;

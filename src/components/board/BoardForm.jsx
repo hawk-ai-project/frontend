@@ -207,7 +207,14 @@ export default function BoardForm({ boardId }) {
             {errors.tags && <span className="field-error">{errors.tags}</span>}
           </label>
         </div>
-        <MarkdownEditor title={form.title} content={form.content} error={errors.content} contentRef={contentRef} onContentChange={(value) => updateField("content", value)} />
+        <MarkdownEditor
+          title={form.title}
+          content={form.content}
+          error={errors.content}
+          contentRef={contentRef}
+          onContentChange={(value) => updateField("content", value)}
+          onImageUpload={(file) => boardService.uploadImage(file)}
+        />
         <div className="editor-form-footer">
           <div>{notice && <p className="board-save-notice" role="alert">{notice}</p>}</div>
           <div className="form-actions">

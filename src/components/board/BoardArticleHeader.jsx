@@ -22,7 +22,9 @@ export default function BoardArticleHeader({ post }) {
       {post.summary && <p className="article-summary">{post.summary}</p>}
       <div className="article-author-row">
         <div className="article-avatar" aria-hidden="true">
-          {authorName.charAt(0)}
+          {post.author?.profileImageUrl
+            ? <Image src={post.author.profileImageUrl} alt="" fill sizes="44px" unoptimized />
+            : authorName.charAt(0)}
         </div>
         <div>
           <strong>{authorName}</strong>
@@ -44,3 +46,4 @@ export default function BoardArticleHeader({ post }) {
     </header>
   );
 }
+import Image from "next/image";

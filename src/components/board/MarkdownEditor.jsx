@@ -1,4 +1,9 @@
+import { useRef, useState } from "react";
+import { getApiErrorMessage } from "@/services/apiClient";
 import MarkdownPreview from "./MarkdownPreview";
+
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const IMAGE_MAX_SIZE = 10 * 1024 * 1024;
 
 const toolbarItems = [
   { label: "제목", icon: "H", before: "## ", after: "", placeholder: "소제목" },
@@ -100,7 +105,12 @@ export default function MarkdownEditor({
   error,
   contentRef,
   onContentChange,
+  onImageUpload,
 }) {
+  const imageInputRef = useRef(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState("");
+
   const insertMarkdown = (item) => {
     const textarea = contentRef.current;
     if (!textarea) return;
@@ -122,6 +132,41 @@ export default function MarkdownEditor({
       textarea.focus();
       textarea.setSelectionRange(selectionStart, selectionEnd);
     });
+  };
+
+  const uploadImage = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!IMAGE_TYPES.includes(file.type)) {
+      setImageError("JPEG, PNG, WebP, GIF 이미지만 추가할 수 있습니다.");
+      return;
+    }
+    if (file.size > IMAGE_MAX_SIZE) {
+      setImageError("이미지는 10MB 이하만 추가할 수 있습니다.");
+      return;
+    }
+
+    const textarea = contentRef.current;
+    const start = textarea?.selectionStart ?? content.length;
+    const end = textarea?.selectionEnd ?? start;
+    try {
+      setImageUploading(true);
+      setImageError("");
+      const uploaded = await onImageUpload(file);
+      const alt = file.name.replace(/\.[^.]+$/, "").replace(/[\[\]]/g, "").trim() || "게시글 이미지";
+      const markdown = `\n\n![${alt}](${uploaded.imageUrl})\n\n`;
+      onContentChange(`${content.slice(0, start)}${markdown}${content.slice(end)}`);
+      window.requestAnimationFrame(() => {
+        const nextPosition = start + markdown.length;
+        textarea?.focus();
+        textarea?.setSelectionRange(nextPosition, nextPosition);
+      });
+    } catch (error) {
+      setImageError(getApiErrorMessage(error, "이미지를 추가하지 못했습니다."));
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   return (
@@ -157,7 +202,27 @@ export default function MarkdownEditor({
               <small>{item.label}</small>
             </button>
           ))}
+          <button
+            type="button"
+            className="markdown-tool markdown-image-tool"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={imageUploading}
+            aria-label="본문 이미지 추가"
+            title="본문 이미지 추가"
+          >
+            <span aria-hidden="true">▧</span>
+            <small>{imageUploading ? "업로드 중" : "이미지"}</small>
+          </button>
+          <input
+            ref={imageInputRef}
+            className="markdown-image-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={uploadImage}
+            tabIndex={-1}
+          />
         </div>
+        {imageError && <p className="markdown-image-error" role="alert">{imageError}</p>}
         <textarea
           ref={contentRef}
           className={`markdown-live-textarea ${error ? "input-error" : ""}`}
@@ -167,6 +232,7 @@ export default function MarkdownEditor({
           placeholder="상단 도구를 누르거나 내용을 바로 입력하세요."
           aria-invalid={Boolean(error)}
           aria-describedby={error ? "content-error" : undefined}
+          disabled={imageUploading}
         />
         {error && (
           <p id="content-error" className="field-error">
