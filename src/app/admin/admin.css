@@ -201,3 +201,43 @@
   .admin-search-form { width: 100%; }
   .admin-search-form input { flex: 1; width: auto; min-width: 0; }
 }
+.admin-button-link { display: inline-flex; align-items: center; justify-content: center; }
+.admin-error-message { margin: 0 0 14px; padding: 11px 14px; border-radius: 9px; background: #fff0f0; color: #b33a3a; font-size: 12px; }
+.admin-board-filters { display: flex; align-items: center; gap: 10px; }
+.admin-board-filters > select { width: 132px; height: 38px; min-height: 38px; padding: 0 34px 0 12px; border: 1px solid #d8dfeb; border-radius: 9px; background-color: #fff; color: #445168; font-size: 12px; line-height: 1; }
+.admin-board-filters .admin-search-form { gap: 0; }
+.admin-board-filters .admin-search-form input {
+  width: 240px;
+  border-radius: 9px 0 0 9px;
+}
+.admin-board-filters .admin-search-form input:focus { position: relative; z-index: 1; }
+.admin-board-filters .admin-search-form button {
+  flex: 0 0 auto;
+  min-width: 58px;
+  margin-left: -1px;
+  border: 1px solid var(--primary-dark);
+  border-radius: 0 9px 9px 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-board-title { min-width: 220px; display: grid; gap: 3px; }
+.admin-board-title strong { max-width: 420px; overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.admin-board-title small { color: #929cad; font-size: 10px; }
+.admin-status-select { min-width: 78px; height: 32px; padding: 0 24px 0 9px; border: 1px solid transparent; border-radius: 7px; font-size: 11px; font-weight: 750; }
+.admin-status-select.status-published { background: #e9f7f1; color: #23775d; }
+.admin-status-select.status-hidden { background: #fff3df; color: #976218; }
+.admin-status-select.status-draft { background: #edf1f6; color: #647084; }
+.admin-row-actions { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.admin-row-actions a,.admin-row-actions button { border: 0; background: transparent; color: var(--primary); font-size: 11px; font-weight: 750; }
+.admin-row-actions button { padding: 0; color: #bf4a4a; }
+.admin-row-actions button:disabled { color: #aeb5c0; cursor: wait; }
+.admin-pagination { padding: 12px 18px; display: flex; align-items: center; justify-content: center; gap: 14px; border-top: 1px solid #edf0f5; }
+.admin-pagination span { color: #657086; font-size: 12px; }
+.admin-pagination button { min-width: 54px; height: 30px; border: 1px solid #dce2ec; border-radius: 7px; background: #fff; color: #4e5a70; font-size: 11px; font-weight: 700; }
+.admin-pagination button:disabled { color: #b4bbc6; background: #f5f6f8; }
+
+@media (max-width: 720px) {
+  .admin-board-filters { align-items: stretch; flex-direction: column; }
+  .admin-board-filters > select { width: 100%; }
+  .admin-board-filters .admin-search-form input { width: auto; }
+}

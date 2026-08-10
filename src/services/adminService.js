@@ -9,6 +9,10 @@ export const adminService = {
   getRoles: () => apiClient.get("/admin/roles").then(({ data }) => data),
   updateUserRole: (userId, roleCode) =>
     apiClient.patch(`/admin/users/${userId}/role`, { roleCode }).then(({ data }) => data),
+  getBoards: (params = {}) => apiClient.get("/admin/boards", { params }).then(({ data }) => data),
+  updateBoardStatus: (boardId, status) =>
+    apiClient.patch(`/admin/boards/${boardId}/status`, { status }).then(({ data }) => data),
+  deleteBoard: (boardId) => apiClient.delete(`/admin/boards/${boardId}`),
   getSettings: () => apiClient.get("/admin/settings").then(({ data }) => data),
   updateSettings: (payload) =>
     apiClient.put("/admin/settings", payload).then(({ data }) => data),

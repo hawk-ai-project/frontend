@@ -20,6 +20,7 @@ const ADMIN_MENU = [
       { href: `${ROUTES.adminUsers}/permissions`, label: "권한 관리" },
     ],
   },
+  { key: "boards", label: "게시글 관리", icon: "board", href: ROUTES.adminBoards },
   {
     key: "settings",
     label: "시스템 설정",
@@ -34,6 +35,9 @@ const ADMIN_MENU = [
 function MenuIcon({ name }) {
   if (name === "home") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Z" /></svg>;
+  }
+  if (name === "board") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4V4Zm4 4h8M8 12h8M8 16h5" /></svg>;
   }
   if (name === "users") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>;

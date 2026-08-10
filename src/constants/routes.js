@@ -10,6 +10,7 @@ export const ROUTES = Object.freeze({
   boardWrite: "/boards/write",
   admin: "/admin",
   adminUsers: "/admin/users",
+  adminBoards: "/admin/boards",
   adminSettings: "/admin/settings",
 });
 
