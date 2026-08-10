@@ -48,21 +48,11 @@ export default function Footer() {
           <h2 id="footer-team-title">TEAM</h2>
           <ul>
             {teamMembers.map((member) => (
-              <li key={member.name} title={member.details}>
+              <li key={member.name}>
                 <div className="footer-member-heading">
                   <strong>{member.name}</strong>
-                  {member.github && (
-                    <a
-                      href={member.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${member.name} GitHub 새 탭에서 열기`}
-                    >
-                      GitHub ↗
-                    </a>
-                  )}
+                  <span>{member.areas.join(" · ")}</span>
                 </div>
-                <p>{member.role}</p>
               </li>
             ))}
           </ul>
