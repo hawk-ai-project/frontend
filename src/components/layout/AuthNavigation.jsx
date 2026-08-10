@@ -31,6 +31,10 @@ export default function AuthNavigation() {
         </summary>
         <div className="user-menu-dropdown">
           <div className="user-menu-info"><strong>{user?.name}</strong><small>{user?.email}</small></div>
+          <Link className="user-menu-item" href={ROUTES.profile || "/profile"}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+            프로필 수정
+          </Link>
           {user?.role === ROLES.ADMIN && (
             <Link className="user-menu-item" href={ROUTES.admin || "/admin"}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" /></svg>

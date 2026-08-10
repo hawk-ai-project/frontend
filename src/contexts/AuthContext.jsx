@@ -95,6 +95,12 @@ export function AuthProvider({ children }) {
     router.push(ROUTES.home);
   };
 
+  const updateProfile = async (payload) => {
+    const updatedUser = await authService.updateProfile(payload);
+    updateAuthState({ ...authState, user: updatedUser });
+    return updatedUser;
+  };
+
   const value = {
     token: authState.token,
     user: authState.user,
@@ -102,6 +108,7 @@ export function AuthProvider({ children }) {
     isLoading: authState.status === "checking",
     login,
     logout,
+    updateProfile,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

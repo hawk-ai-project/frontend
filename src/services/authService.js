@@ -6,5 +6,7 @@ export const authService = {
   signup: (payload) =>
     apiClient.post("/auth/signup", payload).then(({ data }) => data),
   me: () => apiClient.get("/auth/me").then(({ data }) => data),
+  updateProfile: (payload) =>
+    apiClient.patch("/auth/profile", payload).then(({ data }) => data),
   logout: () => apiClient.post("/auth/logout").then(({ data }) => data),
 };
