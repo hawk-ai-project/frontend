@@ -165,6 +165,17 @@
 .admin-empty-cell { padding: 42px !important; color: var(--text-2) !important; text-align: center; }
 .admin-empty-panel { padding: 28px; }
 .admin-empty-panel p { margin: 8px 0 0; color: var(--text-2); font-size: 13px; }
+.admin-permission-notice { margin-bottom: 18px; padding: 16px 18px; border: 1px solid #d7e2f5; border-radius: 13px; background: #f2f6fd; }
+.admin-permission-notice strong { color: #315a9e; font-size: 13px; }
+.admin-permission-notice p { margin: 5px 0 0; color: #63718a; font-size: 12px; line-height: 1.6; }
+.admin-success-message { margin: 0 0 16px; padding: 12px 14px; border-radius: 10px; background: #eaf8f2; color: #24765b; font-size: 13px; }
+.admin-permission-table .admin-member > div { display: grid; gap: 3px; }
+.admin-permission-table .admin-member small { color: #8b96a7; font-size: 11px; }
+.admin-permission-table select { min-width: 190px; height: 40px; padding: 0 34px 0 12px; border: 1px solid #d5ddea; border-radius: 9px; background: #fff; color: #354158; font-size: 12px; }
+.admin-permission-table select:focus { border-color: #6e8ed1; outline: 3px solid rgba(88,120,196,.12); }
+.permission-self-label { display: block; margin-top: 5px; color: #8994a6; font-size: 10px; }
+.permission-save-btn { min-height: 38px; padding: 0 13px; border: 0; border-radius: 9px; background: var(--primary-dark); color: #fff; font-size: 11px; font-weight: 750; }
+.permission-save-btn:disabled { cursor: not-allowed; background: #e3e7ee; color: #98a2b2; }
 @keyframes admin-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 840px) {
