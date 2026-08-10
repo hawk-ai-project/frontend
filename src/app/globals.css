@@ -154,6 +154,94 @@ main {
   color: var(--primary);
   font-size: 11px;
 }
+.user-menu {
+  position: relative;
+}
+.user-menu > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.user-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.user-menu[open] > summary {
+  border-color: #aebddb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(63, 111, 196, 0.1);
+}
+.user-menu-chevron {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #7a879b;
+  stroke-width: 2;
+  transition: transform 150ms ease;
+}
+.user-menu[open] .user-menu-chevron {
+  transform: rotate(180deg);
+}
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 150;
+  width: 220px;
+  padding: 8px;
+  border: 1px solid #dfe5ef;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(27, 42, 72, 0.16);
+}
+.user-menu-info {
+  padding: 10px 10px 12px;
+  display: grid;
+  gap: 3px;
+  border-bottom: 1px solid #edf0f5;
+}
+.user-menu-info strong {
+  color: #25324a;
+  font-size: 13px;
+}
+.user-menu-info small {
+  overflow: hidden;
+  color: #8a96a8;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+.user-menu-item {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 4px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #43516a;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+.user-menu-item:hover {
+  background: #f0f4fb;
+  color: var(--primary-dark);
+}
+.user-menu-item.danger:hover {
+  background: #fff1f2;
+  color: #b63b4b;
+}
+.user-menu-item svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .avatar {
   width: 32px;
   height: 32px;
@@ -2411,5 +2499,19 @@ textarea:focus {
   }
   .markdown-tool small {
     display: none;
+  }
+}
+
+/* 현장점검 반응형 css */
+.inspection-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .inspection-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,3 +1,11 @@
+const CATEGORIES = [
+  "전체",
+  "개발 기록",
+  "점검 결과",
+  "프로젝트 공지",
+  "수거 요청",
+];
+
 export default function BoardFilter({
   category,
   keyword,
@@ -9,17 +17,16 @@ export default function BoardFilter({
     <form className="card board-filter" onSubmit={onSubmit}>
       <select
         value={category}
-        onChange={(e) => onCategoryChange(e.target.value)}
+        onChange={(event) => onCategoryChange(event.target.value)}
       >
-        <option>전체</option>
-        <option>점검 결과</option>
-        <option>수거 요청</option>
-        <option>공지</option>
+        {CATEGORIES.map((item) => (
+          <option key={item}>{item}</option>
+        ))}
       </select>
       <input
         className="input"
         value={keyword}
-        onChange={(e) => onKeywordChange(e.target.value)}
+        onChange={(event) => onKeywordChange(event.target.value)}
         placeholder="제목 또는 내용 검색"
       />
       <button className="btn btn-primary">검색</button>

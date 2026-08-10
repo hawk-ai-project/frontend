@@ -1,6 +1,6 @@
 import "./globals.css";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import AppHeader from "@/components/layout/AppHeader";
+import AppFooter from "@/components/layout/AppFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata = {
@@ -14,9 +14,9 @@ export default function RootLayout({ children }) {
     <html lang="ko" data-scroll-behavior="smooth">
       <body>
         <AuthProvider>
-          <Header />
+          <AppHeader />
           <main>{children}</main>
-          <Footer />
+          <AppFooter />
         </AuthProvider>
       </body>
     </html>

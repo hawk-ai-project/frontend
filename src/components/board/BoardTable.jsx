@@ -12,7 +12,9 @@ export default function BoardTable({ items }) {
           <div className="board-meta">
             {item.author?.name || item.authorName || "-"}
           </div>
-          <div className="board-meta">{item.date || "-"}</div>
+          <div className="board-meta">
+            {item.createdAt ? new Date(item.createdAt).toLocaleDateString("ko-KR") : "-"}
+          </div>
         </Link>
       ))}
     </div>

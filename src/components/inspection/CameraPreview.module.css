@@ -1,0 +1,92 @@
+/* CameraPreview CSS 파일 */
+
+/* 전체 영역 */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 카메라 미리보기 영역 */
+.videoWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #d8e6ef;
+  border-radius: var(--radius-sm); /* globals.css의 변수 활용 */
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 좌측 상단 상태 표시줄 */
+.statusWrapper {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+}
+
+/* 뱃지 배경 덮어쓰기 */
+.badgeConnected {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.badgeWaiting {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--danger);
+}
+
+/* 뱃지 앞의 작은 동그라미(인디케이터) 공통 */
+.indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.indicatorConnected {
+  background-color: #21825f;
+}
+
+.indicatorWaiting {
+  background-color: var(--danger);
+}
+
+/* 실제 비디오 화면 */
+.videoElement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 카메라 꺼져있을 때 가운데 나오는 글씨 */
+.placeholderBadge {
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+
+/* 하단 버튼 및 셀렉트 박스 영역 */
+.controlsWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.selectGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.selectInput {
+  width: auto;
+  min-width: 160px;
+}
