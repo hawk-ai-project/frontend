@@ -6,4 +6,7 @@ export const adminService = {
   getRoles: () => apiClient.get("/admin/roles").then(({ data }) => data),
   updateUserRole: (userId, roleCode) =>
     apiClient.patch(`/admin/users/${userId}/role`, { roleCode }).then(({ data }) => data),
+  getSettings: () => apiClient.get("/admin/settings").then(({ data }) => data),
+  updateSettings: (payload) =>
+    apiClient.put("/admin/settings", payload).then(({ data }) => data),
 };
