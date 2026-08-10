@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
+import BoardAINotifications from "@/components/board/BoardAINotifications";
 
 export default function AuthNavigation() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -23,6 +24,7 @@ export default function AuthNavigation() {
 
   return (
     <div className="auth-user">
+      <BoardAINotifications />
       <details className="user-menu">
         <summary className="profile" aria-label="사용자 메뉴 열기">
           <div className="avatar">{user?.name?.[0] || "U"}</div>
