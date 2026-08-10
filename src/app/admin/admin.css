@@ -142,6 +142,7 @@
 .admin-table td { padding: 17px 24px; border-top: 1px solid #edf0f5; color: #4a566a; }
 .admin-member { display: flex; align-items: center; gap: 10px; }
 .admin-member > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #e8eef9; color: var(--primary-dark); font-weight: 850; }
+.admin-member .avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px; }
 .admin-member strong { color: var(--text); }
 .role-badge,.status-badge { display: inline-flex; padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 850; }
 .role-badge { background: #edf1fa; color: #4164a5; }

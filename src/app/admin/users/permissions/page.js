@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { adminService } from "@/services/adminService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export default function AdminPermissionsPage() {
   const { user: currentUser } = useAuth();
@@ -57,7 +58,7 @@ export default function AdminPermissionsPage() {
             {users.map((member) => {
               const isSelf = member.id === currentUser?.id;
               const changed = drafts[member.id] !== member.role;
-              return <tr key={member.id}><td><div className="admin-member"><span>{member.name?.[0] || "U"}</span><div><strong>{member.name}</strong><small>{member.email}</small></div></div></td><td><span className="role-badge">{member.role}</span></td><td><select value={drafts[member.id] || member.role} disabled={isSelf || savingId === member.id} onChange={(event) => setDrafts((values) => ({ ...values, [member.id]: event.target.value }))}>{roles.map((role) => <option value={role.code} key={role.code}>{role.name} ({role.code})</option>)}</select>{isSelf && <small className="permission-self-label">현재 로그인 계정</small>}</td><td><button type="button" className="permission-save-btn" disabled={isSelf || !changed || savingId === member.id} onClick={() => saveRole(member)}>{savingId === member.id ? "저장 중..." : "변경 저장"}</button></td></tr>;
+              return <tr key={member.id}><td><div className="admin-member"><UserAvatar user={member} adminUserId={member.id} /><div><strong>{member.name}</strong><small>{member.email}</small></div></div></td><td><span className="role-badge">{member.role}</span></td><td><select value={drafts[member.id] || member.role} disabled={isSelf || savingId === member.id} onChange={(event) => setDrafts((values) => ({ ...values, [member.id]: event.target.value }))}>{roles.map((role) => <option value={role.code} key={role.code}>{role.name} ({role.code})</option>)}</select>{isSelf && <small className="permission-self-label">현재 로그인 계정</small>}</td><td><button type="button" className="permission-save-btn" disabled={isSelf || !changed || savingId === member.id} onClick={() => saveRole(member)}>{savingId === member.id ? "저장 중..." : "변경 저장"}</button></td></tr>;
             })}
             {!users.length && <tr><td colSpan="4" className="admin-empty-cell">등록된 회원이 없습니다.</td></tr>}
           </tbody></table></div>

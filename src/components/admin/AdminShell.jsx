@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
+import UserAvatar from "@/components/common/UserAvatar";
 
 const ADMIN_MENU = [
   { key: "dashboard", label: "대시보드", icon: "home", href: ROUTES.admin },
@@ -116,7 +117,7 @@ export default function AdminShell({ children }) {
       <div className="admin-workspace">
         <header className="admin-topbar">
           <div className="admin-topbar-account">
-            <div className="profile"><div className="avatar">{user?.name?.[0] || "A"}</div><span>{user?.name || "관리자"} <small>({user?.role})</small></span></div>
+            <div className="profile"><UserAvatar user={user} fallback="A" /><span>{user?.name || "관리자"} <small>({user?.role})</small></span></div>
             <button type="button" className="logout-btn" onClick={logout}>로그아웃</button>
           </div>
         </header>

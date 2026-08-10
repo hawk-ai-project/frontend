@@ -337,7 +337,10 @@ main {
   place-items: center;
   color: #fff;
   background: var(--gradient);
+  position: relative;
+  overflow: hidden;
 }
+.avatar img { object-fit: cover; }
 .mobile-navigation {
   display: none;
   position: relative;

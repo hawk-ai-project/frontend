@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
 import BoardAINotifications from "@/components/board/BoardAINotifications";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export default function AuthNavigation() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -27,7 +28,7 @@ export default function AuthNavigation() {
       <BoardAINotifications />
       <details className="user-menu">
         <summary className="profile" aria-label="사용자 메뉴 열기">
-          <div className="avatar">{user?.name?.[0] || "U"}</div>
+          <UserAvatar user={user} />
           <span>{user?.name} <small>({user?.role})</small></span>
           <svg className="user-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
         </summary>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { adminService } from "@/services/adminService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import UserAvatar from "@/components/common/UserAvatar";
 
 const formatDate = (value) => value ? new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(value)) : "-";
 
@@ -39,7 +40,7 @@ export default function AdminUsersPage() {
       <section className="admin-panel">
         <div className="admin-toolbar"><div><h2>회원 목록</h2><p>DB의 users 및 roles 테이블을 조회합니다.</p></div><form className="admin-search-form" onSubmit={search}><input type="search" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="이름 또는 이메일 검색" aria-label="회원 검색" /><button type="submit">검색</button></form></div>
         {loading ? <div className="admin-data-loading"><span className="admin-spinner" />회원 정보를 불러오고 있습니다.</div> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>회원</th><th>이메일</th><th>권한</th><th>상태</th><th>최근 로그인</th><th>가입일</th></tr></thead><tbody>
-          {users.map((member) => <tr key={member.id}><td><div className="admin-member"><span>{member.name[0]}</span><strong>{member.name}</strong></div></td><td>{member.email}</td><td><span className="role-badge">{member.role}</span></td><td><span className={`status-badge ${member.status === "ACTIVE" ? "active" : ""}`}>{member.status}</span></td><td>{formatDate(member.lastLoginAt)}</td><td>{formatDate(member.createdAt)}</td></tr>)}
+          {users.map((member) => <tr key={member.id}><td><div className="admin-member"><UserAvatar user={member} adminUserId={member.id} /><strong>{member.name}</strong></div></td><td>{member.email}</td><td><span className="role-badge">{member.role}</span></td><td><span className={`status-badge ${member.status === "ACTIVE" ? "active" : ""}`}>{member.status}</span></td><td>{formatDate(member.lastLoginAt)}</td><td>{formatDate(member.createdAt)}</td></tr>)}
           {!users.length && <tr><td colSpan="6" className="admin-empty-cell">조회된 회원이 없습니다.</td></tr>}
         </tbody></table></div>}
       </section>

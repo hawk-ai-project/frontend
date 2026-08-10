@@ -8,5 +8,16 @@ export const authService = {
   me: () => apiClient.get("/auth/me").then(({ data }) => data),
   updateProfile: (payload) =>
     apiClient.patch("/auth/profile", payload).then(({ data }) => data),
+  updateProfileImage: (file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return apiClient.patch("/auth/profile/image", body, { timeout: 30000 })
+      .then(({ data }) => data);
+  },
+  getProfileImage: () =>
+    apiClient.get("/auth/profile/image", { responseType: "blob" })
+      .then(({ data }) => data),
+  deleteProfileImage: () =>
+    apiClient.delete("/auth/profile/image").then(({ data }) => data),
   logout: () => apiClient.post("/auth/logout").then(({ data }) => data),
 };

@@ -101,6 +101,18 @@ export function AuthProvider({ children }) {
     return updatedUser;
   };
 
+  const updateProfileImage = async (file) => {
+    const updatedUser = await authService.updateProfileImage(file);
+    updateAuthState({ ...authState, user: updatedUser });
+    return updatedUser;
+  };
+
+  const deleteProfileImage = async () => {
+    const updatedUser = await authService.deleteProfileImage();
+    updateAuthState({ ...authState, user: updatedUser });
+    return updatedUser;
+  };
+
   const value = {
     token: authState.token,
     user: authState.user,
@@ -109,6 +121,8 @@ export function AuthProvider({ children }) {
     login,
     logout,
     updateProfile,
+    updateProfileImage,
+    deleteProfileImage,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
