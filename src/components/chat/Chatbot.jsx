@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { chatService } from "@/services/chatService";
 import { getApiErrorMessage } from "@/services/apiClient";
 
@@ -13,6 +14,7 @@ const SUGGESTIONS = [
 ];
 
 export default function Chatbot() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,7 @@ export default function Chatbot() {
           text: result.answer,
           type: result.type,
           sources: result.sources || [],
+          actions: result.actions || [],
         },
       ]);
     } catch (error) {
@@ -91,6 +94,22 @@ export default function Chatbot() {
                       <li key={source.id}>점검 #{source.id} · {source.location}</li>
                     ))}
                   </ul>
+                )}
+                {message.actions?.length > 0 && (
+                  <div className="chatbot-actions">
+                    {message.actions.slice(0, 2).map((action) => (
+                      <button
+                        type="button"
+                        key={action.href}
+                        onClick={() => {
+                          router.push(action.href);
+                          setOpen(false);
+                        }}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}

@@ -34,6 +34,10 @@ export const boardService = {
       .post("/boards/images", body, { timeout: 60000 })
       .then(({ data }) => ({ ...data, imageUrl: absoluteApiUrl(data.imageUrl) }));
   },
+  copyInspectionImage: (inspectionId) =>
+    apiClient
+      .post(`/boards/images/from-inspection/${inspectionId}`)
+      .then(({ data }) => ({ ...data, imageUrl: absoluteApiUrl(data.imageUrl) })),
   generateDraft: (payload) =>
     apiClient.post("/boards/ai/generate", payload).then(({ data }) => data),
   aiJobs: () => apiClient.get("/boards/ai/jobs").then(({ data }) => data),

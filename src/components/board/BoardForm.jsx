@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { boardService } from "@/services/boardService";
+import { inspectionService } from "@/services/inspectionService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import { useAuth } from "@/hooks/useAuth";
 import MarkdownEditor from "./MarkdownEditor";
@@ -21,6 +23,22 @@ const EMPTY_AI_INPUT = {
   priority: "",
   notes: "",
 };
+const PRIORITY_LABELS = { HIGH: "높음", MEDIUM: "중간", LOW: "낮음" };
+
+export function formatDetectionSummary(detections = []) {
+  return detections
+    .filter((item) => item?.className && Number(item.count) > 0)
+    .map((item) => `${item.className} ${Number(item.count)}개`)
+    .join(", ");
+}
+
+function formatInspectionDate(value) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+}
 
 function validate(form) {
   const errors = {};
@@ -44,8 +62,16 @@ export default function BoardForm({ boardId }) {
   const [aiInput, setAIInput] = useState(EMPTY_AI_INPUT);
   const [aiGenerating, setAIGenerating] = useState(false);
   const [aiError, setAIError] = useState("");
+  const [inspectionHistories, setInspectionHistories] = useState(null);
+  const [inspectionLoading, setInspectionLoading] = useState(false);
+  const [inspectionError, setInspectionError] = useState("");
+  const [selectedInspectionId, setSelectedInspectionId] = useState("");
+  const [inspectionPreviewUrl, setInspectionPreviewUrl] = useState("");
+  const [inspectionPreviewLoading, setInspectionPreviewLoading] = useState(false);
+  const [inspectionPreviewError, setInspectionPreviewError] = useState("");
   const titleRef = useRef(null);
   const contentRef = useRef(null);
+  const inspectionPreviewRequestRef = useRef(0);
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -98,6 +124,10 @@ export default function BoardForm({ boardId }) {
     }, 700);
     return () => window.clearTimeout(timer);
   }, [form, isEdit, loading]);
+
+  useEffect(() => () => {
+    if (inspectionPreviewUrl) URL.revokeObjectURL(inspectionPreviewUrl);
+  }, [inspectionPreviewUrl]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -154,6 +184,18 @@ export default function BoardForm({ boardId }) {
     try {
       setAIGenerating(true);
       setAIError("");
+      const selectedInspection = inspectionHistories?.find(
+        (item) => String(item.id) === selectedInspectionId,
+      );
+      let copiedImage = null;
+      let imageCopyFailed = false;
+      if (selectedInspection?.imageId) {
+        try {
+          copiedImage = await boardService.copyInspectionImage(selectedInspection.id);
+        } catch {
+          imageCopyFailed = true;
+        }
+      }
       const category = CATEGORIES.find((item) => item.id === form.categoryId);
       const job = await boardService.generateDraft({
         location: aiInput.location.trim(),
@@ -164,9 +206,20 @@ export default function BoardForm({ boardId }) {
       });
       localStorage.setItem(
         `hawk_ai_board_job_${job.jobId}`,
-        JSON.stringify({ categoryId: form.categoryId }),
+        JSON.stringify({
+          categoryId: form.categoryId,
+          inspectionImageUrl: copiedImage?.imageUrl || null,
+          inspectionImageAlt: selectedInspection
+            ? `${selectedInspection.location} 점검 이미지`
+            : null,
+          inspectionId: selectedInspection?.id || null,
+        }),
       );
-      setNotice("AI 글 생성을 시작했습니다. 완료되면 상단 알림에서 확인할 수 있습니다.");
+      setNotice(
+        imageCopyFailed
+          ? "AI 글 생성을 시작했습니다. 점검 이미지는 저장소에서 찾지 못해 제외되었습니다."
+          : "AI 글 생성을 시작했습니다. 완료되면 상단 알림에서 확인할 수 있습니다.",
+      );
       setShowAIDialog(false);
       setAIInput(EMPTY_AI_INPUT);
     } catch (error) {
@@ -174,6 +227,69 @@ export default function BoardForm({ boardId }) {
     } finally {
       setAIGenerating(false);
     }
+  };
+
+  const loadInspectionHistories = async () => {
+    if (!isAuthenticated) {
+      setInspectionError("점검이력을 불러오려면 로그인이 필요합니다.");
+      return;
+    }
+    try {
+      setInspectionLoading(true);
+      setInspectionError("");
+      setInspectionHistories(await inspectionService.recent(10));
+    } catch (error) {
+      setInspectionError(getApiErrorMessage(error, "점검이력을 불러오지 못했습니다."));
+    } finally {
+      setInspectionLoading(false);
+    }
+  };
+
+  const openAIDialog = () => {
+    setAIError("");
+    setShowAIDialog(true);
+    loadInspectionHistories();
+  };
+
+  const loadInspectionPreview = async (inspection) => {
+    const requestId = ++inspectionPreviewRequestRef.current;
+    setInspectionPreviewUrl("");
+    setInspectionPreviewError("");
+    setInspectionPreviewLoading(false);
+    if (!inspection?.imageId) return;
+    try {
+      setInspectionPreviewLoading(true);
+      const blob = await inspectionService.image(inspection.id);
+      if (requestId !== inspectionPreviewRequestRef.current) return;
+      setInspectionPreviewUrl(URL.createObjectURL(blob));
+    } catch {
+      if (requestId === inspectionPreviewRequestRef.current) {
+        setInspectionPreviewError("저장된 점검 이미지 파일이 없습니다. 이미지를 제외하고 글을 생성할 수 있습니다.");
+      }
+    } finally {
+      if (requestId === inspectionPreviewRequestRef.current) {
+        setInspectionPreviewLoading(false);
+      }
+    }
+  };
+
+  const selectInspection = (inspectionId) => {
+    setSelectedInspectionId(inspectionId);
+    const inspection = inspectionHistories?.find((item) => String(item.id) === inspectionId);
+    if (!inspection) {
+      inspectionPreviewRequestRef.current += 1;
+      setInspectionPreviewUrl("");
+      setInspectionPreviewError("");
+      return;
+    }
+    setAIInput({
+      location: inspection.location || "",
+      wasteSummary: formatDetectionSummary(inspection.detections),
+      priority: PRIORITY_LABELS[inspection.priority] || inspection.priority || "",
+      notes: inspection.notes || "",
+    });
+    setAIError("");
+    loadInspectionPreview(inspection);
   };
 
   if (loading || authLoading) return <p className="board-state">게시글 정보를 불러오는 중입니다.</p>;
@@ -218,7 +334,7 @@ export default function BoardForm({ boardId }) {
         <div className="editor-form-footer">
           <div>{notice && <p className="board-save-notice" role="alert">{notice}</p>}</div>
           <div className="form-actions">
-            {!isEdit && <button type="button" className="btn btn-soft" onClick={() => { setAIError(""); setShowAIDialog(true); }}>AI 글 생성</button>}
+            {!isEdit && <button type="button" className="btn btn-soft" onClick={openAIDialog}>AI 글 생성</button>}
             <button type="button" className="btn btn-soft" onClick={() => setForm(isEdit ? originalForm : EMPTY_FORM)}>초기화</button>
             <button type="button" className="btn btn-secondary" onClick={() => router.back()}>취소</button>
             <button className="btn btn-primary" disabled={submitting}>{submitting ? "저장 중..." : isEdit ? "수정 저장" : "게시글 등록"}</button>
@@ -230,6 +346,58 @@ export default function BoardForm({ boardId }) {
           <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="ai-board-title">
             <h2 id="ai-board-title">AI 게시글 초안 생성</h2>
             <p>입력한 사실만 사용해 제목, 요약, Markdown 본문을 생성합니다.</p>
+            <div className="ai-inspection-picker">
+              <div className="ai-inspection-picker-head">
+                <strong>점검이력에서 가져오기</strong>
+                <button type="button" disabled={inspectionLoading} onClick={loadInspectionHistories}>
+                  {inspectionLoading ? "불러오는 중..." : "새로고침"}
+                </button>
+              </div>
+              {inspectionLoading && inspectionHistories === null && <p>최근 점검이력을 불러오는 중입니다.</p>}
+              {inspectionError && (
+                <p className="ai-inspection-error" role="alert">{inspectionError}</p>
+              )}
+              {!inspectionLoading && inspectionHistories?.length === 0 && (
+                <p>등록된 점검이력이 없습니다. 아래 항목을 직접 입력할 수 있습니다.</p>
+              )}
+              {inspectionHistories?.length > 0 && (
+                <label htmlFor="ai-inspection-history">최근 점검이력
+                  <select id="ai-inspection-history" value={selectedInspectionId} onChange={(event) => selectInspection(event.target.value)}>
+                    <option value="">점검을 선택하세요</option>
+                    {inspectionHistories.map((inspection) => (
+                      <option value={String(inspection.id)} key={inspection.id}>
+                        #{inspection.id} · {inspection.location} · {formatInspectionDate(inspection.capturedAt)} · {inspection.status} · {PRIORITY_LABELS[inspection.priority] || inspection.priority}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {selectedInspectionId && (() => {
+                const selected = inspectionHistories?.find((item) => String(item.id) === selectedInspectionId);
+                return selected ? (
+                  <div className="ai-selected-inspection">
+                    <span>
+                      선택된 점검: #{selected.id} · {selected.location} · {formatInspectionDate(selected.capturedAt)}
+                      {inspectionPreviewLoading
+                        ? " · 이미지 확인 중"
+                        : inspectionPreviewUrl
+                          ? " · 이미지 포함"
+                          : inspectionPreviewError || !selected.imageId
+                            ? " · 이미지 파일 없음"
+                            : ""}
+                    </span>
+                    <button type="button" onClick={() => selectInspection("")}>선택 해제</button>
+                  </div>
+                ) : null;
+              })()}
+              {inspectionPreviewLoading && <p>점검 이미지를 불러오는 중입니다.</p>}
+              {inspectionPreviewError && <p className="ai-inspection-error" role="alert">{inspectionPreviewError}</p>}
+              {inspectionPreviewUrl && (
+                <div className="ai-inspection-preview">
+                  <Image src={inspectionPreviewUrl} alt="선택한 점검 이미지 미리보기" fill sizes="390px" unoptimized />
+                </div>
+              )}
+            </div>
             <label htmlFor="ai-location">위치
               <input id="ai-location" className="input" value={aiInput.location} onChange={(event) => setAIInput((current) => ({ ...current, location: event.target.value }))} placeholder="예: 광안리 해변" />
             </label>

@@ -1789,6 +1789,8 @@ textarea:focus {
 }
 .confirm-dialog {
   width: min(440px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   padding: 28px;
   border: 1px solid var(--border);
   border-radius: 22px;
@@ -1808,6 +1810,82 @@ textarea:focus {
 }
 .confirm-dialog .form-actions {
   justify-content: flex-end;
+}
+.ai-inspection-picker {
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid #dbe4f3;
+  border-radius: 12px;
+  background: #f7f9fd;
+}
+.ai-inspection-picker-head,
+.ai-selected-inspection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ai-inspection-picker-head button,
+.ai-selected-inspection button {
+  padding: 5px 9px;
+  border: 1px solid #b9c8e2;
+  border-radius: 8px;
+  color: var(--primary-dark);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 750;
+}
+.ai-inspection-picker label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 750;
+}
+.ai-inspection-picker select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #cbd6e8;
+  border-radius: 9px;
+  background: #fff;
+}
+.ai-inspection-picker p,
+.ai-selected-inspection {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ai-inspection-error {
+  color: #b42318 !important;
+}
+.ai-inspection-preview {
+  width: 100%;
+  height: 190px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #cbd6e8;
+  border-radius: 11px;
+  background: #e9eef7;
+}
+.ai-inspection-preview img {
+  object-fit: contain;
+}
+.article-markdown a[href^="/histories?inspectionId="],
+.markdown-preview a[href^="/histories?inspectionId="] {
+  width: fit-content;
+  min-height: 42px;
+  margin: 24px 0;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--primary);
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(63, 111, 196, 0.22);
 }
 @media (max-width: 720px) {
   .markdown-form {
@@ -2495,6 +2573,27 @@ textarea:focus {
 @keyframes chatbot-dot { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
 .chatbot-sources { margin: 2px 0 0; padding: 0; list-style: none; }
 .chatbot-sources a { color: var(--primary-dark); font-size: 11px; font-weight: 750; }
+.chatbot-actions {
+  max-width: 88%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chatbot-actions button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #aebfdf;
+  border-radius: 9px;
+  color: var(--primary-dark);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 780;
+  cursor: pointer;
+}
+.chatbot-actions button:hover {
+  border-color: var(--primary);
+  background: #edf3fc;
+}
 .chatbot-suggestions {
   display: flex;
   gap: 7px;

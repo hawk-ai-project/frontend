@@ -48,11 +48,17 @@ export default function BoardAINotifications() {
       try {
         metadata = JSON.parse(localStorage.getItem(`hawk_ai_board_job_${job.jobId}`)) || {};
       } catch { /* Use the default category when metadata is unavailable. */ }
+      const inspectionImage = metadata.inspectionImageUrl
+        ? `\n\n## 점검 이미지\n\n![${metadata.inspectionImageAlt || "점검 이미지"}](${metadata.inspectionImageUrl})`
+        : "";
+      const inspectionLink = metadata.inspectionId
+        ? `\n\n[점검이력 #${metadata.inspectionId} 확인하기](/histories?inspectionId=${metadata.inspectionId})`
+        : "";
       localStorage.setItem(DRAFT_KEY, JSON.stringify({
         categoryId: metadata.categoryId || 1,
         title: job.title,
         summary: job.summary,
-        content: job.content,
+        content: `${job.content}${inspectionImage}${inspectionLink}`,
         tags: [],
       }));
       localStorage.removeItem(`hawk_ai_board_job_${job.jobId}`);
