@@ -8,51 +8,80 @@ import { ROUTES } from "@/constants/routes";
 
 export const AuthContext = createContext(null);
 
+const INITIAL_AUTH_STATE = {
+  status: "checking",
+  token: null,
+  user: null,
+};
+
+// Root layout이 다시 마운트되더라도 확인된 인증 상태를 재사용해
+// 헤더가 잠시 비회원 메뉴로 돌아가는 현상을 막는다.
+let cachedAuthState = INITIAL_AUTH_STATE;
+
 export function AuthProvider({ children }) {
   const router = useRouter();
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authState, setAuthState] = useState(() => cachedAuthState);
+
+  const updateAuthState = useCallback((nextState) => {
+    cachedAuthState = nextState;
+    setAuthState(nextState);
+  }, []);
 
   const clearAuth = useCallback(() => {
     tokenStorage.remove();
-    setToken(null);
-    setUser(null);
-  }, []);
+    updateAuthState({ status: "guest", token: null, user: null });
+  }, [updateAuthState]);
 
   useEffect(() => {
-    Promise.resolve().then(async () => {
+    let cancelled = false;
+
+    async function initializeAuth() {
+      if (cachedAuthState.status !== "checking") return;
+
       const storedToken = tokenStorage.get();
       if (!storedToken) {
-        setIsLoading(false);
+        if (!cancelled) clearAuth();
         return;
       }
-      setToken(storedToken);
+
       try {
-        setUser(await authService.me());
+        const currentUser = await authService.me();
+        if (!cancelled) {
+          updateAuthState({
+            status: "authenticated",
+            token: storedToken,
+            user: currentUser,
+          });
+        }
       } catch {
-        clearAuth();
-      } finally {
-        setIsLoading(false);
+        if (!cancelled) clearAuth();
       }
-    });
-  }, [clearAuth]);
+    }
+
+    initializeAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, [clearAuth, updateAuthState]);
 
   useEffect(() => {
-    const unauthorized = () => {
+    const sessionExpired = () => {
       clearAuth();
       router.replace(ROUTES.login);
     };
-    window.addEventListener("hawk-ai:unauthorized", unauthorized);
+    window.addEventListener("hawk-ai:session-expired", sessionExpired);
     return () =>
-      window.removeEventListener("hawk-ai:unauthorized", unauthorized);
+      window.removeEventListener("hawk-ai:session-expired", sessionExpired);
   }, [clearAuth, router]);
 
   const login = async (credentials) => {
     const result = await authService.login(credentials);
     tokenStorage.set(result.accessToken);
-    setToken(result.accessToken);
-    setUser(result.user);
+    updateAuthState({
+      status: "authenticated",
+      token: result.accessToken,
+      user: result.user,
+    });
     return result;
   };
 
@@ -67,10 +96,10 @@ export function AuthProvider({ children }) {
   };
 
   const value = {
-    token,
-    user,
-    isAuthenticated: Boolean(token),
-    isLoading,
+    token: authState.token,
+    user: authState.user,
+    isAuthenticated: authState.status === "authenticated",
+    isLoading: authState.status === "checking",
     login,
     logout,
   };

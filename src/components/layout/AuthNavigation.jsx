@@ -6,7 +6,9 @@ import { ROUTES } from "@/constants/routes";
 
 export default function AuthNavigation() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  if (isLoading) return <span className="auth-status">인증 확인 중</span>;
+  if (isLoading) {
+    return <span className="auth-status auth-status-placeholder" aria-label="인증 상태 확인 중" />;
+  }
   if (!isAuthenticated) {
     return (
       <div className="auth-guest">
@@ -19,14 +21,10 @@ export default function AuthNavigation() {
   return (
     <div className="auth-user">
       <div className="profile">
-        <div className="avatar">{user?.name?.[0] || "사"}</div>
-        <span>
-          {user?.name} <small>({user?.role})</small>
-        </span>
+        <div className="avatar">{user?.name?.[0] || "사용자"}</div>
+        <span>{user?.name} <small>({user?.role})</small></span>
       </div>
-      <button className="logout-btn" onClick={logout}>
-        로그아웃
-      </button>
+      <button type="button" className="logout-btn" onClick={logout}>로그아웃</button>
     </div>
   );
 }
