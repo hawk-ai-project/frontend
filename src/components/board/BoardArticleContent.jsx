@@ -1,7 +1,9 @@
 import Image from "next/image";
 import MarkdownPreview from "./MarkdownPreview";
+import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 
 export default function BoardArticleContent({ post }) {
+  const safePost = sanitizeBoardDraft(post);
   return (
     <div className="board-article-content">
       {post.thumbnailUrl && (
@@ -14,7 +16,7 @@ export default function BoardArticleContent({ post }) {
           />
         </div>
       )}
-      <MarkdownPreview content={post.content} variant="article" />
+      <MarkdownPreview content={safePost.content} variant="article" />
     </div>
   );
 }

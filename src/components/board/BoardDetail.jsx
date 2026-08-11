@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import BoardArticleHeader from "./BoardArticleHeader";
 import BoardArticleContent from "./BoardArticleContent";
 import BoardArticleActions from "./BoardArticleActions";
+import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 
 export default function BoardDetail({ id }) {
   const [post, setPost] = useState(null);
@@ -19,7 +20,7 @@ export default function BoardDetail({ id }) {
     let cancelled = false;
     boardService.detail(id)
       .then((data) => {
-        if (!cancelled) setPost(data);
+        if (!cancelled) setPost(sanitizeBoardDraft(data));
       })
       .catch((requestError) => {
         if (!cancelled) {

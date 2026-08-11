@@ -8,7 +8,7 @@ import { getApiErrorMessage } from "@/services/apiClient";
 import AnalyticsHeader from "./AnalyticsHeader";
 import AnalyticsSummaryCards from "./AnalyticsSummaryCards";
 import AnalyticsCharts from "./AnalyticsCharts";
-import AnalyticsInsights from "./AnalyticsInsights";
+import AIAnalyticsInsights from "./AIAnalyticsInsights";
 
 export default function AnalyticsClient() {
   const [startDate, setStartDate] = useState("2026-08-01");
@@ -26,7 +26,6 @@ export default function AnalyticsClient() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     analyticsService
       .getSummary({
@@ -60,6 +59,7 @@ export default function AnalyticsClient() {
 
   const search = (event) => {
     if (event) event.preventDefault();
+    setLoading(true);
     setQuery({ startDate, endDate, locationId });
   };
 
@@ -201,7 +201,11 @@ export default function AnalyticsClient() {
             trends={data.trends}
             distribution={data.distribution}
           />
-          <AnalyticsInsights insights={data.insights} />
+          <AIAnalyticsInsights
+            key={`${query.startDate}-${query.endDate}-${query.locationId || "all"}`}
+            analytics={data}
+            query={query}
+          />
         </>
       )}
     </div>

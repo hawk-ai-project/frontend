@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { boardService } from "@/services/boardService";
+import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 
 const DRAFT_KEY = "hawk_ai_board_draft";
 
@@ -28,12 +29,23 @@ export default function BoardAINotifications() {
 
   useEffect(() => {
     const initial = window.setTimeout(refresh, 0);
-    const timer = window.setInterval(refresh, 5000);
+    const handleJobStarted = () => refresh();
+    window.addEventListener("hawk-ai:board-job-started", handleJobStarted);
     return () => {
       window.clearTimeout(initial);
-      window.clearInterval(timer);
+      window.removeEventListener("hawk-ai:board-job-started", handleJobStarted);
     };
   }, [refresh]);
+
+  const hasActiveJob = jobs.some(
+    (job) => job.status === "PENDING" || job.status === "RUNNING",
+  );
+
+  useEffect(() => {
+    if (!hasActiveJob) return undefined;
+    const timer = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(timer);
+  }, [hasActiveJob, refresh]);
 
   const unreadCount = jobs.filter(
     (job) => !job.isRead && (job.status === "COMPLETED" || job.status === "FAILED"),
@@ -54,13 +66,13 @@ export default function BoardAINotifications() {
       const inspectionLink = metadata.inspectionId
         ? `\n\n[점검이력 #${metadata.inspectionId} 확인하기](/histories?inspectionId=${metadata.inspectionId})`
         : "";
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(sanitizeBoardDraft({
         categoryId: metadata.categoryId || 1,
         title: job.title,
         summary: job.summary,
         content: `${job.content}${inspectionImage}${inspectionLink}`,
         tags: [],
-      }));
+      })));
       localStorage.removeItem(`hawk_ai_board_job_${job.jobId}`);
       window.dispatchEvent(new Event("hawk-ai:board-draft-ready"));
       router.push("/boards/write");
