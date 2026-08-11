@@ -26,7 +26,6 @@ export default function AnalyticsClient() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     analyticsService
       .getSummary({
@@ -60,6 +59,7 @@ export default function AnalyticsClient() {
 
   const search = (event) => {
     if (event) event.preventDefault();
+    setLoading(true);
     setQuery({ startDate, endDate, locationId });
   };
 
