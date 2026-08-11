@@ -589,6 +589,23 @@ main {
 .detail-image-modal > div { width: min(100%, 1000px); position: relative; padding: 14px; border-radius: 18px; background: #fff; }
 .detail-image-modal img { display: block; width: 100%; max-height: 80vh; object-fit: contain; background: #111827; }
 .detail-image-modal button { position: absolute; z-index: 2; top: 4px; right: 5px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #fff; color: #344054; font-size: 24px; }
+.assignment-modal { position: fixed; z-index: 510; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(17,24,39,.58); }
+.assignment-modal > div { width: min(100%, 480px); padding: 24px; border-radius: 20px; background: #fff; box-shadow: 0 24px 70px rgba(15,23,42,.28); }
+.assignment-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.assignment-modal-header h2 { margin: 0; color: #172b4d; font-size: 24px; }
+.assignment-modal-header p { margin: 6px 0 0; color: #667085; font-size: 14px; }
+.assignment-modal-header > button { flex: 0 0 auto; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f2f4f7; color: #475467; font-size: 24px; line-height: 1; cursor: pointer; }
+.assignee-list { display: grid; gap: 8px; max-height: 320px; margin: 20px 0; overflow-y: auto; }
+.assignee-list label { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid #dce3ef; border-radius: 12px; cursor: pointer; transition: .15s ease; }
+.assignee-list label:hover, .assignee-list label.selected { border-color: #2f5da9; background: #f1f6ff; }
+.assignee-list input { width: 17px; height: 17px; accent-color: #2f5da9; }
+.assignee-list span { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
+.assignee-list strong { color: #172b4d; }
+.assignee-list small { color: #667085; }
+.assignment-state { margin: 22px 0; color: #667085; text-align: center; }
+.assignment-error { margin: 16px 0 0; padding: 10px 12px; border-radius: 9px; background: #fff1f3; color: #c4324b; font-size: 13px; }
+.assignment-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.assignment-modal-actions .btn:disabled { cursor: not-allowed; opacity: .55; }
 
 /* Compact detail layout */
 .compact-detail-page .detail-header { margin-bottom: 14px; }

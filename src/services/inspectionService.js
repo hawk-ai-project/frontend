@@ -15,4 +15,12 @@ export const inspectionService = {
     apiClient
       .get(`/inspection/histories/${inspectionId}`)
       .then(({ data }) => data),
+  assignees: () =>
+    apiClient
+      .get("/inspection/assignees")
+      .then(({ data }) => data),
+  assign: (inspectionId, assigneeId) =>
+    apiClient
+      .patch(`/inspection/histories/${inspectionId}/assignee`, { assigneeId })
+      .then(({ data }) => data),
 };

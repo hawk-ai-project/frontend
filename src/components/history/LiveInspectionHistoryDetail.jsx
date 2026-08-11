@@ -56,5 +56,6 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
     detections: (inspection.detections || []).map((item) => [item.className, item.count]),
     opinion: inspection.aiOpinion || inspection.notes || "탐지 결과를 확인하고 현장 상황에 맞는 후속 조치를 작성해 주세요.",
   };
-  return <HistoryDetailClient history={history} detail={detail} />;
+  detail.assigneeName = inspection.assigneeName || null;
+  return <HistoryDetailClient history={history} detail={detail} inspectionId={inspection.id} />;
 }
