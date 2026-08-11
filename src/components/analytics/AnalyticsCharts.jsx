@@ -70,10 +70,7 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
       id="analytics-charts-area"
       className="grid grid-2"
       style={{
-        marginBottom: '24px',
-        backgroundColor: '#ffffff',
-        padding: '16px',
-        borderRadius: '16px',
+        marginBottom: '24px',        
       }}
     >
       {/* 기간별 탐지 추이 */}
