@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import BoardWriteForm from "@/components/board/BoardWriteForm";
 
 export const metadata = { title: "게시글 작성" };
@@ -14,7 +15,9 @@ export default function BoardWritePage() {
           </p>
         </div>
       </div>
-      <BoardWriteForm />
+      <Suspense fallback={null}>
+        <BoardWriteForm />
+      </Suspense>
     </div>
   );
 }
