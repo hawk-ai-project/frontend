@@ -51,12 +51,16 @@ export default function CameraPreview() {
 
   // 카메라 선택
   useEffect(() => {
-    const initCamera = async () => {
-      if (selectedDeviceId) {
+    const changeCamera = async () => {
+      // 핵심: stream(카메라 화면)이 이미 켜져 있을 때만 다시 켭니다!
+      // 처음 화면에 들어왔을 때(stream이 null일 때)는 무시하고 OFF를 유지합니다.
+      if (selectedDeviceId && stream) {
         await startCamera();
       }
     };
-    initCamera();
+
+    changeCamera();
+
     return () => {
       if (stream) stream.getTracks().forEach((track) => track.stop());
     };
@@ -102,6 +106,28 @@ export default function CameraPreview() {
       };
       reader.readAsDataURL(file);
       e.target.value = "";
+    }
+  };
+
+  // 카메라 끄기
+  const stopCamera = () => {
+    if (stream) {
+      // 카메라 하드웨어 중지
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    }
+  };
+
+  // 카메라 ON/OFF 토글
+  const toggleCamera = () => {
+    if (stream) {
+      stopCamera();
+    } else {
+      startCamera();
     }
   };
 
@@ -173,9 +199,9 @@ export default function CameraPreview() {
             ))}
           </select>
 
-          {/* 카메라 재연결 버튼 */}
-          <button onClick={startCamera} className="btn btn-secondary">
-            카메라 재연결
+          {/* 카메라 ON/OFF 버튼 */}
+          <button onClick={toggleCamera} className="btn btn-secondary">
+            {stream ? "카메라 OFF" : "카메라 ON"}
           </button>
 
           <button onClick={selectImage} className="btn btn-secondary">

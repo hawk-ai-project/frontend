@@ -2,15 +2,43 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function InspectionInfo() {
   const [formData, setFormData] = useState({
-    location: "부산 해운대 해수욕장 동측",
-    inspector: "김도하",
-    memo: "방파제 인근 수면과 해안선 중심으로 점검",
+    location: "",
+    inspector: "",
+    memo: "",
     status: "미처리",
   });
+
+  useEffect(() => {
+    const fetchMyName = async () => {
+      try {
+        // 일단 로컬에서 점검자 이름 불러오기
+        const token = localStorage.getItem("hawk_ai_access_token");
+
+        if (!token) {
+          console.log("토큰이 없습니다. 로그인이 필요합니다.");
+          return;
+        }
+
+        const response = await axios.get("http://127.0.0.1:8000/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setFormData((prev) => ({
+          ...prev,
+          inspector: response.data.name,
+        }));
+      } catch (error) {
+        console.error("점검자 정보를 가져오는데 실패했습니다.", error);
+      }
+    };
+    fetchMyName();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,9 +73,14 @@ export default function InspectionInfo() {
             id="inspector"
             name="inspector"
             value={formData.inspector}
-            onChange={handleChange}
+            readOnly
             className="input"
-            placeholder="점검자를 입력하세요"
+            style={{
+              backgroundColor: "#f3f4f6",
+              color: "#6b7280",
+              cursor: "not-allowed",
+            }}
+            placeholder="점검자를 불러오는 중..."
           />
         </label>
 
