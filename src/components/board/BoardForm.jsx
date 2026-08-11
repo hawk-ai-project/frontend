@@ -215,6 +215,9 @@ export default function BoardForm({ boardId }) {
           inspectionId: selectedInspection?.id || null,
         }),
       );
+      window.dispatchEvent(new CustomEvent("hawk-ai:board-job-started", {
+        detail: { jobId: job.jobId },
+      }));
       setNotice(
         imageCopyFailed
           ? "AI 글 생성을 시작했습니다. 점검 이미지는 저장소에서 찾지 못해 제외되었습니다."

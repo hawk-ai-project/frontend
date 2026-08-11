@@ -28,12 +28,23 @@ export default function BoardAINotifications() {
 
   useEffect(() => {
     const initial = window.setTimeout(refresh, 0);
-    const timer = window.setInterval(refresh, 5000);
+    const handleJobStarted = () => refresh();
+    window.addEventListener("hawk-ai:board-job-started", handleJobStarted);
     return () => {
       window.clearTimeout(initial);
-      window.clearInterval(timer);
+      window.removeEventListener("hawk-ai:board-job-started", handleJobStarted);
     };
   }, [refresh]);
+
+  const hasActiveJob = jobs.some(
+    (job) => job.status === "PENDING" || job.status === "RUNNING",
+  );
+
+  useEffect(() => {
+    if (!hasActiveJob) return undefined;
+    const timer = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(timer);
+  }, [hasActiveJob, refresh]);
 
   const unreadCount = jobs.filter(
     (job) => !job.isRead && (job.status === "COMPLETED" || job.status === "FAILED"),
