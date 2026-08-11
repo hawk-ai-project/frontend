@@ -7,9 +7,11 @@ import styles from "./CameraPreview.module.css";
 
 export default function CameraPreview() {
   const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [stream, setStream] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
   // 카메라 불러오기
   useEffect(() => {
@@ -18,7 +20,7 @@ export default function CameraPreview() {
         const connectedDevices =
           await navigator.mediaDevices.enumerateDevices();
         const videoDevices = connectedDevices.filter(
-          (device) => device.kind === "videoinput"
+          (device) => device.kind === "videoinput",
         );
         setDevices(videoDevices);
         if (videoDevices.length > 0)
@@ -32,6 +34,7 @@ export default function CameraPreview() {
 
   // 카메라 실행
   const startCamera = async () => {
+    setPreviewImage(null);
     if (stream) stream.getTracks().forEach((track) => track.stop());
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({
@@ -62,7 +65,10 @@ export default function CameraPreview() {
 
   // 촬영 및 분석
   const handleCapture = () => {
-    if (videoRef.current) {
+    if (previewImage) {
+      console.log("분석할 첨부 이미지 : ", previewImage);
+      alert("첨부된 사진으로 분석을 시작합니다.");
+    } else if (videoRef.current && stream) {
       const canvas = document.createElement("canvas");
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
@@ -71,6 +77,31 @@ export default function CameraPreview() {
       const imageUrl = canvas.toDataURL("image/jpeg", 0.8);
       console.log("캡처된 이미지:", imageUrl);
       alert("촬영이 완료되었습니다!");
+    }
+  };
+
+  // 사진 첨부
+  const selectImage = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // 파일 선택 시
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target.result;
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          setStream(null);
+        }
+        setPreviewImage(imageUrl);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = "";
     }
   };
 
@@ -97,16 +128,28 @@ export default function CameraPreview() {
           )}
         </div>
 
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={styles.videoElement}
-        />
+        {/* 사진이 있으면 img태그, 없으면 video태그 */}
+        {previewImage ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={previewImage}
+            alt="첨부된 사진"
+            className={styles.videoElement}
+            style={{ objectFit: "contain", width: "100%", maxHeight: "100%" }}
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={styles.videoElement}
+            style={{ display: stream ? "block" : "none" }}
+          />
+        )}
 
         {/* 카메라 출력 안하고 있을 때 */}
-        {!stream && (
+        {!stream && !previewImage && (
           <div className={`badge ${styles.placeholderBadge}`}>
             USB Camera Preview
           </div>
@@ -134,6 +177,17 @@ export default function CameraPreview() {
           <button onClick={startCamera} className="btn btn-secondary">
             카메라 재연결
           </button>
+
+          <button onClick={selectImage} className="btn btn-secondary">
+            사진 첨부
+          </button>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
         </div>
 
         {/* 촬영 및 분석 버튼 */}
