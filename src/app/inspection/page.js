@@ -4,7 +4,7 @@ import CameraPreview from "@/components/inspection/CameraPreview";
 import InspectionInfo from "@/components/inspection/InspectionInfo";
 export const metadata = { title: "현장점검" };
 
-export default function BoardsPage() {
+export default function InspectionPage() {
   return (
     <div className="page-shell">
       <div className="page-head">

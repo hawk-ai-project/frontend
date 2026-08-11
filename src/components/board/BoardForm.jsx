@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { boardService } from "@/services/boardService";
 import { inspectionService } from "@/services/inspectionService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import { useAuth } from "@/hooks/useAuth";
 import MarkdownEditor from "./MarkdownEditor";
+import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 
 const DRAFT_KEY = "hawk_ai_board_draft";
 const CATEGORIES = [
@@ -40,6 +41,24 @@ function formatInspectionDate(value) {
   }).format(new Date(value));
 }
 
+function createInspectionHistoryDraft(history) {
+  const inspectedAt = new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(history.inspectedAt));
+  const summary = `${history.waste} ${history.detectedCount}개가 탐지되었습니다.`;
+  return {
+    title: `${history.location} 현장 점검 결과`,
+    summary,
+    content: `## 점검 개요\n\n- 점검번호: ${history.id}\n- 점검 일시: ${inspectedAt}\n- 점검 장소: ${history.location}\n\n## 탐지 결과\n\n- ${summary}\n\n## 후속 조치\n\n탐지 결과를 확인한 후 현장 상황에 맞는 수거 및 후속 조치를 진행해 주세요.`,
+    tags: ["현장점검", history.waste],
+  };
+}
+
 function validate(form) {
   const errors = {};
   if (!form.title.trim()) errors.title = "제목을 입력해 주세요.";
@@ -69,10 +88,12 @@ export default function BoardForm({ boardId }) {
   const [inspectionPreviewUrl, setInspectionPreviewUrl] = useState("");
   const [inspectionPreviewLoading, setInspectionPreviewLoading] = useState(false);
   const [inspectionPreviewError, setInspectionPreviewError] = useState("");
+  const [historyImportId, setHistoryImportId] = useState("");
   const titleRef = useRef(null);
   const contentRef = useRef(null);
   const inspectionPreviewRequestRef = useRef(0);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -80,7 +101,7 @@ export default function BoardForm({ boardId }) {
       Promise.resolve().then(() => {
         try {
           const saved = JSON.parse(localStorage.getItem(DRAFT_KEY));
-          if (saved?.title || saved?.content) setForm({ ...EMPTY_FORM, ...saved });
+          if (saved?.title || saved?.content) setForm({ ...EMPTY_FORM, ...sanitizeBoardDraft(saved) });
         } catch { localStorage.removeItem(DRAFT_KEY); }
       });
       return;
@@ -96,8 +117,9 @@ export default function BoardForm({ boardId }) {
           content: post.content,
           tags: post.tags || [],
         };
-        setForm(loaded);
-        setOriginalForm(loaded);
+        const cleanLoaded = sanitizeBoardDraft(loaded);
+        setForm(cleanLoaded);
+        setOriginalForm(cleanLoaded);
       })
       .catch((error) => {
         if (!cancelled) setNotice(getApiErrorMessage(error, "게시글을 불러오지 못했습니다."));
@@ -107,10 +129,25 @@ export default function BoardForm({ boardId }) {
   }, [boardId, isEdit]);
 
   useEffect(() => {
+    if (isEdit) return;
+    const inspectionId = searchParams.get("inspectionId");
+    const history = inspectionHistories?.find((item) => String(item.id) === inspectionId);
+    if (!history) return;
+    const timer = window.setTimeout(() => {
+      setHistoryImportId(history.id);
+      setForm((current) => (
+        current.title || current.content ? current : { ...EMPTY_FORM, ...createInspectionHistoryDraft(history) }
+      ));
+      setNotice(`${history.id} 점검 이력 데이터를 불러왔습니다.`);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isEdit, searchParams]);
+
+  useEffect(() => {
     const applyAIDraft = () => {
       try {
         const saved = JSON.parse(localStorage.getItem(DRAFT_KEY));
-        if (saved?.title && saved?.content) setForm({ ...EMPTY_FORM, ...saved });
+        if (saved?.title && saved?.content) setForm({ ...EMPTY_FORM, ...sanitizeBoardDraft(saved) });
       } catch { /* Ignore malformed local drafts. */ }
     };
     window.addEventListener("hawk-ai:board-draft-ready", applyAIDraft);
@@ -135,6 +172,15 @@ export default function BoardForm({ boardId }) {
     setNotice("");
   };
 
+  const importInspectionHistory = (inspectionId) => {
+    setHistoryImportId(inspectionId);
+    const history = inspectionHistories.find((item) => item.id === inspectionId);
+    if (!history) return;
+    setForm({ ...EMPTY_FORM, ...createInspectionHistoryDraft(history) });
+    setErrors({});
+    setNotice(`${history.id} 점검 이력 데이터를 게시글에 적용했습니다.`);
+  };
+
   const addTag = () => {
     const tag = tagInput.trim().replace(/^#/, "");
     if (!tag) return;
@@ -148,7 +194,8 @@ export default function BoardForm({ boardId }) {
 
   const submit = async (event) => {
     event.preventDefault();
-    const nextErrors = validate(form);
+    const safeForm = sanitizeBoardDraft(form);
+    const nextErrors = validate(safeForm);
     setErrors(nextErrors);
     if (nextErrors.title) return titleRef.current?.focus();
     if (nextErrors.content) return contentRef.current?.focus();
@@ -161,8 +208,8 @@ export default function BoardForm({ boardId }) {
       setSubmitting(true);
       setNotice("");
       const saved = isEdit
-        ? await boardService.update(boardId, form)
-        : await boardService.create({ ...form, summary: form.summary || null });
+        ? await boardService.update(boardId, safeForm)
+        : await boardService.create({ ...safeForm, summary: safeForm.summary || null });
       if (!isEdit) localStorage.removeItem(DRAFT_KEY);
       router.push(`/boards/${saved.id}`);
       router.refresh();
@@ -301,6 +348,12 @@ export default function BoardForm({ boardId }) {
     <article className="card board-editor-card">
       <form className="wide-board-form" onSubmit={submit} noValidate>
         <div className="board-editor-fields">
+          {!isEdit && <label htmlFor="board-inspection-history">점검 이력 불러오기
+            <select id="board-inspection-history" value={historyImportId} onChange={(event) => importInspectionHistory(event.target.value)}>
+              <option value="">점검 이력을 선택하세요</option>
+              {inspectionHistories?.map((history) => <option value={history.id} key={history.id}>{history.id} · {history.location}</option>)}
+            </select>
+          </label>}
           <label htmlFor="board-category">카테고리
             <select id="board-category" value={form.categoryId} onChange={(event) => updateField("categoryId", Number(event.target.value))}>
               {CATEGORIES.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}

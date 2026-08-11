@@ -2,10 +2,32 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { inspectionHistories, STATUS_OPTIONS, statusClass } from './historyData';
+import { inspectionService } from '@/services/inspectionService';
 
 const formatDateTime = (value) => new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value));
+
+function inspectionToHistory(inspection) {
+  const detections = Array.isArray(inspection.detections) ? inspection.detections : [];
+  const detectedCount = detections.reduce((total, item) => total + (Number(item.count) || 0), 0);
+  const statusMap = {
+    REVIEW_REQUIRED: STATUS_OPTIONS[0],
+    ACTION_REQUIRED: STATUS_OPTIONS[1],
+    RESOLVED: STATUS_OPTIONS[2],
+  };
+  return {
+    id: `INSPECTION-${inspection.id}`,
+    inspectionId: inspection.id,
+    inspectedAt: inspection.capturedAt,
+    location: inspection.location && inspection.location !== '미지정 위치'
+      ? inspection.location
+      : inspection.title,
+    detectedCount,
+    waste: inspection.wasteSummary || detections.map((item) => item.className).join(', ') || '탐지 결과 없음',
+    status: statusMap[inspection.status] || STATUS_OPTIONS[0],
+  };
+}
 
 export default function HistoryList() {
   const [items, setItems] = useState(inspectionHistories);
@@ -17,8 +39,22 @@ export default function HistoryList() {
   const [selected, setSelected] = useState([]);
   const [bulkStatus, setBulkStatus] = useState('');
   const [searched, setSearched] = useState({ keyword: '', location: '전체 장소', waste: '전체 폐기물', status: '전체 상태', date: '' });
-  const locations = [...new Set(inspectionHistories.map((item) => item.location.split(' ')[0]))];
-  const wastes = [...new Set(inspectionHistories.map((item) => item.waste))].sort();
+  useEffect(() => {
+    let cancelled = false;
+    inspectionService.recent(10)
+      .then((data) => {
+        if (cancelled) return;
+        const liveHistories = Array.isArray(data) ? data.map(inspectionToHistory) : [];
+        setItems(liveHistories.length ? liveHistories : inspectionHistories);
+      })
+      .catch(() => {
+        // The built-in inspection history remains available if API loading fails.
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const locations = [...new Set(items.map((item) => item.location.split(' ')[0]))];
+  const wastes = [...new Set(items.map((item) => item.waste))].sort();
   const filteredItems = useMemo(() => items.filter((item) => {
     const matchesKeyword = !searched.keyword || `${item.id} ${item.location}`.toLowerCase().includes(searched.keyword.toLowerCase());
     const matchesLocation = searched.location === '전체 장소' || item.location.startsWith(searched.location);
@@ -59,7 +95,7 @@ export default function HistoryList() {
       </div>
       <div className="table-wrap">
         <table className="history-table"><thead><tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="전체 선택" /></th><th>이미지</th><th>점검번호</th><th>점검 일시</th><th>장소</th><th>탐지 수</th><th>주요 폐기물</th><th>상태</th></tr></thead>
-          <tbody>{filteredItems.length ? filteredItems.map((item) => <tr className={selected.includes(item.id) ? 'selected' : ''} key={item.id}><td><input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleItem(item.id)} aria-label={`${item.id} 선택`} /></td><td><span className="history-thumb" aria-hidden="true"><Image src={item.waste === 'PET Bottle' ? '/images/home/pet-bottles.png' : '/images/home/main-analysis.png'} alt="" fill sizes="42px" /></span></td><td><Link className="history-link" href={`/histories/${item.id}`}>{item.id}</Link></td><td>{formatDateTime(item.inspectedAt)}</td><td>{item.location}</td><td>{item.detectedCount}개</td><td>{item.waste}</td><td><span className={`badge ${statusClass(item.status)}`}>{item.status}</span></td></tr>) : <tr><td className="history-empty" colSpan="8">조건에 맞는 점검 이력이 없습니다.</td></tr>}</tbody>
+          <tbody>{filteredItems.length ? filteredItems.map((item) => <tr className={selected.includes(item.id) ? 'selected' : ''} key={item.id}><td><input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleItem(item.id)} aria-label={`${item.id} 선택`} /></td><td><span className="history-thumb" aria-hidden="true"><Image src={item.waste === 'PET Bottle' ? '/images/home/pet-bottles.png' : '/images/home/main-analysis.png'} alt="" fill sizes="42px" /></span></td><td><Link className="history-link" href={item.inspectionId ? `/histories/inspection/${item.inspectionId}` : `/histories/${item.id}`}>{item.id}</Link></td><td>{formatDateTime(item.inspectedAt)}</td><td>{item.location}</td><td>{item.detectedCount}개</td><td>{item.waste}</td><td><span className={`badge ${statusClass(item.status)}`}>{item.status}</span></td></tr>) : <tr><td className="history-empty" colSpan="8">조건에 맞는 점검 이력이 없습니다.</td></tr>}</tbody>
         </table>
       </div>
       <nav className="number-pagination" aria-label="점검 이력 페이지"><button disabled>‹</button><button className="active">1</button><button disabled>›</button></nav>
