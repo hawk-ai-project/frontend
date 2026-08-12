@@ -534,7 +534,11 @@ main {
 .history-page .number-pagination .pagination-arrow { width: 42px; height: 42px; padding: 0; border-color: #d6dce6; background: #f2f4f7; color: var(--primary-dark); font-size: 25px; font-weight: 800; line-height: 1; }
 .history-page .number-pagination .pagination-arrow:not(:disabled):hover { border-color: var(--primary-dark); background: #edf3fc; transform: translateY(-1px); }
 .history-page .number-pagination .pagination-arrow:disabled { color: #aeb8c8; background: #f6f8fb; opacity: .65; }
-.history-total-count { position: absolute; right: 11px; color: #667085; font-size: 14px; font-weight: 700; }
+.history-list-actions { position: absolute; right: 11px; display: flex; align-items: center; gap: 10px; }
+.history-total-count { color: #667085; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.history-delete-button { width: auto !important; min-width: 58px; min-height: 36px; padding: 0 13px; border: 1px solid #efb4bc; border-radius: 9px; background: #fff5f6; color: #c9364a; font-size: 14px !important; font-weight: 750; white-space: nowrap; cursor: pointer; }
+.history-delete-button:hover:not(:disabled) { border-color: #dc5062; background: #ffe9ec; }
+.history-delete-button:disabled { border-color: #dfe3ea; background: #f5f6f8; color: #a9b0bc; cursor: default; }
 
 /* Inspection detail */
 .history-detail-page { padding-top: 30px; }
@@ -1385,7 +1389,7 @@ textarea:focus {
   }
 }
 @media (max-width: 720px) {
-  .history-total-count { position: static; margin-left: 6px; white-space: nowrap; }
+  .history-list-actions { position: static; margin-left: 6px; gap: 7px; }
   .compact-top-grid, .compact-action-grid { grid-template-columns: 1fr; }
   .compact-top-grid { gap: 12px; }
   .detail-header { align-items: stretch; flex-direction: column; }

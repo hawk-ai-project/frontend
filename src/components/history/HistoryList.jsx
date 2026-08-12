@@ -40,6 +40,7 @@ export default function HistoryList() {
   const [date, setDate] = useState('');
   const [selected, setSelected] = useState([]);
   const [bulkStatus, setBulkStatus] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
   const [searched, setSearched] = useState({ keyword: '', location: '전체 장소', waste: '전체 폐기물', status: '전체 상태', date: '' });
   useEffect(() => {
@@ -84,6 +85,24 @@ export default function HistoryList() {
     setSelected([]);
     setBulkStatus('');
   };
+  const deleteSelected = async () => {
+    const targets = items.filter((item) => selected.includes(item.id) && item.inspectionId);
+    if (!targets.length || deleting) return;
+    if (!window.confirm(`선택한 점검 이력 ${targets.length}건을 삭제하시겠습니까?`)) return;
+
+    setDeleting(true);
+    try {
+      await Promise.all(targets.map((item) => inspectionService.delete(item.inspectionId)));
+      const deletedIds = new Set(targets.map((item) => item.id));
+      setItems((current) => current.filter((item) => !deletedIds.has(item.id)));
+      setSelected((current) => current.filter((id) => !deletedIds.has(id)));
+      setPage((current) => Math.min(current, Math.max(1, Math.ceil((filteredItems.length - targets.length) / PAGE_SIZE))));
+    } catch (error) {
+      window.alert(error?.response?.data?.detail || '점검 이력을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return <>
     <form className="card history-filter" onSubmit={search}>
@@ -104,7 +123,7 @@ export default function HistoryList() {
           <tbody>{pagedItems.length ? pagedItems.map((item) => <tr className={selected.includes(item.id) ? 'selected' : ''} key={item.id}><td><input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleItem(item.id)} aria-label={`${item.id} 선택`} /></td><td><HistoryThumbnail inspectionId={item.inspectionId} /></td><td><Link className="history-link" href={item.inspectionId ? `/histories/inspection/${item.inspectionId}` : `/histories/${item.id}`}>{item.id}</Link></td><td>{formatDateTime(item.inspectedAt)}</td><td>{item.location}</td><td>{item.detectedCount}개</td><td>{item.waste}</td><td><span className={`badge ${statusClass(item.status)}`}>{item.status}</span></td></tr>) : <tr><td className="history-empty" colSpan="8">조건에 맞는 점검 이력이 없습니다.</td></tr>}</tbody>
         </table>
       </div>
-      <nav className="number-pagination" aria-label="점검 이력 페이지"><button className="pagination-arrow" type="button" aria-label="이전 페이지" title="이전 페이지" disabled={page === 1} onClick={() => setPage((value) => value - 1)}><span aria-hidden="true">‹</span></button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button type="button" key={number} aria-label={`${number}페이지`} aria-current={page === number ? 'page' : undefined} className={page === number ? 'active' : ''} onClick={() => setPage(number)}>{number}</button>)}<button className="pagination-arrow" type="button" aria-label="다음 페이지" title="다음 페이지" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}><span aria-hidden="true">›</span></button><span className="history-total-count">전체 {filteredItems.length}건</span></nav>
+      <nav className="number-pagination" aria-label="점검 이력 페이지"><button className="pagination-arrow" type="button" aria-label="이전 페이지" title="이전 페이지" disabled={page === 1} onClick={() => setPage((value) => value - 1)}><span aria-hidden="true">‹</span></button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button type="button" key={number} aria-label={`${number}페이지`} aria-current={page === number ? 'page' : undefined} className={page === number ? 'active' : ''} onClick={() => setPage(number)}>{number}</button>)}<button className="pagination-arrow" type="button" aria-label="다음 페이지" title="다음 페이지" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}><span aria-hidden="true">›</span></button><span className="history-list-actions"><button className="history-delete-button" type="button" disabled={!selected.length || deleting} onClick={deleteSelected}>{deleting ? '삭제 중...' : '삭제'}</button><span className="history-total-count">전체 {filteredItems.length}건</span></span></nav>
     </article>
   </>;
 }
