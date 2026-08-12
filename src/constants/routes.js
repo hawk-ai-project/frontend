@@ -7,6 +7,7 @@ export const ROUTES = Object.freeze({
   histories: "/histories",
   analytics: "/analytics",
   boards: "/boards",
+  hokeytoon: "/hokeytoon",
   boardWrite: "/boards/write",
   admin: "/admin",
   adminUsers: "/admin/users",
@@ -21,4 +22,5 @@ export const NAVIGATION = [
   { href: ROUTES.histories, label: "점검이력" },
   { href: ROUTES.analytics, label: "통계분석" },
   { href: ROUTES.boards, label: "게시판" },
+  { href: ROUTES.hokeytoon, label: "호키툰" },
 ];

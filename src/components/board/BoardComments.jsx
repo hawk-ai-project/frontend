@@ -123,7 +123,7 @@ function CommentItem({ comment, currentUserId, onCreateReply, onUpdate, onDelete
   );
 }
 
-export default function BoardComments({ boardId }) {
+export default function BoardComments({ boardId, resourceId = boardId, commentService = boardService }) {
   const { user, isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,17 +131,17 @@ export default function BoardComments({ boardId }) {
 
   const load = useCallback(async () => {
     try {
-      setComments(await boardService.comments(boardId));
+      setComments(await commentService.comments(resourceId));
     } catch {
       setComments([]);
     } finally {
       setLoading(false);
     }
-  }, [boardId]);
+  }, [commentService, resourceId]);
 
   useEffect(() => {
     let cancelled = false;
-    boardService.comments(boardId)
+    commentService.comments(resourceId)
       .then((items) => {
         if (!cancelled) setComments(items);
       })
@@ -152,7 +152,7 @@ export default function BoardComments({ boardId }) {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [boardId]);
+  }, [commentService, resourceId]);
 
   const run = async (request) => {
     try {
@@ -185,7 +185,7 @@ export default function BoardComments({ boardId }) {
         </label>
       </div>
       {isAuthenticated
-        ? <CommentEditor onSubmit={(payload) => run(() => boardService.createComment(boardId, payload))} />
+        ? <CommentEditor onSubmit={(payload) => run(() => commentService.createComment(resourceId, payload))} />
         : <p className="comment-login-notice"><Link href="/login">로그인</Link>하면 댓글과 이모티콘을 남길 수 있습니다.</p>}
       {loading && <p className="board-state">댓글을 불러오는 중입니다.</p>}
       {!loading && comments.length === 0 && <p className="comment-empty">첫 댓글을 남겨보세요.</p>}
@@ -195,10 +195,10 @@ export default function BoardComments({ boardId }) {
             key={comment.id}
             comment={comment}
             currentUserId={user?.id}
-            onCreateReply={(parentId, payload) => run(() => boardService.createComment(boardId, { ...payload, parentId }))}
-            onUpdate={(commentId, payload) => run(() => boardService.updateComment(commentId, payload))}
+            onCreateReply={(parentId, payload) => run(() => commentService.createComment(resourceId, { ...payload, parentId }))}
+            onUpdate={(commentId, payload) => run(() => commentService.updateComment(commentId, payload))}
             onDelete={(commentId) => {
-              if (window.confirm("댓글을 삭제할까요? 대댓글이 있으면 함께 삭제됩니다.")) return run(() => boardService.removeComment(commentId));
+              if (window.confirm("댓글을 삭제할까요? 대댓글이 있으면 함께 삭제됩니다.")) return run(() => commentService.removeComment(commentId));
             }}
           />
         ))}
