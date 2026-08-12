@@ -253,6 +253,45 @@
   .admin-board-filters .admin-search-form input { width: auto; }
 }
 
+/* Session and security */
+.security-danger-btn { min-height: 38px; padding: 0 14px; border: 1px solid #e7b6bb; border-radius: 9px; background: #fff6f6; color: #b43d49; font-size: 11px; font-weight: 800; }
+.security-danger-btn:disabled { cursor: wait; opacity: .6; }
+.security-stat-grid { grid-template-columns: repeat(6,1fr); }
+.security-policy-panel { margin-bottom: 14px; }
+.security-policy-body { padding: 16px 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.security-policy-body label { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.security-policy-body label > span { display: grid; gap: 4px; }
+.security-policy-body label strong { color: #344054; font-size: 13px; }
+.security-policy-body label small { color: #8490a3; font-size: 10px; }
+.security-policy-body select { width: 150px; height: 38px; padding: 0 30px 0 11px; border: 1px solid #d8dfeb; border-radius: 9px; background: #fff; color: #445168; font-size: 11px; }
+.security-session-toolbar { align-items: flex-end; }
+.security-session-filters { display: flex; gap: 7px; }
+.security-session-filters select,.security-session-filters input { height: 36px; padding: 0 10px; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; color: #445168; font-size: 11px; }
+.security-session-filters select { width: 90px; }
+.security-session-filters input { width: 190px; }
+.security-session-filters button { height: 36px; padding: 0 13px; border: 0; border-radius: 8px; background: var(--primary-dark); color: #fff; font-size: 11px; font-weight: 800; }
+.security-session-table { min-width: 1180px; }
+.security-session-table td { white-space: nowrap; }
+.security-session-table code { color: #50617b; font-size: 10px; }
+.security-device { max-width: 190px; display: grid; gap: 2px; }
+.security-device strong { color: #435066; font-size: 11px; }
+.security-device small { overflow: hidden; color: #929cab; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.security-session-status { display: inline-flex; min-width: 38px; padding: 4px 7px; justify-content: center; border-radius: 6px; font-size: 9px; font-weight: 850; }
+.security-session-status.status-active { background: #e9f7f1; color: #23775d; }
+.security-session-status.status-expired { background: #edf1f6; color: #647084; }
+.security-session-status.status-revoked { background: #fff0f0; color: #b33a3a; }
+.security-revoke-btn { padding: 5px 8px; border: 0; border-radius: 6px; background: #fff0f0; color: #b43d49; font-size: 9px; font-weight: 800; }
+.security-revoke-btn:disabled { opacity: .55; }
+
+@media (max-width: 1200px) {
+  .security-stat-grid { grid-template-columns: repeat(3,1fr); }
+}
+@media (max-width: 720px) {
+  .security-stat-grid { grid-template-columns: 1fr 1fr; }
+  .security-policy-body,.security-policy-body label,.security-session-toolbar,.security-session-filters { align-items: stretch; flex-direction: column; }
+  .security-policy-body select,.security-session-filters select,.security-session-filters input,.security-session-filters button { width: 100%; }
+}
+
 /* Activity monitoring */
 .activity-refresh { display: flex; align-items: center; gap: 10px; }
 .monitor-section-nav { margin: -4px 0 16px; padding: 8px; display: flex; gap: 4px; overflow-x: auto; border: 1px solid #e1e6ef; border-radius: 11px; background: #fff; }

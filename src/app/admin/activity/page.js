@@ -169,10 +169,11 @@ function ActivityRow({ item, expanded, onToggle }) {
   </>;
 }
 
-function describeUserAgent(value = "") {
-  const browser = value.includes("Edg/") ? "Edge" : value.includes("Chrome/") ? "Chrome" : value.includes("Firefox/") ? "Firefox" : value.includes("Safari/") ? "Safari" : "기타 브라우저";
-  const os = value.includes("Windows") ? "Windows" : value.includes("Android") ? "Android" : value.includes("iPhone") || value.includes("iPad") ? "iOS/iPadOS" : value.includes("Mac OS") ? "macOS" : value.includes("Linux") ? "Linux" : "기타 OS";
-  return value ? `${browser} · ${os}` : "-";
+function describeUserAgent(value) {
+  const userAgent = value || "";
+  const browser = userAgent.includes("Edg/") ? "Edge" : userAgent.includes("Chrome/") ? "Chrome" : userAgent.includes("Firefox/") ? "Firefox" : userAgent.includes("Safari/") ? "Safari" : "기타 브라우저";
+  const os = userAgent.includes("Windows") ? "Windows" : userAgent.includes("Android") ? "Android" : userAgent.includes("iPhone") || userAgent.includes("iPad") ? "iOS/iPadOS" : userAgent.includes("Mac OS") ? "macOS" : userAgent.includes("Linux") ? "Linux" : "기타 OS";
+  return userAgent ? `${browser} · ${os}` : "-";
 }
 
 function MonitoringSections({ activeTab, data, onSettingsSaved }) {

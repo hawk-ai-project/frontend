@@ -25,6 +25,16 @@ export const adminService = {
     apiClient.get("/admin/monitoring/overview").then(({ data }) => data),
   updateMonitoringSettings: (payload) =>
     apiClient.put("/admin/monitoring/settings", payload).then(({ data }) => data),
+  getSecurityOverview: () =>
+    apiClient.get("/admin/security/overview").then(({ data }) => data),
+  getSecuritySessions: (params = {}) => {
+    const cleanParams = Object.fromEntries(Object.entries(params).filter(([, value]) => value !== "" && value != null));
+    return apiClient.get("/admin/security/sessions", { params: cleanParams }).then(({ data }) => data);
+  },
+  revokeSecuritySession: (sessionId) =>
+    apiClient.delete(`/admin/security/sessions/${sessionId}`).then(({ data }) => data),
+  revokeAllSecuritySessions: (excludeCurrent = true) =>
+    apiClient.post("/admin/security/sessions/revoke-all", { excludeCurrent }).then(({ data }) => data),
   getSettings: () => apiClient.get("/admin/settings").then(({ data }) => data),
   updateSettings: (payload) =>
     apiClient.put("/admin/settings", payload).then(({ data }) => data),
