@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { chatService } from "@/services/chatService";
+import { buildChatHistory } from "@/services/chatHistory";
 import { getApiErrorMessage } from "@/services/apiClient";
 
 const SUGGESTIONS = [
@@ -60,7 +61,8 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const result = await chatService.ask(message);
+      const history = buildChatHistory(messages, message);
+      const result = await chatService.ask(message, history);
       setMessages((current) => [
         ...current,
         {
