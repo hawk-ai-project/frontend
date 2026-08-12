@@ -27,12 +27,20 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
     let cancelled = false;
     const urls = [];
     inspectionService.recent(100).then(async (items) => {
-      const found = items.find((item) => Number(item.id) === Number(inspectionId));
+      let found = items.find((item) => Number(item.id) === Number(inspectionId));
       if (!found) throw new Error("not-found");
-      const [original, annotated] = await Promise.allSettled([
+      let [original, annotated] = await Promise.allSettled([
         inspectionService.image(found.id, "ORIGINAL"),
         inspectionService.image(found.id, "ANNOTATED"),
       ]);
+      if (original.status === "fulfilled" && annotated.status === "rejected") {
+        await inspectionService.analyzeHistory(found.id);
+        const refreshed = await inspectionService.recent(100);
+        found = refreshed.find((item) => Number(item.id) === Number(inspectionId)) || found;
+        annotated = await inspectionService.image(found.id, "ANNOTATED")
+          .then((value) => ({ status: "fulfilled", value }))
+          .catch((reason) => ({ status: "rejected", reason }));
+      }
       if (cancelled) return;
       const originalImageUrl = original.status === "fulfilled" ? URL.createObjectURL(original.value) : null;
       const annotatedImageUrl = annotated.status === "fulfilled" ? URL.createObjectURL(annotated.value) : null;

@@ -16,6 +16,12 @@ export const inspectionService = {
         responseType: "blob",
       })
       .then(({ data }) => data),
+  analyzeHistory: (inspectionId) =>
+    apiClient
+      .post(`/inspection/histories/${inspectionId}/analyze`, undefined, {
+        timeout: 120000,
+      })
+      .then(({ data }) => data),
   detail: (inspectionId) =>
     apiClient
       .get(`/inspection/histories/${inspectionId}`)
