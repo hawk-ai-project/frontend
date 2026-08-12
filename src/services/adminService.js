@@ -13,6 +13,18 @@ export const adminService = {
   updateBoardStatus: (boardId, status) =>
     apiClient.patch(`/admin/boards/${boardId}/status`, { status }).then(({ data }) => data),
   deleteBoard: (boardId) => apiClient.delete(`/admin/boards/${boardId}`),
+  getActivityOverview: (params = {}) =>
+    apiClient.get("/admin/activity/overview", { params }).then(({ data }) => data),
+  getActivityLogs: (params = {}) => {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== "" && value != null),
+    );
+    return apiClient.get("/admin/activity", { params: cleanParams }).then(({ data }) => data);
+  },
+  getMonitoringOverview: () =>
+    apiClient.get("/admin/monitoring/overview").then(({ data }) => data),
+  updateMonitoringSettings: (payload) =>
+    apiClient.put("/admin/monitoring/settings", payload).then(({ data }) => data),
   getSettings: () => apiClient.get("/admin/settings").then(({ data }) => data),
   updateSettings: (payload) =>
     apiClient.put("/admin/settings", payload).then(({ data }) => data),
