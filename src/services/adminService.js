@@ -13,6 +13,18 @@ export const adminService = {
   updateBoardStatus: (boardId, status) =>
     apiClient.patch(`/admin/boards/${boardId}/status`, { status }).then(({ data }) => data),
   deleteBoard: (boardId) => apiClient.delete(`/admin/boards/${boardId}`),
+  getComments: (params = {}) =>
+    apiClient.get("/admin/comments", { params }).then(({ data }) => data),
+  getCommentDetail: (commentId) =>
+    apiClient.get(`/admin/comments/${commentId}`).then(({ data }) => data),
+  moderateComment: (commentId, action, reason) =>
+    apiClient.post(`/admin/comments/${commentId}/moderate`, { action, reason }).then(({ data }) => data),
+  getForbiddenWords: () => apiClient.get("/admin/forbidden-words").then(({ data }) => data),
+  createForbiddenWord: (word) => apiClient.post("/admin/forbidden-words", { word }).then(({ data }) => data),
+  toggleForbiddenWord: (wordId, isActive) => apiClient.patch(`/admin/forbidden-words/${wordId}`, { isActive }).then(({ data }) => data),
+  deleteForbiddenWord: (wordId) => apiClient.delete(`/admin/forbidden-words/${wordId}`),
+  getModerationFlags: (params = {}) => apiClient.get("/admin/moderation-flags", { params }).then(({ data }) => data),
+  resolveModerationFlag: (flagId, status, note = "") => apiClient.post(`/admin/moderation-flags/${flagId}/resolve`, { status, note }).then(({ data }) => data),
   getActivityOverview: (params = {}) =>
     apiClient.get("/admin/activity/overview", { params }).then(({ data }) => data),
   getActivityLogs: (params = {}) => {

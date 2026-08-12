@@ -12,8 +12,10 @@ export const ROUTES = Object.freeze({
   admin: "/admin",
   adminUsers: "/admin/users",
   adminBoards: "/admin/boards",
+  adminComments: "/admin/comments",
   adminActivity: "/admin/activity",
   adminSettings: "/admin/settings",
+  adminForbiddenWords: "/admin/settings/forbidden-words",
 });
 
 export const NAVIGATION = [

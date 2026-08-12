@@ -21,6 +21,7 @@ const ADMIN_MENU = [
     ],
   },
   { key: "boards", label: "게시글 관리", icon: "board", href: ROUTES.adminBoards },
+  { key: "comments", label: "댓글 관리", icon: "comments", href: ROUTES.adminComments },
   {
     key: "settings",
     label: "시스템 설정",
@@ -28,6 +29,7 @@ const ADMIN_MENU = [
     children: [
       { href: ROUTES.adminSettings, label: "서비스 설정" },
       { href: `${ROUTES.adminSettings}/security`, label: "세션 및 보안" },
+      { href: ROUTES.adminForbiddenWords, label: "금칙어 관리" },
     ],
   },
 ];
@@ -41,6 +43,9 @@ function MenuIcon({ name }) {
   }
   if (name === "users") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
+  }
+  if (name === "comments") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8ZM8 9h8M8 13h5" /></svg>;
   }
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63h.01A1.7 1.7 0 0 0 10 3.08V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9v.01A1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" /></svg>;
 }

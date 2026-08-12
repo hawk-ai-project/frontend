@@ -74,7 +74,7 @@ function CommentItem({ comment, currentUserId, onCreateReply, onUpdate, onDelete
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [repliesExpanded, setRepliesExpanded] = useState(true);
-  const mine = Number(currentUserId) === Number(comment.author.id);
+  const mine = !comment.isHidden && Number(currentUserId) === Number(comment.author.id);
   const date = new Date(comment.createdAt).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 
   return (
@@ -90,10 +90,12 @@ function CommentItem({ comment, currentUserId, onCreateReply, onUpdate, onDelete
           <CommentEditor compact initial={comment} onCancel={() => setEditing(false)} onSubmit={async (payload) => { await onUpdate(comment.id, payload); setEditing(false); }} />
         ) : (
           <>
-            {comment.content && <p>{comment.content}</p>}
+            {comment.isHidden
+              ? <p className="comment-hidden-notice" role="status">관리자에 의해 숨김 처리된 댓글입니다.</p>
+              : comment.content && <p>{comment.content}</p>}
             {comment.emoticon && <Image className="comment-emoticon" src={emoticonUrl(comment.emoticon)} alt="댓글 이모티콘" width={96} height={96} />}
             <div className="comment-actions">
-              {!comment.parentId && currentUserId && <button type="button" onClick={() => setReplying((value) => !value)}>답글</button>}
+              {!comment.isHidden && !comment.parentId && currentUserId && <button type="button" onClick={() => setReplying((value) => !value)}>답글</button>}
               {mine && <button type="button" onClick={() => setEditing(true)}>수정</button>}
               {mine && <button type="button" onClick={() => onDelete(comment.id)}>삭제</button>}
             </div>

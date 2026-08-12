@@ -253,6 +253,96 @@
   .admin-board-filters .admin-search-form input { width: auto; }
 }
 
+/* Forbidden words */
+.forbidden-layout { display:grid; grid-template-columns:minmax(280px,.7fr) minmax(0,1.3fr); gap:14px; align-items:start; }
+.forbidden-layout .admin-panel + .admin-panel { margin-top:0; }
+.forbidden-add { padding:14px 16px; display:flex; gap:7px; border-bottom:1px solid #edf0f5; }
+.forbidden-add input { min-width:0; flex:1; height:36px; padding:0 10px; border:1px solid #d8dfeb; border-radius:8px; }
+.forbidden-add button { padding:0 13px; border:0; border-radius:8px; background:var(--primary-dark); color:#fff; font-size:10px; font-weight:800; }
+.forbidden-word-list { padding:6px 16px 12px; }
+.forbidden-word-list>div { min-height:52px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #edf0f5; }
+.forbidden-word-list>div>span { min-width:0; flex:1; display:grid; gap:2px; }
+.forbidden-word-list strong { color:#354158; font-size:12px; }
+.forbidden-word-list small { color:#909aaa; font-size:8px; }
+.forbidden-word-list label { display:flex; align-items:center; gap:3px; }
+.forbidden-word-list label input { accent-color:var(--primary); }
+.forbidden-word-list label i { color:#657086; font-size:8px; font-style:normal; }
+.forbidden-word-list>div>button { border:0; background:transparent; color:#b33a3a; font-size:9px; font-weight:800; }
+.forbidden-filters { display:flex; gap:6px; }
+.forbidden-filters select { height:34px; padding:0 27px 0 9px; border:1px solid #d8dfeb; border-radius:8px; background:#fff; color:#526077; font-size:10px; }
+.forbidden-flag-list { padding:10px 16px 15px; display:grid; gap:9px; }
+.forbidden-flag-list article { padding:12px 13px; border:1px solid #e2e7ef; border-radius:9px; background:#fff; }
+.forbidden-flag-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.forbidden-match { padding:4px 7px; border-radius:6px; background:#fff0f0; color:#b33a3a; font-size:9px; font-weight:850; }
+.forbidden-flag-head small { color:#929cad; font-size:8px; }
+.forbidden-flag-list h3 { margin:8px 0 4px; color:#344054; font-size:12px; }
+.forbidden-flag-list p { margin:0; color:#667389; font-size:10px; line-height:1.55; }
+.forbidden-flag-list footer { margin-top:9px; padding-top:8px; display:flex; align-items:center; justify-content:space-between; gap:8px; border-top:1px solid #eef1f5; }
+.forbidden-flag-list footer>span { color:#7e899a; font-size:9px; }
+.forbidden-flag-list footer div { display:flex; gap:7px; }
+.forbidden-flag-list footer a,.forbidden-flag-list footer button { border:0; background:transparent; color:#60749a; font-size:9px; font-weight:800; }
+.forbidden-flag-list footer button.resolve { color:#23775d; }
+@media(max-width:900px){.forbidden-layout{grid-template-columns:1fr;}}
+@media(max-width:560px){.forbidden-filters{width:100%;}.forbidden-filters select{flex:1;}}
+
+/* Comment moderation */
+.comment-admin-toolbar { align-items: flex-end; }
+.comment-admin-filters { display: flex; align-items: center; gap: 7px; }
+.comment-admin-filters select,.comment-admin-filters input { height: 36px; padding: 0 10px; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; color: #445168; font-size: 11px; }
+.comment-admin-filters select { width: 108px; }
+.comment-admin-filters input { width: 210px; }
+.comment-admin-filters button { height: 36px; padding: 0 13px; border: 0; border-radius: 8px; background: var(--primary-dark); color: #fff; font-size: 11px; font-weight: 800; }
+.comment-admin-table { min-width: 1000px; }
+.comment-admin-row.selected td { background: #f5f8fe; }
+.comment-admin-content { max-width: 330px; display: grid; gap: 3px; }
+.comment-admin-content strong { overflow: hidden; color: #354158; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.comment-admin-content small { color: #929cad; font-size: 9px; }
+.comment-admin-table td > a { display: inline-block; max-width: 220px; overflow: hidden; color: var(--primary); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.comment-status { display: inline-flex; min-width: 38px; padding: 4px 7px; justify-content: center; border-radius: 6px; font-size: 9px; font-weight: 850; }
+.comment-status.status-active,.comment-related-list i.status-active { background: #e9f7f1; color: #23775d; }
+.comment-status.status-hidden,.comment-related-list i.status-hidden { background: #fff3df; color: #976218; }
+.comment-status.status-deleted,.comment-related-list i.status-deleted { background: #fff0f0; color: #b33a3a; }
+.comment-review-btn { padding: 5px 9px; border: 1px solid #d5ddec; border-radius: 7px; background: #fff; color: #4d638a; font-size: 9px; font-weight: 800; }
+.comment-review-row td { padding: 0 !important; background: #f7f9fc; }
+.comment-review-row .admin-data-loading { min-height: 130px; }
+.comment-review-grid { padding: 18px; display: grid; grid-template-columns: minmax(0,1.25fr) minmax(300px,.75fr); gap: 28px; }
+.comment-review-grid section { min-width: 0; }
+.comment-review-grid h3 { margin: 0 0 9px; color: #344054; font-size: 12px; }
+.comment-review-grid h3:not(:first-child) { margin-top: 20px; }
+.comment-context-board { display: inline-block; margin-bottom: 10px; color: var(--primary); font-size: 11px; font-weight: 750; }
+.comment-review-grid blockquote { margin: 0 0 8px; padding: 10px 12px; border-left: 3px solid #9babc5; border-radius: 0 8px 8px 0; background: #edf1f7; color: #68758a; font-size: 11px; }
+.comment-review-grid blockquote small,.comment-context-current small { margin-bottom: 4px; display: block; color: #8995a7; font-size: 9px; font-weight: 750; }
+.comment-context-current { padding: 12px 14px; border: 1px solid #d9e2f0; border-radius: 9px; background: #fff; }
+.comment-context-current p { margin: 0; color: #3f4c61; font-size: 12px; line-height: 1.65; white-space: pre-wrap; }
+.comment-reason { margin-top: 13px; display: grid; gap: 5px; }
+.comment-reason > span { color: #566276; font-size: 10px; font-weight: 800; }
+.comment-reason textarea { min-height: 76px; padding: 9px 11px; resize: vertical; border: 1px solid #d8dfeb; border-radius: 8px; outline: none; color: #3f4c61; font: inherit; font-size: 11px; }
+.comment-reason textarea:focus { border-color: #6e8ed1; box-shadow: 0 0 0 3px rgba(88,120,196,.12); }
+.comment-moderation-actions { margin-top: 9px; display: flex; justify-content: flex-end; gap: 7px; }
+.comment-moderation-actions button { height: 32px; padding: 0 11px; border: 0; border-radius: 7px; background: #fff3df; color: #976218; font-size: 9px; font-weight: 850; }
+.comment-moderation-actions button.restore { background: #e9f7f1; color: #23775d; }
+.comment-moderation-actions button.delete { background: #fff0f0; color: #b33a3a; }
+.comment-moderation-actions button:disabled { opacity: .5; }
+.comment-related-list,.comment-history-list { display: grid; }
+.comment-related-list > div,.comment-history-list > div { min-height: 48px; padding: 7px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #e8ecf2; }
+.comment-related-list span,.comment-history-list span { min-width: 0; display: grid; gap: 2px; }
+.comment-related-list b { max-width: 270px; overflow: hidden; color: #48556a; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.comment-related-list small,.comment-history-list small { color: #929cad; font-size: 8px; }
+.comment-related-list i { padding: 3px 6px; flex: none; border-radius: 5px; font-size: 8px; font-style: normal; font-weight: 800; }
+.comment-related-list > p,.comment-history-list > p { color: #929cad; font-size: 10px; }
+.comment-history-list > div { align-items: flex-start; flex-direction: column; }
+.comment-history-list b { color: #4a5d80; font-size: 10px; }
+.comment-history-list p { margin: 2px 0 0; color: #667389; font-size: 10px; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .comment-review-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .comment-admin-toolbar,.comment-admin-filters { align-items: stretch; flex-direction: column; }
+  .comment-admin-filters { width: 100%; }
+  .comment-admin-filters select,.comment-admin-filters input,.comment-admin-filters button { width: 100%; }
+}
+
 /* Session and security */
 .security-danger-btn { min-height: 38px; padding: 0 14px; border: 1px solid #e7b6bb; border-radius: 9px; background: #fff6f6; color: #b43d49; font-size: 11px; font-weight: 800; }
 .security-danger-btn:disabled { cursor: wait; opacity: .6; }

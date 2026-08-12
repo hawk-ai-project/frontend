@@ -411,6 +411,16 @@ main {
 .mobile-auth-links .mobile-signup-link:hover {
   background: var(--primary-dark);
 }
+.comment-hidden-notice {
+  margin: 8px 0;
+  padding: 11px 13px;
+  border: 1px dashed #ccd4e1;
+  border-radius: 9px;
+  background: #f6f7f9;
+  color: #7b8595 !important;
+  font-size: 13px;
+  font-style: italic;
+}
 .page-shell {
   width: min(100% - 40px, 1240px);
   margin: 0 auto;
