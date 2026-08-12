@@ -7,6 +7,7 @@ import { inspectionHistories, STATUS_OPTIONS, statusClass } from './historyData'
 import { inspectionService } from '@/services/inspectionService';
 
 const formatDateTime = (value) => new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value));
+const PAGE_SIZE = 10;
 
 function inspectionToHistory(inspection) {
   const detections = Array.isArray(inspection.detections) ? inspection.detections : [];
@@ -25,12 +26,13 @@ function inspectionToHistory(inspection) {
       : inspection.title,
     detectedCount,
     waste: inspection.wasteSummary || detections.map((item) => item.className).join(', ') || '탐지 결과 없음',
+    wasteTypes: [...new Set(detections.map((item) => item.className).filter(Boolean))],
     status: statusMap[inspection.status] || STATUS_OPTIONS[0],
   };
 }
 
 export default function HistoryList() {
-  const [items, setItems] = useState(inspectionHistories);
+  const [items, setItems] = useState(() => inspectionHistories.map((item) => ({ ...item, wasteTypes: [item.waste] })));
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('전체 장소');
   const [waste, setWaste] = useState('전체 폐기물');
@@ -38,14 +40,15 @@ export default function HistoryList() {
   const [date, setDate] = useState('');
   const [selected, setSelected] = useState([]);
   const [bulkStatus, setBulkStatus] = useState('');
+  const [page, setPage] = useState(1);
   const [searched, setSearched] = useState({ keyword: '', location: '전체 장소', waste: '전체 폐기물', status: '전체 상태', date: '' });
   useEffect(() => {
     let cancelled = false;
-    inspectionService.recent(10)
+    inspectionService.recent(100)
       .then((data) => {
         if (cancelled) return;
         const liveHistories = Array.isArray(data) ? data.map(inspectionToHistory) : [];
-        setItems(liveHistories.length ? liveHistories : inspectionHistories);
+        setItems(liveHistories.length ? liveHistories : inspectionHistories.map((item) => ({ ...item, wasteTypes: [item.waste] })));
       })
       .catch(() => {
         // The built-in inspection history remains available if API loading fails.
@@ -54,23 +57,26 @@ export default function HistoryList() {
   }, []);
 
   const locations = [...new Set(items.map((item) => item.location.split(' ')[0]))];
-  const wastes = [...new Set(items.map((item) => item.waste))].sort();
+  const wastes = [...new Set(items.flatMap((item) => item.wasteTypes || [item.waste]).filter((name) => name && name !== '탐지 결과 없음'))].sort();
   const filteredItems = useMemo(() => items.filter((item) => {
     const matchesKeyword = !searched.keyword || `${item.id} ${item.location}`.toLowerCase().includes(searched.keyword.toLowerCase());
     const matchesLocation = searched.location === '전체 장소' || item.location.startsWith(searched.location);
-    const matchesWaste = searched.waste === '전체 폐기물' || item.waste === searched.waste;
+    const matchesWaste = searched.waste === '전체 폐기물' || (item.wasteTypes || [item.waste]).includes(searched.waste);
     const matchesStatus = searched.status === '전체 상태' || item.status === searched.status;
     const matchesDate = !searched.date || item.inspectedAt.startsWith(searched.date);
     return matchesKeyword && matchesLocation && matchesWaste && matchesStatus && matchesDate;
   }), [items, searched]);
-  const allSelected = filteredItems.length > 0 && filteredItems.every((item) => selected.includes(item.id));
+  const pageCount = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const pagedItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const allSelected = pagedItems.length > 0 && pagedItems.every((item) => selected.includes(item.id));
 
   const search = (event) => {
     event.preventDefault();
     setSearched({ keyword: keyword.trim(), location, waste, status, date });
     setSelected([]);
+    setPage(1);
   };
-  const toggleAll = () => setSelected(allSelected ? [] : filteredItems.map((item) => item.id));
+  const toggleAll = () => setSelected((current) => allSelected ? current.filter((id) => !pagedItems.some((item) => item.id === id)) : [...new Set([...current, ...pagedItems.map((item) => item.id)])]);
   const toggleItem = (id) => setSelected((current) => current.includes(id) ? current.filter((itemId) => itemId !== id) : [...current, id]);
   const applyStatus = () => {
     if (!bulkStatus || !selected.length) return;
@@ -95,10 +101,32 @@ export default function HistoryList() {
       </div>
       <div className="table-wrap">
         <table className="history-table"><thead><tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="전체 선택" /></th><th>이미지</th><th>점검번호</th><th>점검 일시</th><th>장소</th><th>탐지 수</th><th>주요 폐기물</th><th>상태</th></tr></thead>
-          <tbody>{filteredItems.length ? filteredItems.map((item) => <tr className={selected.includes(item.id) ? 'selected' : ''} key={item.id}><td><input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleItem(item.id)} aria-label={`${item.id} 선택`} /></td><td><span className="history-thumb" aria-hidden="true"><Image src={item.waste === 'PET Bottle' ? '/images/home/pet-bottles.png' : '/images/home/main-analysis.png'} alt="" fill sizes="42px" /></span></td><td><Link className="history-link" href={item.inspectionId ? `/histories/inspection/${item.inspectionId}` : `/histories/${item.id}`}>{item.id}</Link></td><td>{formatDateTime(item.inspectedAt)}</td><td>{item.location}</td><td>{item.detectedCount}개</td><td>{item.waste}</td><td><span className={`badge ${statusClass(item.status)}`}>{item.status}</span></td></tr>) : <tr><td className="history-empty" colSpan="8">조건에 맞는 점검 이력이 없습니다.</td></tr>}</tbody>
+          <tbody>{pagedItems.length ? pagedItems.map((item) => <tr className={selected.includes(item.id) ? 'selected' : ''} key={item.id}><td><input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleItem(item.id)} aria-label={`${item.id} 선택`} /></td><td><HistoryThumbnail inspectionId={item.inspectionId} /></td><td><Link className="history-link" href={item.inspectionId ? `/histories/inspection/${item.inspectionId}` : `/histories/${item.id}`}>{item.id}</Link></td><td>{formatDateTime(item.inspectedAt)}</td><td>{item.location}</td><td>{item.detectedCount}개</td><td>{item.waste}</td><td><span className={`badge ${statusClass(item.status)}`}>{item.status}</span></td></tr>) : <tr><td className="history-empty" colSpan="8">조건에 맞는 점검 이력이 없습니다.</td></tr>}</tbody>
         </table>
       </div>
-      <nav className="number-pagination" aria-label="점검 이력 페이지"><button disabled>‹</button><button className="active">1</button><button disabled>›</button></nav>
+      <nav className="number-pagination" aria-label="점검 이력 페이지"><button className="pagination-arrow" type="button" aria-label="이전 페이지" title="이전 페이지" disabled={page === 1} onClick={() => setPage((value) => value - 1)}><span aria-hidden="true">‹</span></button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button type="button" key={number} aria-label={`${number}페이지`} aria-current={page === number ? 'page' : undefined} className={page === number ? 'active' : ''} onClick={() => setPage(number)}>{number}</button>)}<button className="pagination-arrow" type="button" aria-label="다음 페이지" title="다음 페이지" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}><span aria-hidden="true">›</span></button><span className="history-total-count">전체 {filteredItems.length}건</span></nav>
     </article>
   </>;
+}
+
+function HistoryThumbnail({ inspectionId }) {
+  const [src, setSrc] = useState('/images/home/main-analysis.png');
+  useEffect(() => {
+    if (!inspectionId) return;
+    let active = true;
+    let objectUrl = null;
+    const load = async () => {
+      try {
+        let blob;
+        try { blob = await inspectionService.image(inspectionId, 'ANNOTATED'); }
+        catch { blob = await inspectionService.image(inspectionId, 'ORIGINAL'); }
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setSrc(objectUrl);
+      } catch { /* Keep the sample thumbnail for records without stored images. */ }
+    };
+    load();
+    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [inspectionId]);
+  return <span className="history-thumb"><Image src={src} alt="AI 분석 이미지" fill unoptimized sizes="52px" /></span>;
 }

@@ -3,15 +3,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { inspectionService } from "@/services/inspectionService";
 import styles from "./CameraPreview.module.css";
 
-export default function CameraPreview({ onCapture, onSubmit }) {
+export default function CameraPreview() {
+  const router = useRouter();
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [stream, setStream] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // 카메라 불러오기
   useEffect(() => {
@@ -52,6 +57,8 @@ export default function CameraPreview({ onCapture, onSubmit }) {
   // 카메라 선택
   useEffect(() => {
     const changeCamera = async () => {
+      // 핵심: stream(카메라 화면)이 이미 켜져 있을 때만 다시 켭니다!
+      // 처음 화면에 들어왔을 때(stream이 null일 때)는 무시하고 OFF를 유지합니다.
       if (selectedDeviceId && stream) {
         await startCamera();
       }
@@ -65,93 +72,53 @@ export default function CameraPreview({ onCapture, onSubmit }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeviceId]);
 
-  // 현재 위치 가져오기
-  const getCoordinates = () => {
-    return new Promise((resolve) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) =>
-            resolve(
-              `${position.coords.latitude.toFixed(4)},${position.coords.longitude.toFixed(4)}`,
-            ),
-          (error) => {
-            console.warn("위치 정보를 가져올 수 없습니다.", error);
-            resolve(null);
-          },
-          { enableHighAccuracy: true, timeout: 5000 },
-        );
-      } else {
-        resolve(null);
-      }
-    });
-  };
-
-  // 📡 현재 위치 & 한글 주소 가져오기 (OpenStreetMap 무료 API 사용)
-  const getCoordinatesAndAddress = () => {
-    return new Promise((resolve) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const coordsStr = `${lat.toFixed(4)},${lon.toFixed(4)}`;
-            let addressStr = ""; // 번역된 주소를 담을 빈 그릇
-
-            try {
-              // 🌐 무료 지도 번역기에 위도/경도를 던져서 주소를 물어봅니다!
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-              );
-              const data = await response.json();
-
-              if (data && data.display_name) {
-                // "대한민국 경기도 수원시..." 형태로 결과가 옵니다.
-                addressStr = data.display_name;
-              }
-            } catch (error) {
-              console.error("주소 번역 실패:", error);
-            }
-
-            // 부모에게 좌표와 번역된 주소, 2개를 예쁘게 포장해서 돌려줍니다.
-            resolve({ coords: coordsStr, address: addressStr });
-          },
-          (error) => {
-            console.warn("위치 정보를 가져올 수 없습니다.", error);
-            resolve({ coords: null, address: "" });
-          },
-          { enableHighAccuracy: true, timeout: 5000 },
-        );
-      } else {
-        resolve({ coords: null, address: "" });
-      }
-    });
-  };
-
   // 촬영 및 분석
-  const handleCapture = async () => {
-    let finalImageUrl = previewImage;
-
-    if (!finalImageUrl && videoRef.current && stream) {
+  const handleCapture = () => {
+    if (previewImage) {
+      console.log("분석할 첨부 이미지 : ", previewImage);
+      alert("첨부된 사진으로 분석을 시작합니다.");
+    } else if (videoRef.current && stream) {
       const canvas = document.createElement("canvas");
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      finalImageUrl = canvas.toDataURL("image/jpeg", 0.8);
-    }
-
-    if (finalImageUrl) {
-      // 사진 찍은 직후 GPS 좌표 가져오기
-      const { coords, address } = await getCoordinatesAndAddress();
-
-      if (onCapture) onCapture(finalImageUrl, coords);
-      if (onSubmit) onSubmit(finalImageUrl, coords, address);
-    } else {
-      alert("먼저 카메라를 켜거나 사진을 첨부해 주세요!");
+      const imageUrl = canvas.toDataURL("image/jpeg", 0.8);
+      console.log("캡처된 이미지:", imageUrl);
+      alert("촬영이 완료되었습니다!");
     }
   };
 
   // 사진 첨부
+  const saveInspection = async () => {
+    let image = previewImage;
+    if (!image && videoRef.current && stream) {
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      canvas.getContext("2d").drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      image = canvas.toDataURL("image/jpeg", 0.85);
+      setPreviewImage(image);
+    }
+    const location = document.getElementById("location")?.value?.trim();
+    if (!image) return setSubmitError("사진을 촬영하거나 첨부해 주세요.");
+    if (!location) return setSubmitError("점검 장소를 입력해 주세요.");
+    const latitude = document.getElementById("latitude")?.value;
+    const longitude = document.getElementById("longitude")?.value;
+    setSubmitting(true); setSubmitError("");
+    try {
+      const result = await inspectionService.create({
+        image, title: `${location} 현장점검`, location,
+        notes: document.getElementById("memo")?.value || null,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
+      });
+      router.push(`/histories/inspection/${result.inspectionId}`);
+    } catch (error) {
+      setSubmitError(error.response?.data?.detail || "점검 분석 및 저장에 실패했습니다.");
+    } finally { setSubmitting(false); }
+  };
+
   const selectImage = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -159,20 +126,17 @@ export default function CameraPreview({ onCapture, onSubmit }) {
   };
 
   // 파일 선택 시
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = async (event) => {
+      reader.onload = (event) => {
         const imageUrl = event.target.result;
         if (stream) {
           stream.getTracks().forEach((track) => track.stop());
           setStream(null);
         }
         setPreviewImage(imageUrl);
-
-        const { coords, address } = await getCoordinatesAndAddress();
-        if (onSubmit) onSubmit(imageUrl, coords, address);
       };
       reader.readAsDataURL(file);
       e.target.value = "";
@@ -247,7 +211,7 @@ export default function CameraPreview({ onCapture, onSubmit }) {
         {/* 카메라 출력 안하고 있을 때 */}
         {!stream && !previewImage && (
           <div className={`badge ${styles.placeholderBadge}`}>
-            카메라를 연결해주세요.
+            USB Camera Preview
           </div>
         )}
       </div>
@@ -287,10 +251,11 @@ export default function CameraPreview({ onCapture, onSubmit }) {
         </div>
 
         {/* 촬영 및 분석 버튼 */}
-        <button onClick={handleCapture} className="btn btn-primary">
-          촬영 및 분석
+        <button onClick={saveInspection} className="btn btn-primary" disabled={submitting}>
+          {submitting ? "분석 및 저장 중..." : "촬영 및 분석"}
         </button>
       </div>
+      {submitError && <p className="board-state board-state-error">{submitError}</p>}
     </div>
   );
 }

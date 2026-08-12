@@ -1,13 +1,15 @@
 import { apiClient } from "./apiClient";
 
 export const inspectionService = {
-  recent: (limit = 10) =>
+  create: (payload) => apiClient.post("/inspection", payload, { timeout: 120000 }).then(({ data }) => data),
+  recent: (limit = 100) =>
     apiClient
       .get("/inspection/histories", { params: { limit } })
       .then(({ data }) => data),
-  image: (inspectionId) =>
+  image: (inspectionId, kind) =>
     apiClient
       .get(`/inspection/histories/${inspectionId}/image`, {
+        params: kind ? { kind } : undefined,
         responseType: "blob",
       })
       .then(({ data }) => data),
