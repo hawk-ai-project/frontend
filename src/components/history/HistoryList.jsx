@@ -8,6 +8,46 @@ import { inspectionService } from '@/services/inspectionService';
 
 const formatDateTime = (value) => new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value));
 const PAGE_SIZE = 10;
+const REGION_KEYWORDS = [
+  ['수원', ['수원', '광교']],
+  ['서울', ['서울', '한강', '마포', '여의도', '반포', '잠실']],
+  ['부산', ['부산', '해운대', '광안리', '기장', '다대포', '송정', '영도', '태종대']],
+  ['대구', ['대구']], ['인천', ['인천']], ['광주', ['광주']], ['대전', ['대전']],
+  ['울산', ['울산']], ['세종', ['세종']],
+  ['경기', ['경기', '성남', '용인', '고양', '평택', '안산']],
+  ['강원', ['강원', '강릉', '동해', '속초', '삼척', '양양']],
+  ['충북', ['충북', '청주', '충주', '제천']],
+  ['충남', ['충남', '천안', '아산', '서산', '태안', '보령']],
+  ['전북', ['전북', '전주', '군산', '익산']],
+  ['전남', ['전남', '목포', '여수', '순천']],
+  ['경북', ['경북', '포항', '경주', '구미']],
+  ['경남', ['경남', '창원', '통영', '거제', '김해']],
+  ['제주', ['제주']],
+];
+
+function getRegion(location = '') {
+  return REGION_KEYWORDS.find(([, keywords]) => keywords.some((keyword) => location.includes(keyword)))?.[0] || '기타 지역';
+}
+
+function normalizeSearchDate(value) {
+  if (!value.trim()) return '';
+  const parts = value.match(/\d+/g);
+  if (!parts || parts[0].length !== 4) return value.trim();
+  const [year, month, day] = parts;
+  if (parts.length === 1) return year;
+  if (parts.length === 2) return `${year}-${month.padStart(2, '0')}`;
+  if (parts.length === 3) return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  return value.trim();
+}
+
+function formatSearchDate(value) {
+  const parts = value.match(/\d+/g);
+  if (!parts || parts[0].length !== 4) return value;
+  if (parts.length === 1) return `${parts[0]}.`;
+  if (parts.length === 2) return `${parts[0]}. ${Number(parts[1])}.`;
+  if (parts.length === 3) return `${parts[0]}. ${Number(parts[1])}. ${Number(parts[2])}.`;
+  return value;
+}
 
 function inspectionToHistory(inspection) {
   const detections = Array.isArray(inspection.detections) ? inspection.detections : [];
@@ -24,6 +64,7 @@ function inspectionToHistory(inspection) {
     location: inspection.location && inspection.location !== '미지정 위치'
       ? inspection.location
       : inspection.title,
+    region: getRegion(inspection.location || inspection.title),
     detectedCount,
     waste: inspection.wasteSummary || detections.map((item) => item.className).join(', ') || '탐지 결과 없음',
     wasteTypes: [...new Set(detections.map((item) => item.className).filter(Boolean))],
@@ -32,9 +73,9 @@ function inspectionToHistory(inspection) {
 }
 
 export default function HistoryList() {
-  const [items, setItems] = useState(() => inspectionHistories.map((item) => ({ ...item, wasteTypes: [item.waste] })));
+  const [items, setItems] = useState(() => inspectionHistories.map((item) => ({ ...item, region: getRegion(item.location), wasteTypes: [item.waste] })));
   const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState('전체 장소');
+  const [location, setLocation] = useState('전체 지역');
   const [waste, setWaste] = useState('전체 폐기물');
   const [status, setStatus] = useState('전체 상태');
   const [date, setDate] = useState('');
@@ -42,14 +83,14 @@ export default function HistoryList() {
   const [bulkStatus, setBulkStatus] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
-  const [searched, setSearched] = useState({ keyword: '', location: '전체 장소', waste: '전체 폐기물', status: '전체 상태', date: '' });
+  const [searched, setSearched] = useState({ keyword: '', location: '전체 지역', waste: '전체 폐기물', status: '전체 상태', date: '' });
   useEffect(() => {
     let cancelled = false;
     inspectionService.recent(100)
       .then((data) => {
         if (cancelled) return;
         const liveHistories = Array.isArray(data) ? data.map(inspectionToHistory) : [];
-        setItems(liveHistories.length ? liveHistories : inspectionHistories.map((item) => ({ ...item, wasteTypes: [item.waste] })));
+        setItems(liveHistories.length ? liveHistories : inspectionHistories.map((item) => ({ ...item, region: getRegion(item.location), wasteTypes: [item.waste] })));
       })
       .catch(() => {
         // The built-in inspection history remains available if API loading fails.
@@ -57,11 +98,11 @@ export default function HistoryList() {
     return () => { cancelled = true; };
   }, []);
 
-  const locations = [...new Set(items.map((item) => item.location.split(' ')[0]))];
+  const locations = [...new Set(items.map((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
   const wastes = [...new Set(items.flatMap((item) => item.wasteTypes || [item.waste]).filter((name) => name && name !== '탐지 결과 없음'))].sort();
   const filteredItems = useMemo(() => items.filter((item) => {
     const matchesKeyword = !searched.keyword || `${item.id} ${item.location}`.toLowerCase().includes(searched.keyword.toLowerCase());
-    const matchesLocation = searched.location === '전체 장소' || item.location.startsWith(searched.location);
+    const matchesLocation = searched.location === '전체 지역' || item.region === searched.location;
     const matchesWaste = searched.waste === '전체 폐기물' || (item.wasteTypes || [item.waste]).includes(searched.waste);
     const matchesStatus = searched.status === '전체 상태' || item.status === searched.status;
     const matchesDate = !searched.date || item.inspectedAt.startsWith(searched.date);
@@ -73,7 +114,7 @@ export default function HistoryList() {
 
   const search = (event) => {
     event.preventDefault();
-    setSearched({ keyword: keyword.trim(), location, waste, status, date });
+    setSearched({ keyword: keyword.trim(), location, waste, status, date: normalizeSearchDate(date) });
     setSelected([]);
     setPage(1);
   };
@@ -106,11 +147,11 @@ export default function HistoryList() {
 
   return <>
     <form className="card history-filter" onSubmit={search}>
-      <select value={location} onChange={(event) => setLocation(event.target.value)}><option>전체 장소</option>{locations.map((name) => <option key={name}>{name}</option>)}</select>
+      <select value={location} onChange={(event) => setLocation(event.target.value)} aria-label="지역 선택"><option>전체 지역</option>{locations.map((name) => <option key={name}>{name}</option>)}</select>
       <input className="input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="장소 또는 점검번호 검색" />
       <select value={waste} onChange={(event) => setWaste(event.target.value)} aria-label="폐기물 종류"><option>전체 폐기물</option>{wastes.map((name) => <option key={name}>{name}</option>)}</select>
       <select value={status} onChange={(event) => setStatus(event.target.value)}><option>전체 상태</option>{STATUS_OPTIONS.map((name) => <option key={name}>{name}</option>)}</select>
-      <input className="input" type="text" inputMode="numeric" value={date} onChange={(event) => setDate(event.target.value.replace(/[^0-9-]/g, ''))} placeholder="YYYY-MM-DD" aria-label="점검 날짜" />
+      <input className="input" type="text" inputMode="numeric" value={date} onChange={(event) => setDate(event.target.value.replace(/[^0-9.\-/ ]/g, ''))} onBlur={() => setDate((value) => formatSearchDate(value))} placeholder="YYYY.M.D" aria-label="점검 날짜" />
       <button className="btn btn-primary">검색</button>
     </form>
     <article className="card card-pad">
