@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import BoardArticleHeader from "./BoardArticleHeader";
 import BoardArticleContent from "./BoardArticleContent";
 import BoardArticleActions from "./BoardArticleActions";
+import BoardComments from "./BoardComments";
 import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 
 export default function BoardDetail({ id }) {
@@ -53,6 +54,7 @@ export default function BoardDetail({ id }) {
       <BoardArticleHeader post={post} />
       <BoardArticleContent post={post} />
       <BoardArticleActions post={post} canEdit={canEdit} />
+      <BoardComments boardId={post.id} />
     </article>
   );
 }

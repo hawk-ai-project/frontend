@@ -3,7 +3,7 @@ import BoardForm from "@/components/board/BoardForm";
 export default async function BoardEditPage({ params }) {
   const { id } = await params;
   return (
-    <div className="page-shell">
+    <div className="page-shell board-write-page">
       <div className="page-head">
         <div>
           <div className="eyebrow">Board Edit</div>

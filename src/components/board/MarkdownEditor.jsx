@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { getApiErrorMessage } from "@/services/apiClient";
 import MarkdownPreview from "./MarkdownPreview";
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const IMAGE_MAX_SIZE = 10 * 1024 * 1024;
+const EMOTICONS = Array.from({ length: 30 }, (_, index) => String(index + 1).padStart(2, "0"));
 
 const toolbarItems = [
   { label: "제목", icon: "H", before: "## ", after: "", placeholder: "소제목" },
@@ -110,6 +112,7 @@ export default function MarkdownEditor({
   const imageInputRef = useRef(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [showEmoticons, setShowEmoticons] = useState(false);
 
   const insertMarkdown = (item) => {
     const textarea = contentRef.current;
@@ -169,6 +172,13 @@ export default function MarkdownEditor({
     }
   };
 
+  const insertEmoticon = (name) => {
+    insertMarkdown({
+      block: `\n\n![이모티콘 ${Number(name)}](/images/emoticons/${name}.png)\n\n`,
+    });
+    setShowEmoticons(false);
+  };
+
   return (
     <div className="editor-grid">
       <section
@@ -211,7 +221,7 @@ export default function MarkdownEditor({
             title="본문 이미지 추가"
           >
             <span aria-hidden="true">▧</span>
-            <small>{imageUploading ? "업로드 중" : "이미지"}</small>
+            <small>{imageUploading ? "업로드 중" : "이미지 첨부"}</small>
           </button>
           <input
             ref={imageInputRef}
@@ -221,7 +231,27 @@ export default function MarkdownEditor({
             onChange={uploadImage}
             tabIndex={-1}
           />
+          <button
+            type="button"
+            className="markdown-tool markdown-emoticon-tool"
+            onClick={() => setShowEmoticons((value) => !value)}
+            aria-expanded={showEmoticons}
+            aria-label="게시글 이모티콘 추가"
+            title="게시글 이모티콘 추가"
+          >
+            <span aria-hidden="true">😊</span>
+            <small>이모티콘</small>
+          </button>
         </div>
+        {showEmoticons && (
+          <div className="markdown-emoticon-picker" aria-label="게시글 이모티콘 선택">
+            {EMOTICONS.map((name) => (
+              <button type="button" key={name} onClick={() => insertEmoticon(name)}>
+                <Image src={`/images/emoticons/${name}.png`} alt={`이모티콘 ${Number(name)}`} width={54} height={54} />
+              </button>
+            ))}
+          </div>
+        )}
         {imageError && <p className="markdown-image-error" role="alert">{imageError}</p>}
         <textarea
           ref={contentRef}

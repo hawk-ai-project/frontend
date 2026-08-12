@@ -1,4 +1,5 @@
 import { Children, isValidElement } from "react";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -51,6 +52,15 @@ export default function MarkdownPreview({ content, variant = "editor" }) {
               <table {...props}>{children}</table>
             </div>
           ),
+          img: ({ src, alt }) => {
+            const isEmoticon = /^\/images\/emoticons\/\d{2}\.png$/.test(src || "");
+            if (isEmoticon) {
+              return <Image className="article-emoticon" src={src} alt={alt || "게시글 이모티콘"} width={120} height={120} />;
+            }
+            // Uploaded board images use runtime MinIO URLs that cannot be known by Next Image at build time.
+            // eslint-disable-next-line @next/next/no-img-element
+            return <img src={src} alt={alt || "게시글 이미지"} />;
+          },
           code: ({ className, children, ...props }) => {
             const language = /language-([^\s]+)/.exec(className || "")?.[1];
             const source = String(children).replace(/\n$/, "");

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 function calculateReadingTime(content) {
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(wordCount / 200));
@@ -46,4 +48,3 @@ export default function BoardArticleHeader({ post }) {
     </header>
   );
 }
-import Image from "next/image";

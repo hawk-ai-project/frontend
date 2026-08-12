@@ -1027,6 +1027,7 @@ textarea:focus {
   background: #fff;
   border: 1px solid var(--border);
   transition: 0.18s;
+  min-width: 0;
 }
 .board-row:hover {
   transform: translateY(-1px);
@@ -1039,10 +1040,25 @@ textarea:focus {
 .board-title {
   font-size: 14px;
   font-weight: 750;
+  overflow-wrap: anywhere;
 }
 .board-meta {
   color: var(--text-3);
   font-size: 12px;
+}
+.board-row-content {
+  min-width: 0;
+}
+.board-row-content .board-meta {
+  margin-top: 5px;
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+.board-meta-label {
+  display: none;
 }
 .board-form-card {
   box-shadow: var(--shadow-md);
@@ -1416,12 +1432,62 @@ textarea:focus {
   .board-filter {
     grid-template-columns: 1fr;
   }
-  .board-row {
-    grid-template-columns: 42px 1fr;
+  .board-filter .btn {
+    width: 100%;
   }
-  .board-row > :nth-child(3),
-  .board-row > :nth-child(4) {
-    display: none;
+  .board-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 9px 14px;
+    padding: 16px;
+  }
+  .board-no {
+    width: fit-content;
+    min-height: 25px;
+    padding: 4px 9px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #edf3fc;
+    color: var(--primary-dark);
+    font-weight: 800;
+  }
+  .board-row-content {
+    grid-column: 1 / -1;
+  }
+  .board-title {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .board-row-content .board-meta {
+    margin-top: 7px;
+    -webkit-line-clamp: 2;
+  }
+  .board-author,
+  .board-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .board-date {
+    justify-self: end;
+  }
+  .board-meta-label {
+    display: inline;
+    color: #7c899d;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .board-page .page-head .btn {
+    width: 100%;
+  }
+  .board-page .number-pagination {
+    justify-content: flex-start;
+    padding: 2px 2px 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+  .board-page .number-pagination button {
+    flex: 0 0 40px;
   }
   .home-hero h1 {
     font-size: 34px;
@@ -2232,7 +2298,7 @@ textarea:focus {
     padding-bottom: 30px;
   }
   .board-article-header h1 {
-    font-size: 32px;
+    font-size: clamp(27px, 8.5vw, 32px);
     line-height: 1.32;
   }
   .article-summary {
@@ -2240,6 +2306,9 @@ textarea:focus {
   }
   .article-author-row {
     align-items: flex-start;
+  }
+  .article-author-row > div:last-child {
+    min-width: 0;
   }
   .article-author-row p {
     gap: 5px 10px;
@@ -2265,6 +2334,13 @@ textarea:focus {
   }
   .article-markdown pre {
     padding: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .article-thumbnail {
+    aspect-ratio: 4/3;
+    margin: 22px 0 30px;
+    border-radius: 16px;
   }
   .article-actions {
     align-items: stretch;
@@ -2272,6 +2348,12 @@ textarea:focus {
   }
   .article-actions > div {
     display: grid;
+    width: 100%;
+    gap: 9px;
+  }
+  .article-actions .btn,
+  .article-actions button {
+    width: 100%;
   }
   .post-navigation {
     grid-template-columns: 1fr;
@@ -2680,14 +2762,28 @@ textarea:focus {
   .chatbot-panel { height: min(620px, calc(100vh - 96px)); }
 }
 @media (max-width: 720px) {
+  .board-write-page .page-head {
+    margin-bottom: 20px;
+  }
   .board-editor-card {
-    padding: 18px;
+    padding: 16px;
+    border-radius: 16px;
   }
   .wide-board-form {
     gap: 20px;
   }
   .tag-input-box input {
-    min-width: 140px;
+    min-width: min(140px, 100%);
+  }
+  .board-editor-fields,
+  .board-editor-fields label,
+  .board-editor-fields input,
+  .board-editor-fields select,
+  .board-editor-fields textarea,
+  .editor-work-panel,
+  .editor-preview-panel {
+    min-width: 0;
+    max-width: 100%;
   }
   .editor-panel-head {
     min-height: auto;
@@ -2696,6 +2792,7 @@ textarea:focus {
   .markdown-live-textarea {
     min-height: 420px;
     padding: 18px;
+    font-size: 16px;
   }
   .live-preview-title {
     padding: 22px 18px 0;
@@ -2714,6 +2811,126 @@ textarea:focus {
   .editor-form-footer .btn {
     width: 100%;
   }
+  .board-write-page .dialog-backdrop {
+    align-items: end;
+    padding: 10px;
+  }
+  .board-write-page .confirm-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    padding: 20px 16px;
+    border-radius: 20px 20px 14px 14px;
+  }
+  .board-write-page .confirm-dialog h2 {
+    font-size: 20px;
+  }
+  .board-write-page .confirm-dialog .form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .board-write-page .confirm-dialog .form-actions .btn,
+  .board-write-page .confirm-dialog .form-actions button {
+    width: 100%;
+  }
+  .board-write-page .ai-inspection-picker-head,
+  .board-write-page .ai-selected-inspection {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .board-write-page .ai-inspection-picker-head button,
+  .board-write-page .ai-selected-inspection button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .board-page .page-head h1,
+  .board-write-page .page-head h1 {
+    font-size: 26px;
+  }
+  .board-filter {
+    padding: 13px;
+  }
+  .board-row {
+    padding: 14px;
+  }
+  .board-author,
+  .board-date {
+    font-size: 11px;
+  }
+  .board-editor-card {
+    padding: 13px;
+  }
+  .markdown-toolbar {
+    padding: 8px;
+  }
+  .markdown-tool {
+    min-width: 40px;
+    height: 40px;
+  }
+  .editor-panel-head,
+  .markdown-live-textarea {
+    padding-inline: 14px;
+  }
+  .board-write-page .confirm-dialog .form-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.board-comments { margin-top: 48px; padding-top: 34px; border-top: 1px solid var(--border); }
+.board-comments-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.board-comments-head h2 { margin: 0; font-size: 22px; }
+.board-comments-head h2 span { color: var(--primary); }
+.board-comments-head select { min-width: 108px; padding: 9px 32px 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text-2); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+.comment-editor { padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: #fff; }
+.comment-editor textarea { width: 100%; min-height: 92px; padding: 0; resize: vertical; border: 0; outline: 0; color: var(--text-1); background: transparent; font: inherit; line-height: 1.65; }
+.comment-editor.is-compact { margin-top: 14px; padding: 13px; }
+.comment-editor.is-compact textarea { min-height: 68px; }
+.comment-editor-actions { display: flex; align-items: center; gap: 9px; padding-top: 12px; border-top: 1px solid #edf1f6; }
+.comment-editor-actions > span { margin-right: auto; color: var(--text-3); font-size: 11px; }
+.comment-emoticon-button, .comment-actions button { border: 0; background: transparent; color: var(--primary-dark); font-weight: 750; cursor: pointer; }
+.comment-emoticon-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; max-height: 238px; margin: 8px 0 14px; padding: 10px; overflow-y: auto; border-radius: 14px; background: #f5f8fc; }
+.comment-emoticon-picker button { width: 100%; min-width: 58px; height: 58px; padding: 5px; border: 2px solid transparent; border-radius: 12px; background: #fff; cursor: pointer; }
+.comment-emoticon-picker img { width: 100%; height: 100%; object-fit: contain; }
+.comment-emoticon-picker button:hover { border-color: var(--primary); }
+.comment-selected-emoticon { position: relative; width: fit-content; margin-bottom: 10px; }
+.comment-selected-emoticon button { position: absolute; top: -5px; right: -8px; width: 24px; height: 24px; border: 0; border-radius: 50%; background: #344054; color: #fff; cursor: pointer; }
+.comment-login-notice, .comment-empty { padding: 22px; border-radius: 14px; background: #f6f8fb; color: var(--text-2); text-align: center; }
+.comment-login-notice a { color: var(--primary-dark); font-weight: 800; }
+.comment-list { margin-top: 28px; }
+.board-comment { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 13px; padding: 22px 0; border-bottom: 1px solid var(--border); }
+.comment-avatar { position: relative; width: 40px; height: 40px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; background: #eaf1fb; color: var(--primary-dark); font-weight: 900; }
+.comment-avatar img { object-fit: cover; }
+.comment-body { min-width: 0; }
+.comment-head { display: flex; align-items: center; gap: 10px; }
+.comment-head time { color: var(--text-3); font-size: 12px; }
+.comment-body > p { margin: 9px 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.comment-emoticon { display: block; margin: 10px 0; }
+.comment-actions { display: flex; gap: 12px; margin-top: 8px; }
+.comment-actions button { padding: 0; font-size: 12px; }
+.comment-replies-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 7px 10px; border: 0; border-radius: 9px; background: #eef4fc; color: var(--primary-dark); font-size: 12px; font-weight: 800; cursor: pointer; }
+.comment-replies-toggle span { font-size: 14px; }
+.comment-replies { margin-top: 14px; padding-left: 18px; border-left: 3px solid #e6edf7; }
+.comment-replies .board-comment:last-child { border-bottom: 0; }
+.markdown-emoticon-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; max-height: 280px; padding: 12px; overflow-y: auto; border-bottom: 1px solid var(--border); background: #f5f8fc; }
+.markdown-emoticon-picker button { height: 64px; padding: 5px; border: 2px solid transparent; border-radius: 12px; background: #fff; cursor: pointer; }
+.markdown-emoticon-picker button:hover { border-color: var(--primary); }
+.markdown-emoticon-picker img { width: 100%; height: 100%; object-fit: contain; }
+.markdown-preview .article-emoticon { display: inline-block; width: 120px; height: 120px; margin: 8px 0; object-fit: contain; }
+
+@media (max-width: 720px) {
+  .board-comments { margin-top: 36px; padding-top: 28px; }
+  .board-comments-head { align-items: stretch; }
+  .board-comments-head select { min-height: 42px; }
+  .comment-editor { padding: 14px; }
+  .comment-editor textarea { font-size: 16px; }
+  .comment-editor-actions { flex-wrap: wrap; }
+  .comment-editor-actions > span { order: 2; width: 100%; }
+  .comment-editor-actions .btn { flex: 1; }
+  .board-comment { grid-template-columns: 36px minmax(0, 1fr); padding: 18px 0; }
+  .comment-avatar { width: 34px; height: 34px; }
+  .comment-head { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .comment-replies { margin-left: -22px; padding-left: 15px; }
 }
 
 /* Markdown code languages and Mermaid */

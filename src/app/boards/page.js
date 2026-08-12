@@ -3,7 +3,7 @@ import BoardList from "@/components/board/BoardList";
 export const metadata = { title: "게시판" };
 export default function BoardsPage() {
   return (
-    <div className="page-shell">
+    <div className="page-shell board-page">
       <div className="page-head">
         <div>
           <div className="eyebrow">Board</div>

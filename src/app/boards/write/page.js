@@ -5,7 +5,7 @@ export const metadata = { title: "게시글 작성" };
 
 export default function BoardWritePage() {
   return (
-    <div className="page-shell">
+    <div className="page-shell board-write-page">
       <div className="page-head">
         <div>
           <div className="eyebrow">Board Write</div>
