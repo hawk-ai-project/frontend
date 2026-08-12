@@ -18,31 +18,35 @@ export default function AnalyticsHeader({
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    handleResize(); // 초기 화면 실행
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
     <div style={{ width: '100%', marginBottom: '24px' }}>
-      {/* 1. 상단 타이틀 & 보고서 내보내기 버튼 */}
+      {/* 1. 상단 타이틀 영역 */}
+      <div className="page-head" style={{ marginBottom: '8px' }}>
+        <div>
+          <div className="eyebrow">ANALYTICS</div>
+          <h1>통계 분석</h1>
+        </div>
+      </div>
+
+      {/* 2. 서브타이틀 & 보고서 내보내기 버튼 (동일한 줄에 배치) */}
       <div
-        className="page-head"
         style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'flex-start',
-          gap: '16px',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: '12px',
+          marginBottom: '16px',
         }}
       >
-        <div>
-          <div className="eyebrow">ANALYTICS</div>
-          <h1>통계 분석</h1>
-          <p className="subtitle">
-            기간과 장소를 기준으로 점검 및 폐기물 탐지 추이를 분석합니다.
-          </p>
-        </div>
+        <p className="subtitle" style={{ margin: 0 }}>
+          기간과 장소를 기준으로 점검 및 폐기물 탐지 추이를 분석합니다.
+        </p>
 
         <button
           type="button"
@@ -59,13 +63,14 @@ export default function AnalyticsHeader({
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
             whiteSpace: 'nowrap',
             width: isMobile ? '100%' : 'auto',
+            flexShrink: 0,
           }}
         >
           보고서 내보내기
         </button>
       </div>
 
-      {/* 2. 하단: 필터 검색 영역 (모바일 반응형 적용) */}
+      {/* 3. 하단 필터 검색 영역 */}
       <form
         onSubmit={onSearch}
         style={{
@@ -80,7 +85,6 @@ export default function AnalyticsHeader({
           border: '1px solid #f1f5f9',
           width: '100%',
           boxSizing: 'border-box',
-          marginTop: '20px',
         }}
       >
         <div style={{ flex: '1', width: '100%' }}>
