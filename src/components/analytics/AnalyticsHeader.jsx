@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 export default function AnalyticsHeader({
   startDate,
   endDate,
@@ -10,10 +12,30 @@ export default function AnalyticsHeader({
   onSearch,
   onExport,
 }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // 초기 화면 실행
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div style={{ width: '100%', marginBottom: '24px' }}>
-      {/* 현장점검과 동일한 page-head 헤더 구조 */}
-      <div className="page-head">
+      {/* 1. 상단 타이틀 & 보고서 내보내기 버튼 */}
+      <div
+        className="page-head"
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'flex-start',
+          gap: '16px',
+        }}
+      >
         <div>
           <div className="eyebrow">ANALYTICS</div>
           <h1>통계 분석</h1>
@@ -36,13 +58,14 @@ export default function AnalyticsHeader({
             cursor: 'pointer',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
             whiteSpace: 'nowrap',
+            width: isMobile ? '100%' : 'auto',
           }}
         >
           보고서 내보내기
         </button>
       </div>
 
-      {/* 하단: 필터 검색 영역 (독립 카드) */}
+      {/* 2. 하단: 필터 검색 영역 (모바일 반응형 적용) */}
       <form
         onSubmit={onSearch}
         style={{
@@ -50,6 +73,7 @@ export default function AnalyticsHeader({
           borderRadius: '20px',
           padding: '16px 20px',
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           gap: '12px',
           alignItems: 'center',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
@@ -59,7 +83,7 @@ export default function AnalyticsHeader({
           marginTop: '20px',
         }}
       >
-        <div style={{ flex: '1' }}>
+        <div style={{ flex: '1', width: '100%' }}>
           <input
             type="date"
             value={startDate}
@@ -77,7 +101,7 @@ export default function AnalyticsHeader({
             }}
           />
         </div>
-        <div style={{ flex: '1' }}>
+        <div style={{ flex: '1', width: '100%' }}>
           <input
             type="date"
             value={endDate}
@@ -95,7 +119,7 @@ export default function AnalyticsHeader({
             }}
           />
         </div>
-        <div style={{ flex: '1' }}>
+        <div style={{ flex: '1', width: '100%' }}>
           <select
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
@@ -123,6 +147,7 @@ export default function AnalyticsHeader({
             fontWeight: '600',
             whiteSpace: 'nowrap',
             flexShrink: 0,
+            width: isMobile ? '100%' : 'auto',
           }}
         >
           조회

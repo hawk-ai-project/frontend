@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -17,6 +18,18 @@ import {
 const COLORS = ['#8b5cf6', '#38bdf8', '#2563eb', '#3b82f6', '#6366f1', '#ec4899'];
 
 export default function AnalyticsCharts({ trends = [], distribution = [] }) {
+  // 모바일 여부 감지 상태
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // 초기 실행
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const maxCount = Math.max(...trends.map((item) => Number(item.count ?? 0)), 0);
 
   const normalizedDistribution = distribution.map((item) => {
@@ -37,16 +50,16 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
           y={cy - 8}
           textAnchor="middle"
           dominantBaseline="central"
-          style={{ fontSize: '12px', fill: '#64748b', fontWeight: '500' }}
+          style={{ fontSize: isMobile ? '11px' : '12px', fill: '#64748b', fontWeight: '500' }}
         >
           총 탐지량
         </text>
         <text
           x={cx}
-          y={cy + 12}
+          y={cy + 10}
           textAnchor="middle"
           dominantBaseline="central"
-          style={{ fontSize: '18px', fill: '#0f172a', fontWeight: 'bold' }}
+          style={{ fontSize: isMobile ? '15px' : '18px', fill: '#0f172a', fontWeight: 'bold' }}
         >
           {totalWaste}개
         </text>
@@ -59,7 +72,7 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
     const percentage = totalWaste > 0 ? ((itemValue / totalWaste) * 100).toFixed(1) : 0;
 
     return (
-      <span style={{ color: '#334155', fontSize: '13px', marginLeft: '6px' }}>
+      <span style={{ color: '#334155', fontSize: isMobile ? '11px' : '13px', marginLeft: '4px' }}>
         {value} <strong style={{ color: '#0f172a' }}>{itemValue}개</strong> ({percentage}%)
       </span>
     );
@@ -70,15 +83,15 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
       id="analytics-charts-area"
       className="grid grid-2"
       style={{
-        marginBottom: '24px',        
+        marginBottom: '24px',
       }}
     >
       {/* 기간별 탐지 추이 */}
       <div className="card card-pad">
         <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>기간별 탐지 추이</h2>
-        <div style={{ width: '100%', height: '320px' }}>
+        <div style={{ width: '100%', height: isMobile ? '260px' : '320px' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={trends}>
+            <BarChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="primaryBarGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
@@ -92,8 +105,8 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="date" tickLine={false} axisLine={false} stroke="#94a3b8" />
-              <YAxis tickLine={false} axisLine={false} stroke="#94a3b8" unit="건" />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} stroke="#94a3b8" tick={{ fontSize: 12 }} />
+              <YAxis tickLine={false} axisLine={false} stroke="#94a3b8" unit="건" tick={{ fontSize: 12 }} />
               <Tooltip formatter={(val) => [`${val}건`, '탐지 건수']} />
 
               <Bar dataKey="count" radius={[6, 6, 0, 0]}>
@@ -118,15 +131,15 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
       {/* 폐기물 분포 */}
       <div className="card card-pad">
         <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>폐기물 분포</h2>
-        <div style={{ width: '100%', height: '320px' }}>
+        <div style={{ width: '100%', height: isMobile ? '360px' : '320px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={normalizedDistribution}
-                cx="35%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={85}
+                cx={isMobile ? '50%' : '35%'}
+                cy={isMobile ? '35%' : '50%'}
+                innerRadius={isMobile ? 45 : 60}
+                outerRadius={isMobile ? 70 : 85}
                 paddingAngle={4}
                 dataKey="value"
                 nameKey="name"
@@ -139,10 +152,11 @@ export default function AnalyticsCharts({ trends = [], distribution = [] }) {
               </Pie>
               <Tooltip formatter={(val) => [`${val}개`, '수량']} />
               <Legend
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
+                layout={isMobile ? 'horizontal' : 'vertical'}
+                align={isMobile ? 'center' : 'right'}
+                verticalAlign={isMobile ? 'bottom' : 'middle'}
                 formatter={renderLegendText}
+                wrapperStyle={isMobile ? { paddingTop: '10px' } : undefined}
               />
             </PieChart>
           </ResponsiveContainer>
