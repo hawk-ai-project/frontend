@@ -40,7 +40,12 @@ export function AuthProvider({ children }) {
 
       const storedToken = tokenStorage.get();
       if (!storedToken) {
-        if (!cancelled) clearAuth();
+        try {
+          const refreshed = await authService.refresh();
+          if (!cancelled) updateAuthState({ status: "authenticated", token: refreshed.accessToken, user: refreshed.user });
+        } catch {
+          if (!cancelled) clearAuth();
+        }
         return;
       }
 
@@ -63,6 +68,15 @@ export function AuthProvider({ children }) {
       cancelled = true;
     };
   }, [clearAuth, updateAuthState]);
+
+  useEffect(() => {
+    const tokenRefreshed = (event) => {
+      const result = event.detail;
+      updateAuthState({ status: "authenticated", token: result.accessToken, user: result.user });
+    };
+    window.addEventListener("hawk-ai:token-refreshed", tokenRefreshed);
+    return () => window.removeEventListener("hawk-ai:token-refreshed", tokenRefreshed);
+  }, [updateAuthState]);
 
   useEffect(() => {
     const sessionExpired = () => {

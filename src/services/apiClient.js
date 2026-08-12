@@ -2,7 +2,9 @@ import axios from "axios";
 import { tokenStorage } from "@/utils/tokenStorage";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
-export const apiClient = axios.create({ baseURL, timeout: 10000 });
+export const apiClient = axios.create({ baseURL, timeout: 10000, withCredentials: true });
+const refreshClient = axios.create({ baseURL, timeout: 10000, withCredentials: true });
+let refreshPromise = null;
 
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.get();
@@ -12,14 +14,36 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const requestUrl = error.config?.url || "";
-    if (error.response?.status === 401 && requestUrl.endsWith("/auth/me")) {
-      window.dispatchEvent(new Event("hawk-ai:session-expired"));
+    const isAuthOperation = ["/auth/login", "/auth/refresh", "/auth/logout"].some((path) => requestUrl.endsWith(path));
+    if (error.response?.status === 401 && !error.config?._retriedAfterRefresh && !isAuthOperation) {
+      try {
+        refreshPromise ||= refreshClient.post("/auth/refresh")
+          .then(({ data }) => {
+            tokenStorage.set(data.accessToken);
+            window.dispatchEvent(new CustomEvent("hawk-ai:token-refreshed", { detail: data }));
+            return data.accessToken;
+          })
+          .finally(() => { refreshPromise = null; });
+        const token = await refreshPromise;
+        error.config._retriedAfterRefresh = true;
+        error.config.headers.Authorization = `Bearer ${token}`;
+        return apiClient.request(error.config);
+      } catch {
+        tokenStorage.remove();
+        window.dispatchEvent(new Event("hawk-ai:session-expired"));
+      }
     }
     return Promise.reject(error);
   },
 );
+
+export const refreshAccessToken = () => refreshClient.post("/auth/refresh")
+  .then(({ data }) => {
+    tokenStorage.set(data.accessToken);
+    return data;
+  });
 
 export function getApiErrorMessage(error, fallback = "요청을 처리하지 못했습니다.") {
   const detail = error.response?.data?.detail;

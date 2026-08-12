@@ -1,4 +1,4 @@
-import { apiClient } from "./apiClient";
+import { apiClient, refreshAccessToken } from "./apiClient";
 
 export const authService = {
   login: (credentials) =>
@@ -6,6 +6,7 @@ export const authService = {
   signup: (payload) =>
     apiClient.post("/auth/signup", payload).then(({ data }) => data),
   me: () => apiClient.get("/auth/me").then(({ data }) => data),
+  refresh: () => refreshAccessToken(),
   updateProfile: (payload) =>
     apiClient.patch("/auth/profile", payload).then(({ data }) => data),
   updateProfileImage: (file) => {
