@@ -375,6 +375,25 @@ main {
 .mobile-nav-panel a:hover {
   background: #eaf0fb;
 }
+.mobile-auth-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.mobile-auth-links a {
+  padding: 11px 8px;
+  text-align: center;
+}
+.mobile-auth-links .mobile-signup-link {
+  color: #fff;
+  background: var(--primary);
+}
+.mobile-auth-links .mobile-signup-link:hover {
+  background: var(--primary-dark);
+}
 .page-shell {
   width: min(100% - 40px, 1240px);
   margin: 0 auto;
