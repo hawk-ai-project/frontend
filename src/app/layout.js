@@ -10,6 +10,14 @@ export const metadata = {
   icons: { icon: "/images/common/favicon.jpg" },
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f5f7fc",
+  colorScheme: "light",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="ko" data-scroll-behavior="smooth">

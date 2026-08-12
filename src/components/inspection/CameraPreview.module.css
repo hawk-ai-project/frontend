@@ -90,3 +90,13 @@
   width: auto;
   min-width: 160px;
 }
+
+@media (max-width: 720px) {
+  .container { gap: 12px; }
+  .statusWrapper { top: 10px; left: 10px; }
+  .controlsWrapper, .selectGroup { width: 100%; }
+  .selectGroup { display: grid; grid-template-columns: 1fr 1fr; }
+  .selectInput { grid-column: 1 / -1; width: 100%; min-width: 0; }
+  .selectGroup button, .controlsWrapper > button { width: 100%; }
+  .videoWrapper { min-height: 210px; }
+}

@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { apiClient } from "@/services/apiClient";
 
 export default function InspectionInfo() {
   const [formData, setFormData] = useState({
@@ -24,11 +24,7 @@ export default function InspectionInfo() {
           return;
         }
 
-        const response = await axios.get("http://127.0.0.1:8000/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await apiClient.get("/auth/me");
         setFormData((prev) => ({
           ...prev,
           inspector: response.data.name,
