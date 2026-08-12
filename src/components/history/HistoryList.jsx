@@ -25,13 +25,12 @@ function inspectionToHistory(inspection) {
       : inspection.title,
     detectedCount,
     waste: inspection.wasteSummary || detections.map((item) => item.className).join(', ') || '탐지 결과 없음',
-    wasteTypes: [...new Set(detections.map((item) => item.className).filter(Boolean))],
     status: statusMap[inspection.status] || STATUS_OPTIONS[0],
   };
 }
 
 export default function HistoryList() {
-  const [items, setItems] = useState(() => inspectionHistories.map((item) => ({ ...item, wasteTypes: [item.waste] })));
+  const [items, setItems] = useState(inspectionHistories);
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('전체 장소');
   const [waste, setWaste] = useState('전체 폐기물');
@@ -46,7 +45,7 @@ export default function HistoryList() {
       .then((data) => {
         if (cancelled) return;
         const liveHistories = Array.isArray(data) ? data.map(inspectionToHistory) : [];
-        setItems(liveHistories.length ? liveHistories : inspectionHistories.map((item) => ({ ...item, wasteTypes: [item.waste] })));
+        setItems(liveHistories.length ? liveHistories : inspectionHistories);
       })
       .catch(() => {
         // The built-in inspection history remains available if API loading fails.
@@ -55,11 +54,11 @@ export default function HistoryList() {
   }, []);
 
   const locations = [...new Set(items.map((item) => item.location.split(' ')[0]))];
-  const wastes = [...new Set(items.flatMap((item) => item.wasteTypes || [item.waste]))].sort();
+  const wastes = [...new Set(items.map((item) => item.waste))].sort();
   const filteredItems = useMemo(() => items.filter((item) => {
     const matchesKeyword = !searched.keyword || `${item.id} ${item.location}`.toLowerCase().includes(searched.keyword.toLowerCase());
     const matchesLocation = searched.location === '전체 장소' || item.location.startsWith(searched.location);
-    const matchesWaste = searched.waste === '전체 폐기물' || (item.wasteTypes || [item.waste]).includes(searched.waste);
+    const matchesWaste = searched.waste === '전체 폐기물' || item.waste === searched.waste;
     const matchesStatus = searched.status === '전체 상태' || item.status === searched.status;
     const matchesDate = !searched.date || item.inspectedAt.startsWith(searched.date);
     return matchesKeyword && matchesLocation && matchesWaste && matchesStatus && matchesDate;

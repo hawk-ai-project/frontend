@@ -13,6 +13,22 @@ const SUGGESTIONS = [
   "AI 모델은 어떻게 구현했나요?",
 ];
 
+const NAVIGATION_LABELS = {
+  "/inspection": "현장점검 시작",
+  "/histories": "점검이력 보기",
+  "/analytics": "통계분석 보기",
+  "/boards": "게시판 보기",
+  "/boards/write": "게시글 작성하기",
+  "/login": "로그인하기",
+};
+
+function responseActions(result) {
+  if (Array.isArray(result.actions) && result.actions.length) return result.actions;
+  const action = result.action;
+  if (action?.type !== "NAVIGATE" || !NAVIGATION_LABELS[action.path]) return [];
+  return [{ label: NAVIGATION_LABELS[action.path], href: action.path }];
+}
+
 export default function Chatbot() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -53,7 +69,7 @@ export default function Chatbot() {
           text: result.answer,
           type: result.type,
           sources: result.sources || [],
-          actions: result.actions || [],
+          actions: responseActions(result),
         },
       ]);
     } catch (error) {

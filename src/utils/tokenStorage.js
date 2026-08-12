@@ -1,29 +1,12 @@
 const TOKEN_KEY = "hawk_ai_access_token";
-let memoryToken = null;
-
-function read(storage) {
-  try { return storage?.getItem(TOKEN_KEY) || null; } catch { return null; }
-}
 
 export const tokenStorage = {
-  get: () => {
-    if (typeof window === "undefined") return null;
-    return read(window.localStorage) || read(window.sessionStorage) || memoryToken;
-  },
+  get: () =>
+    typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY),
   set: (token) => {
-    if (typeof window === "undefined") return;
-    memoryToken = token;
-    try {
-      window.localStorage.setItem(TOKEN_KEY, token);
-      return;
-    } catch {
-      try { window.sessionStorage.setItem(TOKEN_KEY, token); } catch { /* memory fallback */ }
-    }
+    if (typeof window !== "undefined") localStorage.setItem(TOKEN_KEY, token);
   },
   remove: () => {
-    memoryToken = null;
-    if (typeof window === "undefined") return;
-    try { window.localStorage.removeItem(TOKEN_KEY); } catch { /* unavailable */ }
-    try { window.sessionStorage.removeItem(TOKEN_KEY); } catch { /* unavailable */ }
+    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_KEY);
   },
 };

@@ -16,9 +16,9 @@ export default function AuthNavigation() {
   if (!isAuthenticated) {
     return (
       <div className="auth-guest">
-        <a href={ROUTES.login}>로그인</a>
+        <Link href={ROUTES.login}>로그인</Link>
         <span className="auth-divider">/</span>
-        <a href={ROUTES.signup}>회원가입</a>
+        <Link href={ROUTES.signup}>회원가입</Link>
       </div>
     );
   }
