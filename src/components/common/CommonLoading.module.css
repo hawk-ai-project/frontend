@@ -1,0 +1,53 @@
+.area {
+  width: 100%;
+  min-height: clamp(300px, 52vh, 560px);
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+
+.card {
+  width: min(100%, 300px);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 26px 28px 23px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.character {
+  width: 116px;
+  height: 116px;
+  display: block;
+  object-fit: contain;
+}
+
+.card p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .area {
+    min-height: 340px;
+    padding: 24px 16px;
+  }
+
+  .card {
+    width: min(100%, 270px);
+    padding: 22px 24px 20px;
+    border-radius: 17px;
+  }
+
+  .character {
+    width: 104px;
+    height: 104px;
+  }
+}

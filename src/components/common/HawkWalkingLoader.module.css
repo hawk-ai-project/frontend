@@ -1,0 +1,52 @@
+.track {
+  --hawk-loader-width: 86px;
+  --hawk-loader-track-width: 330px;
+  --hawk-loader-one-way-duration: 4s;
+  position: fixed;
+  z-index: 30;
+  left: 0;
+  bottom: 0;
+  width: var(--hawk-loader-track-width);
+  height: 130px;
+  display: none;
+  align-items: flex-end;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mover {
+  width: var(--hawk-loader-width);
+  animation: move-across calc(var(--hawk-loader-one-way-duration) * 2) linear infinite;
+}
+
+.character {
+  width: 100%;
+  height: auto;
+  display: block;
+  transform-origin: center bottom;
+  animation: face-direction calc(var(--hawk-loader-one-way-duration) * 2) linear infinite;
+}
+
+@keyframes move-across {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(calc(var(--hawk-loader-track-width) - var(--hawk-loader-width))); }
+}
+
+@keyframes face-direction {
+  0%, 49.99% { transform: scaleX(1); }
+  50%, 99.99% { transform: scaleX(-1); }
+  100% { transform: scaleX(1); }
+}
+
+@media (min-width: 1024px) {
+  .track {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mover,
+  .character {
+    animation: none;
+  }
+}

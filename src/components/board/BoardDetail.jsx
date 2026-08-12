@@ -10,6 +10,7 @@ import BoardArticleContent from "./BoardArticleContent";
 import BoardArticleActions from "./BoardArticleActions";
 import BoardComments from "./BoardComments";
 import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
+import CommonLoading from "@/components/common/CommonLoading";
 
 export default function BoardDetail({ id }) {
   const [post, setPost] = useState(null);
@@ -34,7 +35,7 @@ export default function BoardDetail({ id }) {
     return () => { cancelled = true; };
   }, [id]);
 
-  if (loading) return <p className="board-state">게시글을 불러오는 중입니다.</p>;
+  if (loading) return <CommonLoading message="게시글을 불러오는 중..." />;
   if (error || !post) {
     return (
       <div className="board-state board-state-error">

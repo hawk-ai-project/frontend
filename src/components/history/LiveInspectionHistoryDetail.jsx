@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { inspectionService } from "@/services/inspectionService";
 import HistoryDetailClient from "./HistoryDetailClient";
 import { STATUS_OPTIONS } from "./historyData";
+import CommonLoading from "@/components/common/CommonLoading";
 
 function toHistory(inspection) {
   const detections = Array.isArray(inspection.detections) ? inspection.detections : [];
@@ -43,7 +44,7 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
   }, [inspectionId]);
 
   if (error) return <p className="board-state board-state-error">{error}</p>;
-  if (!inspection) return <p className="board-state">점검 이력과 이미지를 불러오는 중입니다.</p>;
+  if (!inspection) return <CommonLoading message="점검 이력과 이미지를 불러오는 중..." />;
   const history = toHistory(inspection);
   const detail = {
     inspector: inspection.inspectorName,

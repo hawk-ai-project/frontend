@@ -3,6 +3,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import AppFooter from "@/components/layout/AppFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Chatbot from "@/components/chat/Chatbot";
+import HawkWalkingLoader from "@/components/common/HawkWalkingLoader";
 
 export const metadata = {
   title: { default: "Hawk-AI", template: "%s | Hawk-AI" },
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
           <AppHeader />
           <main>{children}</main>
           <AppFooter />
+          <HawkWalkingLoader />
           <Chatbot />
         </AuthProvider>
       </body>

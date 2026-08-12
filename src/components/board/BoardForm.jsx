@@ -9,6 +9,7 @@ import { getApiErrorMessage } from "@/services/apiClient";
 import { useAuth } from "@/hooks/useAuth";
 import MarkdownEditor from "./MarkdownEditor";
 import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
+import CommonLoading from "@/components/common/CommonLoading";
 
 const DRAFT_KEY = "hawk_ai_board_draft";
 const CATEGORIES = [
@@ -342,7 +343,7 @@ export default function BoardForm({ boardId }) {
     loadInspectionPreview(inspection);
   };
 
-  if (loading || authLoading) return <p className="board-state">게시글 정보를 불러오는 중입니다.</p>;
+  if (loading || authLoading) return <CommonLoading message="게시글 정보를 불러오는 중..." />;
 
   return (
     <article className="card board-editor-card">

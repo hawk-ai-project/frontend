@@ -9,6 +9,7 @@ import AnalyticsHeader from "./AnalyticsHeader";
 import AnalyticsSummaryCards from "./AnalyticsSummaryCards";
 import AnalyticsCharts from "./AnalyticsCharts";
 import AIAnalyticsInsights from "./AIAnalyticsInsights";
+import CommonLoading from "@/components/common/CommonLoading";
 
 export default function AnalyticsClient() {
   const [startDate, setStartDate] = useState("2026-08-01");
@@ -190,7 +191,7 @@ export default function AnalyticsClient() {
         onSearch={search}
         onExport={handleExport}
       />
-      {loading && <p className="board-state">통계 데이터를 불러오는 중입니다.</p>}
+      {loading && <CommonLoading message="통계 데이터를 불러오는 중..." />}
       {!loading && error && (
         <p className="board-state board-state-error">{error}</p>
       )}

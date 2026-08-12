@@ -35,6 +35,7 @@ export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const [messages, setMessages] = useState([
     {
       id: "welcome",
@@ -53,6 +54,7 @@ export default function Chatbot() {
     const message = rawMessage.trim();
     if (!message || loading) return;
 
+    setShowSuggestions(false);
     setMessages((current) => [
       ...current,
       { id: `user-${Date.now()}`, role: "USER", text: message, sources: [] },
@@ -106,6 +108,23 @@ export default function Chatbot() {
               <div className={`chatbot-message ${message.role.toLowerCase()}`} key={message.id}>
                 <span>{message.role === "USER" ? "나" : message.role === "ERROR" ? "오류" : "Hawk-AI"}</span>
                 <p>{message.text}</p>
+                {message.id === "welcome" && showSuggestions && (
+                  <div className="chatbot-suggestions" aria-label="추천 질문">
+                    <strong>추천 질문</strong>
+                    <div>
+                      {SUGGESTIONS.map((suggestion) => (
+                        <button
+                          type="button"
+                          onClick={() => send(suggestion)}
+                          disabled={loading}
+                          key={suggestion}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {message.sources?.length > 0 && (
                   <ul className="chatbot-sources">
                     {message.sources.map((source) => (
@@ -139,16 +158,6 @@ export default function Chatbot() {
             )}
             <div ref={messageEndRef} />
           </div>
-
-          {messages.length === 1 && (
-            <div className="chatbot-suggestions" aria-label="추천 질문">
-              {SUGGESTIONS.map((suggestion) => (
-                <button type="button" onClick={() => send(suggestion)} disabled={loading} key={suggestion}>
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
 
           <div className="chatbot-input">
             <label htmlFor="chatbot-message">질문</label>

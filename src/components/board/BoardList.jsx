@@ -5,6 +5,7 @@ import { boardService } from "@/services/boardService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import BoardFilter from "./BoardFilter";
 import BoardTable from "./BoardTable";
+import CommonLoading from "@/components/common/CommonLoading";
 
 const listParams = (page, keyword, category) => ({
   page,
@@ -73,7 +74,7 @@ export default function BoardList() {
         onKeywordChange={setKeyword}
         onSubmit={search}
       />
-      {loading && <p className="board-state">게시글을 불러오는 중입니다.</p>}
+      {loading && <CommonLoading message="게시글을 불러오는 중..." />}
       {!loading && error && (
         <p className="board-state board-state-error">{error}</p>
       )}
