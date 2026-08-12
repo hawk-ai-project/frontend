@@ -86,47 +86,6 @@ export default function CameraPreview({ onCapture, onSubmit }) {
     });
   };
 
-  // 📡 현재 위치 & 한글 주소 가져오기 (OpenStreetMap 무료 API 사용)
-  const getCoordinatesAndAddress = () => {
-    return new Promise((resolve) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const coordsStr = `${lat.toFixed(4)},${lon.toFixed(4)}`;
-            let addressStr = ""; // 번역된 주소를 담을 빈 그릇
-
-            try {
-              // 🌐 무료 지도 번역기에 위도/경도를 던져서 주소를 물어봅니다!
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-              );
-              const data = await response.json();
-
-              if (data && data.display_name) {
-                // "대한민국 경기도 수원시..." 형태로 결과가 옵니다.
-                addressStr = data.display_name;
-              }
-            } catch (error) {
-              console.error("주소 번역 실패:", error);
-            }
-
-            // 부모에게 좌표와 번역된 주소, 2개를 예쁘게 포장해서 돌려줍니다.
-            resolve({ coords: coordsStr, address: addressStr });
-          },
-          (error) => {
-            console.warn("위치 정보를 가져올 수 없습니다.", error);
-            resolve({ coords: null, address: "" });
-          },
-          { enableHighAccuracy: true, timeout: 5000 },
-        );
-      } else {
-        resolve({ coords: null, address: "" });
-      }
-    });
-  };
-
   // 촬영 및 분석
   const handleCapture = async () => {
     let finalImageUrl = previewImage;
@@ -142,10 +101,10 @@ export default function CameraPreview({ onCapture, onSubmit }) {
 
     if (finalImageUrl) {
       // 사진 찍은 직후 GPS 좌표 가져오기
-      const { coords, address } = await getCoordinatesAndAddress();
+      const coords = await getCoordinates();
 
       if (onCapture) onCapture(finalImageUrl, coords);
-      if (onSubmit) onSubmit(finalImageUrl, coords, address);
+      if (onSubmit) onSubmit();
     } else {
       alert("먼저 카메라를 켜거나 사진을 첨부해 주세요!");
     }
@@ -171,8 +130,8 @@ export default function CameraPreview({ onCapture, onSubmit }) {
         }
         setPreviewImage(imageUrl);
 
-        const { coords, address } = await getCoordinatesAndAddress();
-        if (onSubmit) onSubmit(imageUrl, coords, address);
+        const coords = await getCoordinates();
+        if (onCapture) onCapture(imageUrl, coords);
       };
       reader.readAsDataURL(file);
       e.target.value = "";

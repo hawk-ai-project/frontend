@@ -2,17 +2,10 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
 import axios from "axios";
+import { useEffect } from "react";
 
-export default function InspectionInfo() {
-  const [formData, setFormData] = useState({
-    location: "",
-    inspector: "",
-    memo: "",
-    status: "미처리",
-  });
-
+export default function InspectionInfo({ formData, setFormData }) {
   useEffect(() => {
     const fetchMyName = async () => {
       try {
@@ -38,7 +31,7 @@ export default function InspectionInfo() {
       }
     };
     fetchMyName();
-  }, []);
+  }, [setFormData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -106,9 +99,9 @@ export default function InspectionInfo() {
             onChange={handleChange}
             className="input"
           >
-            <option value="미처리">미처리</option>
-            <option value="처리 중">처리 중</option>
-            <option value="처리 완료">처리 완료</option>
+            <option value="DRAFT">미처리</option>
+            <option value="ACTION_REQUIRED">처리 중</option>
+            <option value="RESOLVED">처리 완료</option>
           </select>
         </label>
       </div>
