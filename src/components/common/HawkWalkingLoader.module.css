@@ -12,6 +12,7 @@
   align-items: flex-end;
   overflow: hidden;
   pointer-events: none;
+  user-select: none;
 }
 
 .mover {
@@ -25,6 +26,29 @@
   display: block;
   transform-origin: center bottom;
   animation: face-direction calc(var(--hawk-loader-one-way-duration) * 2) linear infinite;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  -webkit-user-drag: none;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+
+.dragging .mover,
+.dragging .character {
+  animation: none;
+}
+
+.dragging .mover {
+  width: 140px;
+}
+
+.dragging .character {
+  width: 140px;
+  max-width: none;
+  cursor: grabbing;
 }
 
 @keyframes move-across {
