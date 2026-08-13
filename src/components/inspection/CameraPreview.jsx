@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { inspectionService } from "@/services/inspectionService";
 import styles from "./CameraPreview.module.css";
 
-export default function CameraPreview() {
+export default function CameraPreview({ onCapture }) {
   const router = useRouter();
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -72,51 +72,100 @@ export default function CameraPreview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeviceId]);
 
-  // 촬영 및 분석
-  const handleCapture = () => {
-    if (previewImage) {
-      console.log("분석할 첨부 이미지 : ", previewImage);
-      alert("첨부된 사진으로 분석을 시작합니다.");
-    } else if (videoRef.current && stream) {
-      const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      const imageUrl = canvas.toDataURL("image/jpeg", 0.8);
-      console.log("캡처된 이미지:", imageUrl);
-      alert("촬영이 완료되었습니다!");
-    }
-  };
+  // // 촬영 및 분석
+  // const handleCapture = () => {
+  //   if (previewImage) {
+  //     console.log("분석할 첨부 이미지 : ", previewImage);
+  //     alert("첨부된 사진으로 분석을 시작합니다.");
+  //   } else if (videoRef.current && stream) {
+  //     const canvas = document.createElement("canvas");
+  //     canvas.width = videoRef.current.videoWidth;
+  //     canvas.height = videoRef.current.videoHeight;
+  //     const ctx = canvas.getContext("2d");
+  //     ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+  //     const imageUrl = canvas.toDataURL("image/jpeg", 0.8);
+  //     console.log("캡처된 이미지:", imageUrl);
+  //     alert("촬영이 완료되었습니다!");
+  //   }
+  // };
 
-  // 사진 첨부
-  const saveInspection = async () => {
+  // // 촬영 및 분석
+  // const saveInspection = async () => {
+  //   let image = previewImage;
+  //   if (!image && videoRef.current && stream) {
+  //     const canvas = document.createElement("canvas");
+  //     canvas.width = videoRef.current.videoWidth;
+  //     canvas.height = videoRef.current.videoHeight;
+  //     canvas
+  //       .getContext("2d")
+  //       .drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+  //     image = canvas.toDataURL("image/jpeg", 0.85);
+  //     setPreviewImage(image);
+  //   }
+  //   const location = document.getElementById("location")?.value?.trim();
+
+  //   // 확인용
+  //   console.log("현재 이미지 상태 : ", image ? "있음" : "없음");
+  //   console.log("입력된 점검 장소 : ", location);
+  //   if (!image) {
+  //     console.log("이미지가 없어서 중단됨");
+  //     return setSubmitError("사진을 촬영하거나 첨부해 주세요.");
+  //   }
+  //   if (!location) {
+  //     console.log("점검 장소가 비어있어서 중단됨");
+  //     return setSubmitError("점검 장소를 입력해 주세요.");
+  //   }
+  //   const latitude = document.getElementById("latitude")?.value;
+  //   const longitude = document.getElementById("longitude")?.value;
+  //   setSubmitting(true);
+  //   setSubmitError("");
+  //   try {
+  //     console.log("1. 백엔드로 전송 시작");
+  //     const result = await inspectionService.create({
+  //       image,
+  //       title: `${location} 현장점검`,
+  //       location,
+  //       notes: document.getElementById("memo")?.value || null,
+  //       latitude: latitude ? Number(latitude) : null,
+  //       longitude: longitude ? Number(longitude) : null,
+  //       // 처리상태를 기본값 미처리로 등록
+  //       status: "DRAFT",
+  //     });
+
+  //     console.log("2. 백엔드 저장 완료", result);
+
+  //     router.push(`/histories/inspection/${result.inspectionId}`);
+  //   } catch (error) {
+  //     console.log("3. 에러 발생", error);
+  //     setSubmitError(
+  //       error.response?.data?.detail || "점검 분석 및 저장에 실패했습니다.",
+  //     );
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
+
+  // 카메라 캡쳐
+  const captureImage = () => {
     let image = previewImage;
+
+    // 카메라가 켜있을때만 캡쳐
     if (!image && videoRef.current && stream) {
       const canvas = document.createElement("canvas");
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
-      canvas.getContext("2d").drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      canvas
+        .getContext("2d")
+        .drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       image = canvas.toDataURL("image/jpeg", 0.85);
+
+      // 캡쳐된 이미지를 state에 저장
       setPreviewImage(image);
+
+      if (onCapture) {
+        onCapture(image, null);
+      }
     }
-    const location = document.getElementById("location")?.value?.trim();
-    if (!image) return setSubmitError("사진을 촬영하거나 첨부해 주세요.");
-    if (!location) return setSubmitError("점검 장소를 입력해 주세요.");
-    const latitude = document.getElementById("latitude")?.value;
-    const longitude = document.getElementById("longitude")?.value;
-    setSubmitting(true); setSubmitError("");
-    try {
-      const result = await inspectionService.create({
-        image, title: `${location} 현장점검`, location,
-        notes: document.getElementById("memo")?.value || null,
-        latitude: latitude ? Number(latitude) : null,
-        longitude: longitude ? Number(longitude) : null,
-      });
-      router.push(`/histories/inspection/${result.inspectionId}`);
-    } catch (error) {
-      setSubmitError(error.response?.data?.detail || "점검 분석 및 저장에 실패했습니다.");
-    } finally { setSubmitting(false); }
   };
 
   const selectImage = () => {
@@ -136,7 +185,12 @@ export default function CameraPreview() {
           stream.getTracks().forEach((track) => track.stop());
           setStream(null);
         }
-        setPreviewImage(imageUrl);
+        setPreviewImage(imageUrl); // 내 화면에 띄우기
+
+        // 💡 추가된 부분: 첨부한 사진도 부모(page.js)에게 전달!
+        if (onCapture) {
+          onCapture(imageUrl, null);
+        }
       };
       reader.readAsDataURL(file);
       e.target.value = "";
@@ -251,11 +305,21 @@ export default function CameraPreview() {
         </div>
 
         {/* 촬영 및 분석 버튼 */}
-        <button onClick={saveInspection} className="btn btn-primary" disabled={submitting}>
-          {submitting ? "분석 및 저장 중..." : "촬영 및 분석"}
+
+        <button onClick={captureImage} className="btn btn-primary">
+          사진 캡쳐
         </button>
+        {/* <button
+          onClick={saveInspection}
+          className="btn btn-primary"
+          disabled={submitting}
+        >
+          {submitting ? "분석 및 저장 중..." : "촬영 및 분석"}
+        </button> */}
       </div>
-      {submitError && <p className="board-state board-state-error">{submitError}</p>}
+      {submitError && (
+        <p className="board-state board-state-error">{submitError}</p>
+      )}
     </div>
   );
 }
