@@ -10,9 +10,41 @@
   height: 130px;
   display: none;
   align-items: flex-end;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
   user-select: none;
+}
+
+.speech {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  bottom: 108px;
+  width: max-content;
+  max-width: 230px;
+  padding: 9px 12px;
+  border: 1px solid rgba(63, 111, 196, .24);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .96);
+  color: #27364d;
+  box-shadow: 0 7px 22px rgba(34, 62, 105, .14);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.speech::after {
+  content: "";
+  position: absolute;
+  left: 24px;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  border-right: 1px solid rgba(63, 111, 196, .24);
+  border-bottom: 1px solid rgba(63, 111, 196, .24);
+  background: #fff;
+  transform: rotate(45deg);
 }
 
 .mover {
@@ -37,7 +69,9 @@
 }
 
 .dragging .mover,
-.dragging .character {
+.dragging .character,
+.acting .mover,
+.acting .character {
   animation: none;
 }
 
@@ -49,6 +83,71 @@
   width: 140px;
   max-width: none;
   cursor: grabbing;
+}
+
+.acting .mover {
+  width: 112px;
+}
+
+.acting .character {
+  width: 112px;
+  max-width: none;
+}
+
+.actionMenu {
+  position: fixed;
+  z-index: 1000;
+  width: 250px;
+  padding: 10px;
+  border: 1px solid rgba(63, 111, 196, .36);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 16px 42px rgba(32, 61, 105, .2);
+  backdrop-filter: blur(14px);
+}
+
+.actionMenu > strong {
+  display: block;
+  margin: -10px -10px 7px;
+  padding: 12px 14px;
+  border-radius: 16px 16px 8px 8px;
+  background: #3f6fc4;
+  color: #fff;
+  font-size: 13px;
+}
+
+.actionMenu button {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 750;
+  text-align: left;
+}
+
+.actionMenu button:hover,
+.actionMenu button:focus-visible,
+.actionMenu button.selected {
+  background: #eaf1fb;
+  color: #244e94;
+  outline: none;
+}
+
+.actionMenu button:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(63, 111, 196, .4);
+}
+
+.actionMenu button span {
+  width: 24px;
+  font-size: 18px;
+  text-align: center;
 }
 
 @keyframes move-across {
@@ -72,5 +171,9 @@
   .mover,
   .character {
     animation: none;
+  }
+
+  .actionMenu button {
+    transition: none;
   }
 }
