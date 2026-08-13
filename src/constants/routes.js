@@ -15,6 +15,7 @@ export const ROUTES = Object.freeze({
   adminComments: "/admin/comments",
   adminActivity: "/admin/activity",
   adminDetections: "/admin/ai/detections",
+  adminAiData: "/admin/ai/data",
   adminSettings: "/admin/settings",
   adminForbiddenWords: "/admin/settings/forbidden-words",
 });

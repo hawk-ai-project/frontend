@@ -60,4 +60,20 @@ export const adminService = {
     apiClient.patch(`/admin/ai/detections/${id}`, payload).then(({ data }) => data),
   getAiStatistics: () =>
     apiClient.get("/admin/ai/statistics").then(({ data }) => data),
+  getAiClasses: () =>
+    apiClient.get("/admin/ai/classes").then(({ data }) => data),
+  getAiData: (params = {}) => {
+    const cleanParams=Object.fromEntries(Object.entries(params).filter(([,v])=>v!==""&&v!=null));
+    return apiClient.get("/admin/ai/data",{params:cleanParams}).then(({data})=>data);
+  },
+  getAiTags: () => apiClient.get("/admin/ai/tags").then(({data})=>data),
+  createAiTag: (payload) => apiClient.post("/admin/ai/tags",payload).then(({data})=>data),
+  bulkAiData: (payload) => apiClient.post("/admin/ai/data/bulk",payload).then(({data})=>data),
+  getInspectionImage: (inspectionId) =>
+    apiClient.get(`/inspection/histories/${inspectionId}/image`,{params:{kind:"ORIGINAL"},responseType:"blob"}).then(({data})=>data),
+  getAiDataDetail: (inspectionId) =>
+    apiClient.get(`/admin/ai/data/${inspectionId}`).then(({data})=>data),
+  createMissedDetection: (payload) =>
+    apiClient.post("/admin/ai/missed-detections",payload).then(({data})=>data),
+  deleteAiDetection: (id) => apiClient.delete(`/admin/ai/detections/${id}`),
 };

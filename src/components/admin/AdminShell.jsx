@@ -15,7 +15,10 @@ const ADMIN_MENU = [
     key: "ai",
     label: "AI 관리",
     icon: "board",
-    children: [{ href: ROUTES.adminDetections, label: "탐지 결과 검수" }],
+    children: [
+      { href: ROUTES.adminDetections, label: "탐지 결과 검수" },
+      { href: ROUTES.adminAiData, label: "Data Browser" },
+    ],
   },
   {
     key: "users",
