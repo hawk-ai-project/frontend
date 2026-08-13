@@ -14,6 +14,19 @@ const INITIAL_AUTH_STATE = {
   user: null,
 };
 
+const REFRESH_EARLY_MS = 60 * 1000;
+
+function getTokenExpiry(token) {
+  try {
+    const payload = token.split(".")[1];
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(window.atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return Number(decoded.exp) * 1000;
+  } catch {
+    return 0;
+  }
+}
+
 // Root layout이 다시 마운트되더라도 확인된 인증 상태를 재사용해
 // 헤더가 잠시 비회원 메뉴로 돌아가는 현상을 막는다.
 let cachedAuthState = INITIAL_AUTH_STATE;
@@ -87,6 +100,29 @@ export function AuthProvider({ children }) {
     return () =>
       window.removeEventListener("hawk-ai:session-expired", sessionExpired);
   }, [clearAuth, router]);
+
+  useEffect(() => {
+    if (authState.status !== "authenticated" || !authState.token) return undefined;
+
+    let cancelled = false;
+    const expiresAt = getTokenExpiry(authState.token);
+    const delay = Math.max(0, expiresAt - Date.now() - REFRESH_EARLY_MS);
+    const timer = window.setTimeout(async () => {
+      try {
+        await authService.refresh();
+      } catch {
+        if (!cancelled) {
+          clearAuth();
+          router.replace(ROUTES.login);
+        }
+      }
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [authState.status, authState.token, clearAuth, router]);
 
   const login = async (credentials) => {
     const result = await authService.login(credentials);

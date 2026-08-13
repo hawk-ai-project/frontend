@@ -6,6 +6,17 @@ export const apiClient = axios.create({ baseURL, timeout: 10000, withCredentials
 const refreshClient = axios.create({ baseURL, timeout: 10000, withCredentials: true });
 let refreshPromise = null;
 
+function requestTokenRefresh() {
+  refreshPromise ||= refreshClient.post("/auth/refresh")
+    .then(({ data }) => {
+      tokenStorage.set(data.accessToken);
+      window.dispatchEvent(new CustomEvent("hawk-ai:token-refreshed", { detail: data }));
+      return data;
+    })
+    .finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.get();
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -19,14 +30,7 @@ apiClient.interceptors.response.use(
     const isAuthOperation = ["/auth/login", "/auth/refresh", "/auth/logout"].some((path) => requestUrl.endsWith(path));
     if (error.response?.status === 401 && !error.config?._retriedAfterRefresh && !isAuthOperation) {
       try {
-        refreshPromise ||= refreshClient.post("/auth/refresh")
-          .then(({ data }) => {
-            tokenStorage.set(data.accessToken);
-            window.dispatchEvent(new CustomEvent("hawk-ai:token-refreshed", { detail: data }));
-            return data.accessToken;
-          })
-          .finally(() => { refreshPromise = null; });
-        const token = await refreshPromise;
+        const { accessToken: token } = await requestTokenRefresh();
         error.config._retriedAfterRefresh = true;
         error.config.headers.Authorization = `Bearer ${token}`;
         return apiClient.request(error.config);
@@ -39,11 +43,7 @@ apiClient.interceptors.response.use(
   },
 );
 
-export const refreshAccessToken = () => refreshClient.post("/auth/refresh")
-  .then(({ data }) => {
-    tokenStorage.set(data.accessToken);
-    return data;
-  });
+export const refreshAccessToken = () => requestTokenRefresh();
 
 export function getApiErrorMessage(error, fallback = "요청을 처리하지 못했습니다.") {
   const detail = error.response?.data?.detail;
