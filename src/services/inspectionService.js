@@ -18,9 +18,13 @@ export const inspectionService = {
       .then(({ data }) => data),
   analyzeHistory: (inspectionId) =>
     apiClient
-      .post(`/inspection/histories/${inspectionId}/analyze`, undefined, {
-        timeout: 120000,
-      })
+      .post(
+        "/inspection/analyze",
+        { inspection_id: inspectionId },
+        {
+          timeout: 120000,
+        },
+      )
       .then(({ data }) => data),
   detail: (inspectionId) =>
     apiClient

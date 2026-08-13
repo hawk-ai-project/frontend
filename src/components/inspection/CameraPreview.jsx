@@ -265,7 +265,7 @@ export default function CameraPreview({ onCapture }) {
         {/* 카메라 출력 안하고 있을 때 */}
         {!stream && !previewImage && (
           <div className={`badge ${styles.placeholderBadge}`}>
-            USB Camera Preview
+            카메라 ON 버튼을 눌러주세요
           </div>
         )}
       </div>

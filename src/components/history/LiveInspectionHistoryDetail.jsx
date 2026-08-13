@@ -7,14 +7,26 @@ import { STATUS_OPTIONS } from "./historyData";
 import CommonLoading from "@/components/common/CommonLoading";
 
 function toHistory(inspection) {
-  const detections = Array.isArray(inspection.detections) ? inspection.detections : [];
-  const statusMap = { REVIEW_REQUIRED: STATUS_OPTIONS[0], ACTION_REQUIRED: STATUS_OPTIONS[1], RESOLVED: STATUS_OPTIONS[2] };
+  const detections = Array.isArray(inspection.detections)
+    ? inspection.detections
+    : [];
+  const statusMap = {
+    REVIEW_REQUIRED: STATUS_OPTIONS[0],
+    ACTION_REQUIRED: STATUS_OPTIONS[1],
+    RESOLVED: STATUS_OPTIONS[2],
+  };
   return {
     id: `INSPECTION-${inspection.id}`,
     inspectedAt: inspection.capturedAt,
     location: inspection.location || inspection.title,
-    detectedCount: detections.reduce((total, item) => total + (Number(item.count) || 0), 0),
-    waste: inspection.wasteSummary || detections.map((item) => item.className).join(", ") || "탐지 결과 없음",
+    detectedCount: detections.reduce(
+      (total, item) => total + (Number(item.count) || 0),
+      0,
+    ),
+    waste:
+      inspection.wasteSummary ||
+      detections.map((item) => item.className).join(", ") ||
+      "탐지 결과 없음",
     status: statusMap[inspection.status] || STATUS_OPTIONS[0],
   };
 }
@@ -26,43 +38,75 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
   useEffect(() => {
     let cancelled = false;
     const urls = [];
-    inspectionService.recent(100).then(async (items) => {
-      let found = items.find((item) => Number(item.id) === Number(inspectionId));
-      if (!found) throw new Error("not-found");
-      let [original, annotated] = await Promise.allSettled([
-        inspectionService.image(found.id, "ORIGINAL"),
-        inspectionService.image(found.id, "ANNOTATED"),
-      ]);
-      if (original.status === "fulfilled" && annotated.status === "rejected") {
-        await inspectionService.analyzeHistory(found.id);
-        const refreshed = await inspectionService.recent(100);
-        found = refreshed.find((item) => Number(item.id) === Number(inspectionId)) || found;
-        annotated = await inspectionService.image(found.id, "ANNOTATED")
-          .then((value) => ({ status: "fulfilled", value }))
-          .catch((reason) => ({ status: "rejected", reason }));
-      }
-      if (cancelled) return;
-      const originalImageUrl = original.status === "fulfilled" ? URL.createObjectURL(original.value) : null;
-      const annotatedImageUrl = annotated.status === "fulfilled" ? URL.createObjectURL(annotated.value) : null;
-      if (originalImageUrl) urls.push(originalImageUrl);
-      if (annotatedImageUrl) urls.push(annotatedImageUrl);
-      setInspection({ ...found, originalImageUrl, annotatedImageUrl });
-    }).catch(() => { if (!cancelled) setError("점검 이력을 불러오지 못했습니다."); });
-    return () => { cancelled = true; urls.forEach((url) => URL.revokeObjectURL(url)); };
+
+    inspectionService
+      .recent(100)
+      .then(async (items) => {
+        let found = items.find(
+          (item) => Number(item.id) === Number(inspectionId),
+        );
+        if (!found) throw new Error("not-found");
+
+        // 사진 두 장을 요청합니다 (없으면 없는 대로 넘어갑니다)
+        let [original, annotated] = await Promise.allSettled([
+          inspectionService.image(found.id, "ORIGINAL"),
+          inspectionService.image(found.id, "ANNOTATED"),
+        ]);
+
+        if (cancelled) return;
+
+        // 사진 덩어리(Blob)를 화면에 띄울 수 있는 가짜 주소로 변환
+        const originalImageUrl =
+          original.status === "fulfilled"
+            ? URL.createObjectURL(original.value)
+            : null;
+        const annotatedImageUrl =
+          annotated.status === "fulfilled"
+            ? URL.createObjectURL(annotated.value)
+            : null;
+
+        if (originalImageUrl) urls.push(originalImageUrl);
+        if (annotatedImageUrl) urls.push(annotatedImageUrl);
+
+        setInspection({ ...found, originalImageUrl, annotatedImageUrl });
+      })
+      .catch(() => {
+        if (!cancelled) setError("점검 이력을 불러오지 못했습니다.");
+      });
+
+    return () => {
+      cancelled = true;
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
   }, [inspectionId]);
 
   if (error) return <p className="board-state board-state-error">{error}</p>;
-  if (!inspection) return <CommonLoading message="점검 이력과 이미지를 불러오는 중..." />;
+  if (!inspection)
+    return <CommonLoading message="점검 이력과 이미지를 불러오는 중..." />;
+
   const history = toHistory(inspection);
   const detail = {
     inspector: inspection.inspectorName,
     fullLocation: inspection.location || inspection.title,
     coordinates: inspection.coordinates || "",
-    detections: (inspection.detections || []).map((item) => [item.className, item.count]),
-    opinion: inspection.aiOpinion || inspection.notes || "탐지 결과를 확인하고 후속 조치를 작성해 주세요.",
+    detections: (inspection.detections || []).map((item) => [
+      item.className,
+      item.count,
+    ]),
+    opinion:
+      inspection.aiOpinion ||
+      inspection.notes ||
+      "탐지 결과를 확인하고 후속 조치를 작성해 주세요.",
     assigneeName: inspection.assigneeName || null,
     originalImageUrl: inspection.originalImageUrl,
     annotatedImageUrl: inspection.annotatedImageUrl,
   };
-  return <HistoryDetailClient history={history} detail={detail} inspectionId={inspection.id} />;
+
+  return (
+    <HistoryDetailClient
+      history={history}
+      detail={detail}
+      inspectionId={inspection.id}
+    />
+  );
 }

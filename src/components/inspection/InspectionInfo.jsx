@@ -14,10 +14,11 @@ export default function InspectionInfo({
   setSubmitting,
   setSubmitError,
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     const fetchMyName = async () => {
       try {
-        // 일단 로컬에서 점검자 이름 불러오기
         const token = localStorage.getItem("hawk_ai_access_token");
 
         if (!token) {
@@ -51,43 +52,31 @@ export default function InspectionInfo({
 
   // 백엔드로 전달하는 함수
   const submitInspection = async () => {
-    // 💡 1. 버튼이 눌렸는지부터 확실하게 확인!
-    console.log(
-      "🔘 등록 버튼 클릭됨! 현재 사진 유무:",
-      previewImage ? "있음" : "없음",
-    );
-
     const location = formData.location?.trim();
 
-    // 💡 2. 검증 로직 (어디서 멈췄는지 로그를 찍어줍니다)
-    if (!previewImage) {
-      console.log("🚨 사진이 없어서 중단됨!");
-      return setSubmitError("사진을 촬영하거나 첨부해주세요.");
-    }
-    if (!location) {
-      console.log("🚨 점검 장소가 비어있어서 중단됨!");
-      return setSubmitError("점검 장소를 입력해주세요.");
-    }
+    if (!previewImage) return setSubmitError("사진을 촬영하거나 첨부해주세요.");
+    if (!location) return setSubmitError("점검 장소를 입력해주세요.");
 
     setSubmitting(true);
-    setSubmitError(""); // 💡 3. 오타 수정 완료 (Submmit -> Submit)
+    setSubmitError("");
 
     try {
-      console.log("🚀 1. 백엔드로 전송 시작!");
+      const token = localStorage.getItem("hawk_ai_access_token");
 
+      console.log("백엔드로 사진과 데이터 전송 시작!");
+
+      // 백엔드의 /save API가 AI 분석까지
       const finalPayload = {
         title: `${location} 현장 점검`,
         location_name: location,
         address: formData.address || "",
         coordinates: formData.coordinates || "",
         notes: formData.memo || "",
-        status: "DRAFT",
+        status: "REVIEW_REQUIRED",
         image: previewImage,
         ai_detections: [],
       };
 
-      // 토큰 꺼내서 axios로 직접 쏘기
-      const token = localStorage.getItem("hawk_ai_access_token");
       const response = await axios.post(
         "http://127.0.0.1:8000/api/inspection/save",
         finalPayload,
@@ -96,12 +85,12 @@ export default function InspectionInfo({
         },
       );
 
-      console.log("✅ 2. 백엔드 저장 완료!", response.data);
-      alert("등록이 완료됐습니다! 점검이력 페이지에서 확인하세요.");
+      console.log("백엔드 저장 완벽하게 성공!", response.data);
+      alert("현장 점검이 등록되었습니다! 상세 페이지에서 확인하세요.");
     } catch (error) {
-      console.log("🚨 3. 에러 발생", error);
+      console.error("에러 발생:", error);
       setSubmitError(
-        error.response?.data?.detail || "점검 분석 및 저장에 실패했습니다.",
+        error.response?.data?.detail || "점검 저장에 실패했습니다.",
       );
     } finally {
       setSubmitting(false);
@@ -125,8 +114,6 @@ export default function InspectionInfo({
             placeholder="도시명과 장소를 입력하세요"
           />
         </label>
-        {/* gps 좌표를 addess에 추가
-        시까지만 나와도 됨 */}
 
         <label htmlFor="inspector">
           점검자
@@ -158,25 +145,8 @@ export default function InspectionInfo({
             placeholder="특이사항 등을 메모해 주세요"
           />
         </label>
-
-        {/* 기본값을 미처리로 등록 */}
-        {/* <label htmlFor="status">
-          처리 상태
-          <select
-            id="status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="input"
-          >
-            <option value="DRAFT">미처리</option>
-            <option value="ACTION_REQUIRED">처리 중</option>
-            <option value="RESOLVED">처리 완료</option>
-          </select>
-        </label> */}
       </div>
 
-      {/* 등록 버튼 */}
       <div style={{ marginTop: "20px" }}>
         <button
           onClick={submitInspection}
