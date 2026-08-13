@@ -1,0 +1,32 @@
+.overlay { position: fixed; z-index: 900; inset: 0; overflow: hidden; color: #fff; background: linear-gradient(180deg, rgba(14, 75, 136, .72), rgba(20, 127, 173, .76) 46%, rgba(5, 85, 132, .88)); backdrop-filter: blur(5px) saturate(.92); user-select: none; }
+.waves { position: absolute; inset: 0; opacity: .35; background: repeating-radial-gradient(ellipse at 50% 120%, transparent 0 42px, rgba(210, 241, 255, .38) 44px 47px, transparent 49px 78px); animation: seaMove 12s linear infinite alternate; pointer-events: none; }
+.hud { position: relative; z-index: 20; width: min(calc(100% - 36px), 1100px); margin: 18px auto; padding: 12px 14px; display: grid; grid-template-columns: repeat(5, minmax(90px, 1fr)) auto; gap: 8px; border: 1px solid rgba(255,255,255,.38); border-radius: 17px; background: rgba(16, 57, 105, .72); box-shadow: 0 12px 34px rgba(3, 37, 70, .22); backdrop-filter: blur(12px); }
+.hud > div { min-width: 0; padding: 5px 12px; border-right: 1px solid rgba(255,255,255,.16); }
+.hud small { display: block; margin-bottom: 3px; color: #cce8ff; font-size: 10px; font-weight: 800; }
+.hud strong { display: block; overflow: hidden; font-size: 16px; white-space: nowrap; text-overflow: ellipsis; }
+.hud button, .result button { border: 1px solid rgba(255,255,255,.34); border-radius: 11px; background: rgba(255,255,255,.13); color: #fff; font-weight: 800; }
+.hud button { padding: 0 16px; }
+.hud button:hover, .hud button:focus-visible, .result button:hover, .result button:focus-visible { background: rgba(255,255,255,.25); outline: 3px solid rgba(255,255,255,.24); }
+.trash { position: fixed; z-index: 6; left: 0; top: 0; object-fit: contain; cursor: grab; touch-action: none; will-change: transform; filter: drop-shadow(0 7px 8px rgba(0,30,60,.23)); -webkit-user-drag: none; }
+.draggingTrash { z-index: 30; cursor: grabbing; filter: drop-shadow(0 13px 13px rgba(0,30,60,.35)); }
+.hoki { position: absolute; z-index: 5; left: clamp(20px, 5vw, 80px); bottom: 16px; width: clamp(116px, 12vw, 175px); pointer-events: none; }
+.hoki img { width: 100%; height: auto; display: block; }
+.bin { position: absolute; z-index: 8; right: clamp(30px, 8vw, 130px); bottom: 20px; width: clamp(120px, 14vw, 190px); min-height: 100px; display: grid; place-items: end center; filter: drop-shadow(0 10px 12px rgba(0,30,60,.3)); }
+.bin img { width: 100%; height: auto; display: block; pointer-events: none; }
+.particles { position: fixed; z-index: 32; width: 180px; height: 180px; object-fit: contain; transform: translate(-20%, -45%); pointer-events: none; }
+.countdown { position: absolute; z-index: 40; inset: 0; display: grid; place-items: center; color: #fff; font-size: clamp(78px, 15vw, 180px); font-weight: 950; letter-spacing: -.06em; text-shadow: 0 10px 30px rgba(0, 48, 91, .42); animation: countPulse .8s ease-out; pointer-events: none; }
+.resultBackdrop { position: absolute; z-index: 50; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(5, 28, 57, .48); }
+.result { width: min(100%, 410px); padding: 30px; border: 1px solid rgba(255,255,255,.52); border-radius: 24px; background: rgba(247, 251, 255, .96); color: #213550; box-shadow: 0 24px 65px rgba(0, 25, 52, .32); text-align: center; }
+.result > span { color: #3f6fc4; font-size: 11px; font-weight: 900; letter-spacing: .15em; }
+.result h2 { margin: 8px 0 20px; font-size: 27px; }
+.result p { margin: 0; color: #526077; }
+.result p strong { display: block; margin-top: 7px; color: #244e94; font-size: 34px; }
+.result em { display: block; margin-top: 10px; color: #e58727; font-style: normal; font-weight: 850; }
+.result div { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.result button { min-height: 46px; border-color: #b9c9e2; background: #3f6fc4; }
+.result button:last-child { background: #fff; color: #40516a; }
+@keyframes seaMove { to { transform: translate3d(25px, 8px, 0); } }
+@keyframes countPulse { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
+@media (max-width: 1100px) { .hud { grid-template-columns: repeat(3, 1fr); } .hud button { min-height: 44px; } .trash { scale: .85; } .bin { width: 130px; } }
+@media (max-width: 720px) { .overlay { display: none; } }
+@media (prefers-reduced-motion: reduce) { .waves, .countdown { animation: none; } .trash { filter: none; } }

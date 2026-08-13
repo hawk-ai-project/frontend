@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import OceanCleanupGame from "@/components/game/OceanCleanupGame";
 import styles from "./HawkWalkingLoader.module.css";
 
 const WALKING_WIDTH = 86;
@@ -39,6 +40,7 @@ export default function HawkWalkingLoader() {
   const [action, setAction] = useState("walking");
   const [message, setMessage] = useState("");
   const [menuPosition, setMenuPosition] = useState(null);
+  const [gameOpen, setGameOpen] = useState(false);
 
   const clearActionTimer = useCallback(() => {
     if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
@@ -57,7 +59,7 @@ export default function HawkWalkingLoader() {
 
     if (nextAction === "playing") {
       setAction("walking");
-      showMessage("바다 정화 작전은 준비 중이에요!");
+      setGameOpen(true);
       return;
     }
 
@@ -91,7 +93,10 @@ export default function HawkWalkingLoader() {
   };
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setMenuPosition(null));
+    const frame = window.requestAnimationFrame(() => {
+      setMenuPosition(null);
+      if (pathname !== "/") setGameOpen(false);
+    });
     return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
@@ -160,7 +165,7 @@ export default function HawkWalkingLoader() {
     <>
       <div
         ref={trackRef}
-        className={`${styles.track}${dragging ? ` ${styles.dragging}` : ""}${action !== "walking" ? ` ${styles.acting}` : ""}`}
+        className={`${styles.track}${dragging ? ` ${styles.dragging}` : ""}${action !== "walking" ? ` ${styles.acting}` : ""}${gameOpen ? ` ${styles.gameHidden}` : ""}`}
         style={position ? { left: `${position.left}px`, top: `${position.top}px`, bottom: "auto", "--hawk-loader-track-width": `${trackWidth}px` } : undefined}
       >
         {message && <div className={styles.speech} role="status">{message}</div>}
@@ -214,6 +219,7 @@ export default function HawkWalkingLoader() {
           </button>
         </div>
       )}
+      {gameOpen && <OceanCleanupGame onClose={() => setGameOpen(false)} />}
     </>
   );
 }
