@@ -12,6 +12,12 @@ import UserAvatar from "@/components/common/UserAvatar";
 const ADMIN_MENU = [
   { key: "dashboard", label: "대시보드", icon: "home", href: ROUTES.admin },
   {
+    key: "ai",
+    label: "AI 관리",
+    icon: "board",
+    children: [{ href: ROUTES.adminDetections, label: "탐지 결과 검수" }],
+  },
+  {
     key: "users",
     label: "회원 관리",
     icon: "users",
@@ -55,7 +61,7 @@ export default function AdminShell({ children }) {
   const currentPath = usePathname() || ROUTES.admin;
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [openMenu, setOpenMenu] = useState(() => currentPath.startsWith(ROUTES.adminSettings) ? "settings" : currentPath.startsWith(ROUTES.adminUsers) ? "users" : null);
+  const [openMenu, setOpenMenu] = useState(() => currentPath.startsWith(ROUTES.adminSettings) ? "settings" : currentPath.startsWith(ROUTES.adminUsers) ? "users" : currentPath.startsWith("/admin/ai") ? "ai" : null);
   const isAdmin = isAuthenticated && user?.role === ROLES.ADMIN;
 
   useEffect(() => {

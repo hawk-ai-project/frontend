@@ -50,4 +50,14 @@ export const adminService = {
   getSettings: () => apiClient.get("/admin/settings").then(({ data }) => data),
   updateSettings: (payload) =>
     apiClient.put("/admin/settings", payload).then(({ data }) => data),
+  getAiDetections: (params = {}) => {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== "" && value != null),
+    );
+    return apiClient.get("/admin/ai/detections", { params: cleanParams }).then(({ data }) => data);
+  },
+  reviewAiDetection: (id, payload) =>
+    apiClient.patch(`/admin/ai/detections/${id}`, payload).then(({ data }) => data),
+  getAiStatistics: () =>
+    apiClient.get("/admin/ai/statistics").then(({ data }) => data),
 };
