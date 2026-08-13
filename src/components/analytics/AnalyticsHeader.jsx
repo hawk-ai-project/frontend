@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export default function AnalyticsHeader({
+  regions = [], // 1. regions Props 추가 (기본값 빈 배열)
   startDate,
   endDate,
   locationId,
@@ -33,7 +34,7 @@ export default function AnalyticsHeader({
         </div>
       </div>
 
-      {/* 2. 서브타이틀 & 보고서 내보내기 버튼 (동일한 줄에 배치) */}
+      {/* 2. 서브타이틀 & 보고서 내보내기 버튼 */}
       <div
         style={{
           display: 'flex',
@@ -124,6 +125,7 @@ export default function AnalyticsHeader({
           />
         </div>
         <div style={{ flex: '1', width: '100%' }}>
+          {/* 2. regions 데이터로 옵션 동적 구성 */}
           <select
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
@@ -140,6 +142,11 @@ export default function AnalyticsHeader({
             }}
           >
             <option value="">전체 장소</option>
+            {regions.map((region) => (
+              <option key={region.id} value={region.id}>
+                {region.name}
+              </option>
+            ))}
           </select>
         </div>
         <button

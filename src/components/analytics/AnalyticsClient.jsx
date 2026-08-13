@@ -1,22 +1,48 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { analyticsService } from "@/services/analyticsService";
 import { getApiErrorMessage } from "@/services/apiClient";
-import { exportAnalyticsToExcel } from "@/utils/excelExport"; // 추출한 유틸 모듈 임포트
+import { exportAnalyticsToExcel } from "@/utils/excelExport";
 import AnalyticsHeader from "./AnalyticsHeader";
 import AnalyticsSummaryCards from "./AnalyticsSummaryCards";
 import AnalyticsCharts from "./AnalyticsCharts";
 import AIAnalyticsInsights from "./AIAnalyticsInsights";
 import CommonLoading from "@/components/common/CommonLoading";
 
+// YYYY-MM-DD 날짜 포맷 변환 함수
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// 오늘 및 7일 전 날짜 초기값 계산
+const getInitialDates = () => {
+  const today = new Date();
+  const weekAgo = new Date();
+  weekAgo.setDate(today.getDate() - 7);
+
+  return {
+    startDate: formatDate(weekAgo),
+    endDate: formatDate(today),
+  };
+};
+
 export default function AnalyticsClient() {
-  const [startDate, setStartDate] = useState("2026-08-01");
-  const [endDate, setEndDate] = useState("2026-08-10");
+  const initialDates = getInitialDates();
+
+  const [startDate, setStartDate] = useState(initialDates.startDate);
+  const [endDate, setEndDate] = useState(initialDates.endDate);
   const [locationId, setLocationId] = useState("");
+  
+  // 1. 지역 기준정보 목록 저장용 State 추가
+  const [regions, setRegions] = useState([]);
+
   const [query, setQuery] = useState({
-    startDate: "2026-08-01",
-    endDate: "2026-08-10",
+    startDate: initialDates.startDate,
+    endDate: initialDates.endDate,
     locationId: undefined,
   });
 
@@ -24,6 +50,27 @@ export default function AnalyticsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // 2. 마운트 시 지역 기준정보 목록(regions) API 호출
+  useEffect(() => {
+    let cancelled = false;
+
+    analyticsService
+      .getRegions()
+      .then((regionList) => {
+        if (!cancelled && Array.isArray(regionList)) {
+          setRegions(regionList);
+        }
+      })
+      .catch((err) => {
+        console.error("지역 목록을 불러오는 중 오류 발생:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // 통계 데이터 조회 (기존 유지)
   useEffect(() => {
     let cancelled = false;
 
@@ -63,14 +110,15 @@ export default function AnalyticsClient() {
     setQuery({ startDate, endDate, locationId });
   };
 
-  // 단 한 줄의 함수 호출로 처리
   const handleExport = () => {
     exportAnalyticsToExcel(data, query, "analytics-charts-area");
   };
 
   return (
     <div className="page-shell">
+      {/* 3. regions 전달 */}
       <AnalyticsHeader
+        regions={regions}
         startDate={startDate}
         endDate={endDate}
         locationId={locationId}
