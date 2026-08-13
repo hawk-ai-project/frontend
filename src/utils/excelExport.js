@@ -363,15 +363,43 @@ export const exportAnalyticsToExcel = async (data, query) => {
   worksheet.mergeCells(`A${insightBoxStartRow}:H${insightBoxEndRow}`);
   const insightCell = worksheet.getCell(`A${insightBoxStartRow}`);
 
-  const defaultInsights = [
-    "• 평일(8/5) 탐지 건수가 전주 대비 40% 증가하여 주요 오염 구역 집중 점검이 필요합니다.",
-    "• 전체 폐기물 중 스티로폼 및 페트병이 50% 이상을 차지하므로 올바른 배출 안내가 시급합니다.",
-    "• 처리 완료율은 30% 수준으로, 현장 조치 인력 배정 확대를 권장합니다.",
-  ];
+  // 화면 UI의 동적 데이터 추출
+  const topName = data.summary?.topDetectedItem?.name || "폐기물";
+  const topCount = data.summary?.topDetectedItem?.count || 0;
+  const totalInspections = data.summary?.totalInspections || 0;
+  const totalDetections = data.summary?.totalDetections || 0;
+  const resolvedCount = data.summary?.resolvedCount || 0;
+  const resolutionRate = data.summary?.resolutionRate || 0;
 
-  const insightText = Array.isArray(data.insights)
-    ? data.insights.map((item) => `• ${item}`).join("\n")
-    : data.insights || defaultInsights.join("\n");
+  // 일별 탐지 중 최대건수 날짜 산출
+  const peakTrend =
+    trends.length > 0
+      ? [...trends].sort(
+          (a, b) => Number(b.count ?? 0) - Number(a.count ?? 0),
+        )[0]
+      : null;
+  const peakDate = peakTrend?.date || "-";
+  const peakCount = peakTrend?.count || 0;
+
+  // 비율 계산
+  const topRatio =
+    totalDetections > 0 ? ((topCount / totalDetections) * 100).toFixed(1) : 0;
+
+  let insightText = "";
+
+  if (
+    data.insights &&
+    Array.isArray(data.insights) &&
+    data.insights.length > 0
+  ) {
+    insightText = data.insights.map((item) => `• ${item}`).join("\n");
+  } else {
+    // UI 화면과 동일한 형태 문구 자동 조합
+    const headline = `${topName}이(가) 가장 많이 탐지되었습니다.`;
+    const detail = `조회 기간에는 점검 ${totalInspections}건과 폐기물 탐지 ${totalDetections}건이 집계되었습니다. 가장 많이 탐지된 항목은 ${topName}으로 ${topCount}건, 전체 탐지의 ${topRatio}%입니다. 일별 탐지는 ${peakDate}에 ${peakCount}건으로 가장 많았습니다. 처리 완료는 ${resolvedCount}건이며 현재 처리율은 ${resolutionRate}%입니다. 미처리 점검이력을 우선 확인하는 것이 좋습니다.`;
+
+    insightText = `▶ ${headline}\n\n${detail}`;
+  }
 
   insightCell.value = insightText;
   insightCell.font = {
