@@ -9,7 +9,7 @@ export const projectLinks = [
 export const teamMembers = [
   {
     name: "김도하",
-    areas: ["HOME", "LLM", "게시판", "챗봇"],
+    areas: ["HOME", "LLM", "게시판", "챗봇", "호키제작"],
   },
   {
     name: "이중호",

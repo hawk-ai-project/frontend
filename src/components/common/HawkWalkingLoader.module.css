@@ -150,6 +150,11 @@
   text-align: center;
 }
 
+.gameHidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 @keyframes move-across {
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(calc(var(--hawk-loader-track-width) - var(--hawk-loader-width))); }
