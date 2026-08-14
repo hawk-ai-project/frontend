@@ -70,6 +70,10 @@ export function sanitizeBoardDraft(draft) {
     summary: cleanText(source.summary),
     content: cleanText(source.content),
   };
-  if (!cleaned.title || !cleaned.content) return { ...source, ...fallbackDraft() };
+  const lostRequiredValue = (
+    (typeof source.title === "string" && source.title.trim() && !cleaned.title)
+    || (typeof source.content === "string" && source.content.trim() && !cleaned.content)
+  );
+  if (lostRequiredValue) return { ...source, ...fallbackDraft() };
   return { ...source, ...cleaned };
 }
