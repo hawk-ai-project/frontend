@@ -3433,3 +3433,11 @@ textarea:focus {
     transform: translateY(0) scale(1);
   }
 }
+
+/* 모바일 화면 (600px 이하) 정렬 맞춤 */
+@media (max-width: 600px) {
+  .favorite-floating-container {
+    right: 16px !important;  /* 챗봇과 동일한 오른쪽 여백 */
+    bottom: 88px !important; /* 모바일 바닥(16px) + 버튼높이(58px) + 간격(14px) */
+  }
+}
