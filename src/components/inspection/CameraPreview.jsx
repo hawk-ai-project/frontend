@@ -10,6 +10,7 @@ export default function CameraPreview({ onCapture }) {
   const router = useRouter();
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
+  const streamRef = useRef(null);
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [stream, setStream] = useState(null);
@@ -36,6 +37,16 @@ export default function CameraPreview({ onCapture }) {
     getDevices();
   }, []);
 
+  // 화면을 벗어날 때 카메라 끄기
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        console.log("화면 이동 감지: 카메라 전원이 안전하게 차단되었습니다.");
+      }
+    };
+  }, []);
+
   // 카메라 실행
   const startCamera = async () => {
     setPreviewImage(null);
@@ -47,6 +58,7 @@ export default function CameraPreview({ onCapture }) {
         },
       });
       setStream(newStream);
+      streamRef.current = newStream;
       if (videoRef.current) videoRef.current.srcObject = newStream;
     } catch (err) {
       console.error("카메라 권한이 없거나 오류가 발생했습니다.", err);
@@ -64,10 +76,6 @@ export default function CameraPreview({ onCapture }) {
     };
 
     changeCamera();
-
-    return () => {
-      if (stream) stream.getTracks().forEach((track) => track.stop());
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeviceId]);
 
@@ -138,8 +146,9 @@ export default function CameraPreview({ onCapture }) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target.result;
-        if (stream) {
-          stream.getTracks().forEach((track) => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
           setStream(null);
         }
         setPreviewImage(imageUrl); // 내 화면에 띄우기
@@ -154,9 +163,9 @@ export default function CameraPreview({ onCapture }) {
 
   // 카메라 끄기
   const stopCamera = () => {
-    if (stream) {
-      // 카메라 하드웨어 중지
-      stream.getTracks().forEach((track) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
       setStream(null);
 
       if (videoRef.current) {
