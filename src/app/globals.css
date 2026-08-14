@@ -3261,3 +3261,175 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Hawk-AI Quick Favorite Floating Widget Styles
+   ========================================================================== */
+
+/* 우측 하단 플로팅 컨테이너 */
+.favorite-floating-container {
+  position: fixed;
+  /* 챗봇 버튼 높이(58px) + 바닥 여백(24px) + 간격(14px) = 96px */
+  bottom: 96px;
+  right: 24px;
+  z-index: 998;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* 플로팅 버튼 (FAB - 챗봇 .chatbot-toggle 규격과 완전 일치) */
+.favorite-fab-btn {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primary-dark, #2b52a1);
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(33, 65, 121, 0.32);
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 내부 아이콘 (SVG 사용 시 챗봇과 동일 규격) */
+.favorite-fab-btn svg {
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+/* Lucide/FontAwesome 등 이모지나 글자 아이콘 사용 시 */
+.favorite-fab-btn i,
+.favorite-fab-btn span {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.favorite-fab-btn:hover {
+  background-color: #1e3c7b;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(33, 65, 121, 0.4);
+}
+
+.favorite-fab-btn:active {
+  transform: scale(0.95);
+}
+
+/* 즐겨찾기 팝업 창 (Hawk-AI 도우미 스타일 연동) */
+.favorite-popup-card {
+  margin-bottom: 14px;
+  width: 320px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(23, 43, 77, 0.28);
+  border: 1px solid var(--border, #e5e7eb);
+  animation: favoriteSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 팝업 헤더 */
+.favorite-popup-header {
+  background: linear-gradient(135deg, var(--primary-dark, #2b52a1), #4b78c8);
+  color: #ffffff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.favorite-popup-title {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 현재 페이지 추가 버튼 */
+.favorite-add-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.favorite-add-btn:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+/* 팝업 바디 */
+.favorite-popup-body {
+  background-color: #f8fafc;
+  padding: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* 즐겨찾기 아이템 */
+.favorite-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.favorite-item-card:last-child {
+  margin-bottom: 0;
+}
+
+.favorite-item-card:hover {
+  border-color: #2b52a1;
+  background-color: #f0f5ff;
+  transform: translateY(-1px);
+}
+
+.favorite-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.favorite-badge {
+  font-size: 11px;
+  background-color: #eff6ff;
+  color: #2b52a1;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* 애니메이션 */
+@keyframes favoriteSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

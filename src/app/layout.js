@@ -4,6 +4,7 @@ import AppFooter from "@/components/layout/AppFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Chatbot from "@/components/chat/Chatbot";
 import HawkWalkingLoader from "@/components/common/HawkWalkingLoader";
+import { FloatingFavoriteWidget } from "@/components/favorite/FloatingFavoriteWidget"; // 1. import 추가
 
 export const metadata = {
   title: { default: "Hawk-AI", template: "%s | Hawk-AI" },
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
           <main>{children}</main>
           <AppFooter />
           <HawkWalkingLoader />
+          <FloatingFavoriteWidget />
           <Chatbot />
         </AuthProvider>
       </body>
