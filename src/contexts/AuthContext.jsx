@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/authService";
 import { tokenStorage } from "@/utils/tokenStorage";
 import { ROUTES } from "@/constants/routes";
+import { isSessionExpiredError } from "@/services/apiClient";
 
 export const AuthContext = createContext(null);
 
@@ -15,6 +16,7 @@ const INITIAL_AUTH_STATE = {
 };
 
 const REFRESH_EARLY_MS = 60 * 1000;
+const SESSION_HEARTBEAT_MS = 5 * 60 * 1000;
 
 function getTokenExpiry(token) {
   try {
@@ -34,9 +36,11 @@ let cachedAuthState = INITIAL_AUTH_STATE;
 export function AuthProvider({ children }) {
   const router = useRouter();
   const [authState, setAuthState] = useState(() => cachedAuthState);
+  const authStateRef = useRef(authState);
 
   const updateAuthState = useCallback((nextState) => {
     cachedAuthState = nextState;
+    authStateRef.current = nextState;
     setAuthState(nextState);
   }, []);
 
@@ -110,8 +114,8 @@ export function AuthProvider({ children }) {
     const timer = window.setTimeout(async () => {
       try {
         await authService.refresh();
-      } catch {
-        if (!cancelled) {
+      } catch (error) {
+        if (!cancelled && isSessionExpiredError(error)) {
           clearAuth();
           router.replace(ROUTES.login);
         }
@@ -123,6 +127,33 @@ export function AuthProvider({ children }) {
       window.clearTimeout(timer);
     };
   }, [authState.status, authState.token, clearAuth, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const keepAlive = async () => {
+      if (cancelled || authStateRef.current.status !== "authenticated") return;
+      try {
+        await authService.refresh();
+      } catch (error) {
+        if (!cancelled && isSessionExpiredError(error)) {
+          clearAuth();
+          router.replace(ROUTES.login);
+        }
+      }
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") void keepAlive(); };
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void keepAlive(); }, SESSION_HEARTBEAT_MS);
+    window.addEventListener("focus", keepAlive);
+    window.addEventListener("online", keepAlive);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", keepAlive);
+      window.removeEventListener("online", keepAlive);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [clearAuth, router]);
 
   const login = async (credentials) => {
     const result = await authService.login(credentials);

@@ -17,6 +17,10 @@ function requestTokenRefresh() {
   return refreshPromise;
 }
 
+function isExpiredSession(error) {
+  return error?.response?.status === 401 || error?.response?.status === 403;
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.get();
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -34,9 +38,13 @@ apiClient.interceptors.response.use(
         error.config._retriedAfterRefresh = true;
         error.config.headers.Authorization = `Bearer ${token}`;
         return apiClient.request(error.config);
-      } catch {
-        tokenStorage.remove();
-        window.dispatchEvent(new Event("hawk-ai:session-expired"));
+      } catch (refreshError) {
+        // A temporary timeout or network interruption must not sign the user
+        // out. Only an explicit authentication rejection ends the session.
+        if (isExpiredSession(refreshError)) {
+          tokenStorage.remove();
+          window.dispatchEvent(new Event("hawk-ai:session-expired"));
+        }
       }
     }
     return Promise.reject(error);
@@ -44,6 +52,7 @@ apiClient.interceptors.response.use(
 );
 
 export const refreshAccessToken = () => requestTokenRefresh();
+export const isSessionExpiredError = isExpiredSession;
 
 export function getApiErrorMessage(error, fallback = "요청을 처리하지 못했습니다.") {
   const detail = error.response?.data?.detail;
