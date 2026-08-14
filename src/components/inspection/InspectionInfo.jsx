@@ -15,6 +15,7 @@ export default function InspectionInfo({
   setSubmitError,
 }) {
   const router = useRouter();
+  // const CATEGORIES = ["도시명과 장소를 입력하세요", "서울", "수원"];
 
   useEffect(() => {
     const fetchMyName = async () => {
@@ -42,6 +43,97 @@ export default function InspectionInfo({
     fetchMyName();
   }, [setFormData]);
 
+  // 점검장소 자동추가
+  useEffect(() => {
+    const fetchAddressFromCoords = async () => {
+      let convertedAddress = formData.address || "";
+
+      // 좌표가 존재하고, 아직 주소가 없으며, 에러 메시지가 아닐 때만 실행
+      if (
+        formData.coordinates &&
+        !formData.coordinates.includes("없음") &&
+        !convertedAddress
+      ) {
+        // 변환하는 동안
+        if (formData.location !== "위치 정보 변환 중...") {
+          setFormData((prev) => ({
+            ...prev,
+            location: "위치 정보 변환 중...",
+          }));
+        }
+
+        try {
+          // 1. 글자가 섞여 있어도 숫자만 2개 뽑기 (위도, 경도)
+          const numbers = formData.coordinates.match(/-?\d+(\.\d+)?/g);
+
+          // 위도, 경도 들어왔는지 확인
+          if (numbers && numbers.length >= 2) {
+            const lat = numbers[0]; // 위도
+            const lng = numbers[1]; // 경도
+
+            // 2. zoom=16 옵션으로 '동(마을)' 수준까지 검색
+            const geoResponse = await axios.get(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&accept-language=ko`,
+              {
+                headers: { "User-Agent": "Hawk-Inspection-App" },
+              },
+            );
+
+            // 3. "시", "구", "동" 조합
+            const addr = geoResponse.data?.address;
+            if (addr) {
+              // 시
+              const city = addr.city || addr.town || "";
+              // 구
+              const borough =
+                addr.city_district ||
+                addr.borough ||
+                addr.district ||
+                addr.county ||
+                "";
+              // 동
+              const dong =
+                addr.suburb ||
+                addr.quarter ||
+                addr.neighbourhood ||
+                addr.village ||
+                "";
+
+              // 주소 조합 (예: 수원시 팔달구 화서동)
+              convertedAddress = `${city} ${borough} ${dong}`
+                .trim()
+                .replace(/\s+/g, " ");
+              console.log("주소 변환 성공 (시/구/동):", convertedAddress);
+
+              // 완성된 convertedAddress를 화면과 데이터에 즉시 꽂아주기
+              setFormData((prev) => ({
+                ...prev,
+                location: convertedAddress,
+                address: convertedAddress,
+              }));
+            }
+          } else {
+            console.warn(
+              "좌표에서 숫자를 찾을 수 없습니다:",
+              formData.coordinates,
+            );
+            // 실패 시 다시 빈칸으로 돌려놓기
+            setFormData((prev) => ({ ...prev, location: "" }));
+          }
+        } catch (geoError) {
+          console.warn(
+            "좌표를 주소로 변환하는데 실패했습니다.",
+            geoError.message,
+          );
+          // 실패 시 다시 빈칸으로 돌려놓기
+          setFormData((prev) => ({ ...prev, location: "" }));
+        }
+      }
+    };
+
+    fetchAddressFromCoords();
+  }, [formData.coordinates]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -65,11 +157,13 @@ export default function InspectionInfo({
 
       console.log("백엔드로 사진과 데이터 전송 시작!");
 
-      // 백엔드의 /save API가 AI 분석까지
+      let convertedAddress = formData.address || "";
+
+      // 백엔드의 /save API로 전달할 내용
       const finalPayload = {
         title: `${location} 현장 점검`,
         location_name: location,
-        address: formData.address || "",
+        address: convertedAddress,
         coordinates: formData.coordinates || "",
         notes: formData.memo || "",
         status: "REVIEW_REQUIRED",
@@ -77,6 +171,7 @@ export default function InspectionInfo({
         ai_detections: [],
       };
 
+      // 백엔드로 보내기
       const response = await axios.post(
         "http://127.0.0.1:8000/api/inspection/save",
         finalPayload,
@@ -86,7 +181,7 @@ export default function InspectionInfo({
       );
 
       console.log("백엔드 저장 완벽하게 성공!", response.data);
-      alert("현장 점검이 등록되었습니다! 상세 페이지에서 확인하세요.");
+      alert("현장 점검이 등록되었습니다! 점검이력 페이지에서 확인하세요.");
     } catch (error) {
       console.error("에러 발생:", error);
       setSubmitError(
@@ -104,6 +199,11 @@ export default function InspectionInfo({
       <div className="form-stack">
         <label htmlFor="location">
           점검 장소
+          {/* <select>
+            {CATEGORIES.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select> */}
           <input
             type="text"
             id="location"
@@ -129,7 +229,7 @@ export default function InspectionInfo({
               color: "#6b7280",
               cursor: "not-allowed",
             }}
-            placeholder="점검자를 불러오는 중..."
+            placeholder="로그인 후 이용해주세요"
           />
         </label>
 
@@ -142,7 +242,7 @@ export default function InspectionInfo({
             onChange={handleChange}
             className="input"
             style={{ minHeight: "120px" }}
-            placeholder="특이사항 등을 메모해 주세요"
+            placeholder="특이사항을 메모해 주세요"
           />
         </label>
       </div>

@@ -4,7 +4,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { inspectionService } from "@/services/inspectionService";
 import styles from "./CameraPreview.module.css";
 
 export default function CameraPreview({ onCapture }) {
@@ -57,8 +56,8 @@ export default function CameraPreview({ onCapture }) {
   // 카메라 선택
   useEffect(() => {
     const changeCamera = async () => {
-      // 핵심: stream(카메라 화면)이 이미 켜져 있을 때만 다시 켭니다!
-      // 처음 화면에 들어왔을 때(stream이 null일 때)는 무시하고 OFF를 유지합니다.
+      // stream(카메라 화면)이 이미 켜져 있을 때만 다시 켜기
+      // 처음 화면에 들어왔을 때는 OFF를 유지
       if (selectedDeviceId && stream) {
         await startCamera();
       }
@@ -72,78 +71,38 @@ export default function CameraPreview({ onCapture }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeviceId]);
 
-  // // 촬영 및 분석
-  // const handleCapture = () => {
-  //   if (previewImage) {
-  //     console.log("분석할 첨부 이미지 : ", previewImage);
-  //     alert("첨부된 사진으로 분석을 시작합니다.");
-  //   } else if (videoRef.current && stream) {
-  //     const canvas = document.createElement("canvas");
-  //     canvas.width = videoRef.current.videoWidth;
-  //     canvas.height = videoRef.current.videoHeight;
-  //     const ctx = canvas.getContext("2d");
-  //     ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-  //     const imageUrl = canvas.toDataURL("image/jpeg", 0.8);
-  //     console.log("캡처된 이미지:", imageUrl);
-  //     alert("촬영이 완료되었습니다!");
-  //   }
-  // };
+  // 사진 좌표를 보내는 함수
+  const sendDataToParent = (imageUrl) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const coordsString = `${lat}, ${lng}`;
+          console.log("[CameraPreview] GPS 획득 성공:", coordsString);
 
-  // // 촬영 및 분석
-  // const saveInspection = async () => {
-  //   let image = previewImage;
-  //   if (!image && videoRef.current && stream) {
-  //     const canvas = document.createElement("canvas");
-  //     canvas.width = videoRef.current.videoWidth;
-  //     canvas.height = videoRef.current.videoHeight;
-  //     canvas
-  //       .getContext("2d")
-  //       .drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-  //     image = canvas.toDataURL("image/jpeg", 0.85);
-  //     setPreviewImage(image);
-  //   }
-  //   const location = document.getElementById("location")?.value?.trim();
-
-  //   // 확인용
-  //   console.log("현재 이미지 상태 : ", image ? "있음" : "없음");
-  //   console.log("입력된 점검 장소 : ", location);
-  //   if (!image) {
-  //     console.log("이미지가 없어서 중단됨");
-  //     return setSubmitError("사진을 촬영하거나 첨부해 주세요.");
-  //   }
-  //   if (!location) {
-  //     console.log("점검 장소가 비어있어서 중단됨");
-  //     return setSubmitError("점검 장소를 입력해 주세요.");
-  //   }
-  //   const latitude = document.getElementById("latitude")?.value;
-  //   const longitude = document.getElementById("longitude")?.value;
-  //   setSubmitting(true);
-  //   setSubmitError("");
-  //   try {
-  //     console.log("1. 백엔드로 전송 시작");
-  //     const result = await inspectionService.create({
-  //       image,
-  //       title: `${location} 현장점검`,
-  //       location,
-  //       notes: document.getElementById("memo")?.value || null,
-  //       latitude: latitude ? Number(latitude) : null,
-  //       longitude: longitude ? Number(longitude) : null,
-  //       // 처리상태를 기본값 미처리로 등록
-  //       status: "DRAFT",
-  //     });
-
-  //     console.log("2. 백엔드 저장 완료", result);
-
-  //     router.push(`/histories/inspection/${result.inspectionId}`);
-  //   } catch (error) {
-  //     console.log("3. 에러 발생", error);
-  //     setSubmitError(
-  //       error.response?.data?.detail || "점검 분석 및 저장에 실패했습니다.",
-  //     );
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
+          if (onCapture) {
+            onCapture(imageUrl, coordsString); // 사진과 진짜 좌표를 함께
+          }
+        },
+        (error) => {
+          console.warn("GPS를 가져올 수 없습니다:", error.message);
+          if (onCapture) {
+            onCapture(imageUrl, "위치 정보 없음"); // 실패 시 에러 메시지 전달
+          }
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 0,
+        },
+      );
+    } else {
+      if (onCapture) {
+        onCapture(imageUrl, "위치 정보 없음");
+      }
+    }
+  };
 
   // 카메라 캡쳐
   const captureImage = () => {
@@ -162,9 +121,7 @@ export default function CameraPreview({ onCapture }) {
       // 캡쳐된 이미지를 state에 저장
       setPreviewImage(image);
 
-      if (onCapture) {
-        onCapture(image, null);
-      }
+      sendDataToParent(image);
     }
   };
 
@@ -187,10 +144,8 @@ export default function CameraPreview({ onCapture }) {
         }
         setPreviewImage(imageUrl); // 내 화면에 띄우기
 
-        // 💡 추가된 부분: 첨부한 사진도 부모(page.js)에게 전달!
-        if (onCapture) {
-          onCapture(imageUrl, null);
-        }
+        // 첨부한 사진도 page.js에게 전달
+        sendDataToParent(imageUrl);
       };
       reader.readAsDataURL(file);
       e.target.value = "";
@@ -309,13 +264,6 @@ export default function CameraPreview({ onCapture }) {
         <button onClick={captureImage} className="btn btn-primary">
           사진 캡쳐
         </button>
-        {/* <button
-          onClick={saveInspection}
-          className="btn btn-primary"
-          disabled={submitting}
-        >
-          {submitting ? "분석 및 저장 중..." : "촬영 및 분석"}
-        </button> */}
       </div>
       {submitError && (
         <p className="board-state board-state-error">{submitError}</p>
