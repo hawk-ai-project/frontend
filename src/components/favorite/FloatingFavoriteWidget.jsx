@@ -163,7 +163,7 @@ export const FloatingFavoriteWidget = () => {
       )}
 
       <button className="favorite-fab-btn" aria-label="즐겨찾기">
-        {isOpen ? "✕" : "★"}
+        {isOpen ? "★" : "☆"}
       </button>
     </div>
   );
