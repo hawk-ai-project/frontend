@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { inspectionService } from "@/services/inspectionService";
+import { historyService } from "@/services/historyService";
+import { getApiErrorMessage } from "@/services/apiClient";
 import HistoryDetailClient from "./HistoryDetailClient";
 import { STATUS_OPTIONS } from "./historyData";
 import CommonLoading from "@/components/common/CommonLoading";
@@ -33,29 +34,27 @@ function toHistory(inspection) {
 
 export default function LiveInspectionHistoryDetail({ inspectionId }) {
   const [inspection, setInspection] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     const urls = [];
 
-    inspectionService
-      .recent(100)
-      .then(async (items) => {
-        let found = items.find(
-          (item) => Number(item.id) === Number(inspectionId),
-        );
-        if (!found) throw new Error("not-found");
+    setLoading(true);
 
-        // 사진 두 장을 요청합니다 (없으면 없는 대로 넘어갑니다)
-        let [original, annotated] = await Promise.allSettled([
-          inspectionService.image(found.id, "ORIGINAL"),
-          inspectionService.image(found.id, "ANNOTATED"),
+    historyService
+      .getHistoryById(inspectionId)
+      .then(async (found) => {
+        if (!found) throw new Error("해당 점검 이력을 찾을 수 없습니다.");
+
+        const [original, annotated] = await Promise.allSettled([
+          historyService.getHistoryImage(found.id, "ORIGINAL"),
+          historyService.getHistoryImage(found.id, "ANNOTATED"),
         ]);
 
         if (cancelled) return;
 
-        // 사진 덩어리(Blob)를 화면에 띄울 수 있는 가짜 주소로 변환
         const originalImageUrl =
           original.status === "fulfilled"
             ? URL.createObjectURL(original.value)
@@ -69,9 +68,20 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
         if (annotatedImageUrl) urls.push(annotatedImageUrl);
 
         setInspection({ ...found, originalImageUrl, annotatedImageUrl });
+        setError("");
       })
-      .catch(() => {
-        if (!cancelled) setError("점검 이력을 불러오지 못했습니다.");
+      .catch((requestError) => {
+        if (!cancelled) {
+          setError(
+            getApiErrorMessage(
+              requestError,
+              "점검 이력을 불러오지 못했습니다.",
+            ),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
@@ -80,9 +90,9 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
     };
   }, [inspectionId]);
 
-  if (error) return <p className="board-state board-state-error">{error}</p>;
-  if (!inspection)
+  if (loading)
     return <CommonLoading message="점검 이력과 이미지를 불러오는 중..." />;
+  if (error) return <p className="board-state board-state-error">{error}</p>;
 
   const history = toHistory(inspection);
   const detail = {
