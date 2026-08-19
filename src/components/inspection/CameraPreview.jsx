@@ -3,11 +3,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import styles from "./CameraPreview.module.css";
 
 export default function CameraPreview({ onCapture }) {
-  const router = useRouter();
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
   const streamRef = useRef(null);
@@ -15,8 +13,6 @@ export default function CameraPreview({ onCapture }) {
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [stream, setStream] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
 
   // 카메라 불러오기
   useEffect(() => {
@@ -50,6 +46,9 @@ export default function CameraPreview({ onCapture }) {
   // 카메라 실행
   const startCamera = async () => {
     setPreviewImage(null);
+    if (onCapture) {
+      onCapture(null, "");
+    }
     if (stream) stream.getTracks().forEach((track) => track.stop());
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({
@@ -146,6 +145,7 @@ export default function CameraPreview({ onCapture }) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target.result;
+        // 파일 선택 시 카메라는 끄기
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
@@ -228,8 +228,19 @@ export default function CameraPreview({ onCapture }) {
 
         {/* 카메라 출력 안하고 있을 때 */}
         {!stream && !previewImage && (
-          <div className={`badge ${styles.placeholderBadge}`}>
-            카메라 ON 버튼을 눌러주세요
+          <div
+            className={`badge ${styles.placeholderBadge}`}
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: "bold",
+              padding: "12px 24px",
+              lineHeight: "1.5",
+              textAlign: "center",
+            }}
+          >
+            [카메라 ON] 버튼 또는
+            <br />
+            [사진 첨부] 버튼을 눌러주세요
           </div>
         )}
       </div>
@@ -274,9 +285,6 @@ export default function CameraPreview({ onCapture }) {
           사진 캡쳐
         </button>
       </div>
-      {submitError && (
-        <p className="board-state board-state-error">{submitError}</p>
-      )}
     </div>
   );
 }

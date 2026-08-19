@@ -15,7 +15,6 @@ export default function InspectionInfo({
   setSubmitError,
 }) {
   const router = useRouter();
-  // const CATEGORIES = ["도시명과 장소를 입력하세요", "서울", "수원"];
 
   useEffect(() => {
     const fetchMyName = async () => {
@@ -55,12 +54,10 @@ export default function InspectionInfo({
         !convertedAddress
       ) {
         // 변환하는 동안
-        if (formData.location !== "위치 정보 변환 중...") {
-          setFormData((prev) => ({
-            ...prev,
-            location: "위치 정보 변환 중...",
-          }));
-        }
+        setFormData((prev) => ({
+          ...prev,
+          location: prev.location ? prev.location : "위치 정보 변환 중...",
+        }));
 
         try {
           // 1. 글자가 섞여 있어도 숫자만 2개 뽑기 (위도, 경도)
@@ -106,11 +103,17 @@ export default function InspectionInfo({
               console.log("주소 변환 성공 (시/구/동):", convertedAddress);
 
               // 완성된 convertedAddress를 화면과 데이터에 즉시 꽂아주기
-              setFormData((prev) => ({
-                ...prev,
-                location: convertedAddress,
-                address: convertedAddress,
-              }));
+              setFormData((prev) => {
+                const isLocationEmpty =
+                  !prev.location || prev.location === "위치 정보 변환 중...";
+                return {
+                  ...prev,
+                  // 비어있을 때만 자동 주소를 넣고, 수기로 적은 게 있으면 유지
+                  location: isLocationEmpty ? convertedAddress : prev.location,
+                  // address(DB 저장용)
+                  address: convertedAddress,
+                };
+              });
             }
           } else {
             console.warn(
@@ -146,7 +149,10 @@ export default function InspectionInfo({
   const submitInspection = async () => {
     const location = formData.location?.trim();
 
-    if (!previewImage) return setSubmitError("사진을 촬영하거나 첨부해주세요.");
+    if (!previewImage) {
+      alert("캡쳐버튼을 누르거나 사진을 첨부해주세요.");
+      return setSubmitError("사진을 촬영하거나 첨부해주세요.");
+    }
     if (!location) return setSubmitError("점검 장소를 입력해주세요.");
 
     setSubmitting(true);
@@ -181,7 +187,18 @@ export default function InspectionInfo({
       );
 
       console.log("백엔드 저장 완벽하게 성공!", response.data);
-      alert("현장 점검이 등록되었습니다! 점검이력 페이지에서 확인하세요.");
+      alert("현장 점검이 등록되었습니다! 점검이력 페이지로 이동합니다.");
+
+      // 지금 만든 점검번호 꺼내기
+      const newInspectionId = response.data.inspectionId;
+
+      // 해당 점검번호 상페 페이지로 이동
+      if (newInspectionId) {
+        router.push(`/histories/${newInspectionId}`);
+      } else {
+        // 혹시 번호가 없을경우 전체 목록으로 이동
+        router.push("/histories");
+      }
     } catch (error) {
       console.error("에러 발생:", error);
       setSubmitError(
@@ -199,11 +216,6 @@ export default function InspectionInfo({
       <div className="form-stack">
         <label htmlFor="location">
           점검 장소
-          {/* <select>
-            {CATEGORIES.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select> */}
           <input
             type="text"
             id="location"
@@ -241,7 +253,7 @@ export default function InspectionInfo({
             value={formData.memo}
             onChange={handleChange}
             className="input"
-            style={{ minHeight: "120px" }}
+            style={{ minHeight: "150px" }}
             placeholder="특이사항을 메모해 주세요"
           />
         </label>
