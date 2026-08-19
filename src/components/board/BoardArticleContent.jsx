@@ -1,9 +1,13 @@
 import Image from "next/image";
 import MarkdownPreview from "./MarkdownPreview";
-import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 
 export default function BoardArticleContent({ post }) {
-  const safePost = sanitizeBoardDraft(post);
+  // DB에 /histories?inspectionId=96 형태로 저장된 텍스트를 /histories/96 으로 자동 치환
+  const fixedContent = post?.content?.replace(
+    /\/histories\?inspectionId=(\d+)/g,
+    "/histories/$1",
+  );
+
   return (
     <div className="board-article-content">
       {post.thumbnailUrl && (
@@ -16,7 +20,10 @@ export default function BoardArticleContent({ post }) {
           />
         </div>
       )}
-      <MarkdownPreview content={safePost.content} variant="article" />
+      <MarkdownPreview
+        content={fixedContent || post?.content}
+        variant="article"
+      />
     </div>
   );
 }

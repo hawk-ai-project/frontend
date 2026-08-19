@@ -48,7 +48,8 @@ export default function BoardAINotifications() {
   }, [hasActiveJob, refresh]);
 
   const unreadCount = jobs.filter(
-    (job) => !job.isRead && (job.status === "COMPLETED" || job.status === "FAILED"),
+    (job) =>
+      !job.isRead && (job.status === "COMPLETED" || job.status === "FAILED"),
   ).length;
   const activeCount = jobs.filter(
     (job) => job.status === "PENDING" || job.status === "RUNNING",
@@ -58,26 +59,44 @@ export default function BoardAINotifications() {
     if (job.status === "COMPLETED") {
       let metadata = {};
       try {
-        metadata = JSON.parse(localStorage.getItem(`hawk_ai_board_job_${job.jobId}`)) || {};
-      } catch { /* Use the default category when metadata is unavailable. */ }
+        metadata =
+          JSON.parse(localStorage.getItem(`hawk_ai_board_job_${job.jobId}`)) ||
+          {};
+      } catch {
+        /* Use the default category when metadata is unavailable. */
+      }
+
       const inspectionImage = metadata.inspectionImageUrl
         ? `\n\n## 점검 이미지\n\n![${metadata.inspectionImageAlt || "점검 이미지"}](${metadata.inspectionImageUrl})`
         : "";
+
+      // 상세페이지 경로(/histories/{id})로 변경
       const inspectionLink = metadata.inspectionId
-        ? `\n\n[점검이력 #${metadata.inspectionId} 확인하기](/histories?inspectionId=${metadata.inspectionId})`
+        ? `\n\n[점검이력 #${metadata.inspectionId} 확인하기](/histories/${metadata.inspectionId})`
         : "";
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(sanitizeBoardDraft({
-        categoryId: metadata.categoryId || 1,
-        title: job.title,
-        summary: job.summary,
-        content: `${job.content}${inspectionImage}${inspectionLink}`,
-        tags: [],
-      })));
+
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify(
+          sanitizeBoardDraft({
+            categoryId: metadata.categoryId || 1,
+            title: job.title,
+            summary: job.summary,
+            content: `${job.content}${inspectionImage}${inspectionLink}`,
+            tags: [],
+          }),
+        ),
+      );
+
       localStorage.removeItem(`hawk_ai_board_job_${job.jobId}`);
       window.dispatchEvent(new Event("hawk-ai:board-draft-ready"));
       router.push("/boards/write");
     }
-    if (!job.isRead && (job.status === "COMPLETED" || job.status === "FAILED")) {
+
+    if (
+      !job.isRead &&
+      (job.status === "COMPLETED" || job.status === "FAILED")
+    ) {
       await boardService.readAIJob(job.jobId);
       await refresh();
     }
@@ -89,8 +108,15 @@ export default function BoardAINotifications() {
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
         </svg>
-        {activeCount > 0 && <span className="ai-notification-progress" aria-label={`${activeCount}개 생성 중`} />}
-        {unreadCount > 0 && <span className="ai-notification-badge">{unreadCount}</span>}
+        {activeCount > 0 && (
+          <span
+            className="ai-notification-progress"
+            aria-label={`${activeCount}개 생성 중`}
+          />
+        )}
+        {unreadCount > 0 && (
+          <span className="ai-notification-badge">{unreadCount}</span>
+        )}
       </summary>
       <div className="ai-notification-dropdown">
         <strong>AI 글 생성 알림</strong>
@@ -103,7 +129,9 @@ export default function BoardAINotifications() {
             key={job.jobId}
           >
             <span>{jobLabel(job)}</span>
-            <small>{job.status === "COMPLETED" ? "초안 열기" : job.status}</small>
+            <small>
+              {job.status === "COMPLETED" ? "초안 열기" : job.status}
+            </small>
           </button>
         ))}
       </div>

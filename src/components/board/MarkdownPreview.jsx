@@ -1,5 +1,6 @@
 import { Children, isValidElement } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -16,7 +17,7 @@ const markdownSchema = {
 };
 
 export default function MarkdownPreview({ content, variant = "editor" }) {
-  if (!content.trim()) {
+  if (!content || !content.trim()) {
     return (
       <div className="markdown-empty">
         <strong>미리볼 내용이 없습니다.</strong>
@@ -33,12 +34,67 @@ export default function MarkdownPreview({ content, variant = "editor" }) {
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, markdownSchema]]}
         components={{
-          a: ({ href, children, ...props }) => {
+          a: ({ href, children, className, style, ...props }) => {
             const isExternal =
               href?.startsWith("http://") || href?.startsWith("https://");
+
+            // 구버전 쿼리 파라미터(?inspectionId=96)를 /histories/96 경로로 변환
+            let targetHref = href || "";
+            if (targetHref.includes("/histories?inspectionId=")) {
+              targetHref = targetHref.replace(
+                /\/histories\?inspectionId=(\d+)/,
+                "/histories/$1",
+              );
+            }
+
+            const isInspectionLink = targetHref.startsWith("/histories");
+
+            // 첫 번째 캡처 이미지와 완전히 동일한 버튼 디자인 스타일 적용
+            const inspectionButtonStyle = {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#4175df", // 원본의 밝은 파란색
+              color: "#ffffff",
+              textDecoration: "none", // 밑줄 제거
+              fontWeight: "700",
+              fontSize: "16px",
+              padding: "12px 24px",
+              borderRadius: "12px",
+              boxShadow: "0 4px 14px rgba(65, 117, 223, 0.3)",
+              lineHeight: "1.4",
+              margin: "8px 0",
+            };
+
+            const linkStyle = isInspectionLink
+              ? { ...style, ...inspectionButtonStyle }
+              : style;
+
+            const linkClassName = [
+              className,
+              isInspectionLink ? "btn-inspection-link" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            if (!isExternal && targetHref.startsWith("/")) {
+              return (
+                <Link
+                  href={targetHref}
+                  className={linkClassName || undefined}
+                  style={linkStyle}
+                  {...props}
+                >
+                  {children}
+                </Link>
+              );
+            }
+
             return (
               <a
-                href={href}
+                href={targetHref}
+                className={linkClassName || undefined}
+                style={linkStyle}
                 target={isExternal ? "_blank" : undefined}
                 rel={isExternal ? "noopener noreferrer" : undefined}
                 {...props}
@@ -53,11 +109,20 @@ export default function MarkdownPreview({ content, variant = "editor" }) {
             </div>
           ),
           img: ({ src, alt }) => {
-            const isEmoticon = /^\/images\/emoticons\/\d{2}\.png$/.test(src || "");
+            const isEmoticon = /^\/images\/emoticons\/\d{2}\.png$/.test(
+              src || "",
+            );
             if (isEmoticon) {
-              return <Image className="article-emoticon" src={src} alt={alt || "게시글 이모티콘"} width={120} height={120} />;
+              return (
+                <Image
+                  className="article-emoticon"
+                  src={src}
+                  alt={alt || "게시글 이모티콘"}
+                  width={120}
+                  height={120}
+                />
+              );
             }
-            // Uploaded board images use runtime MinIO URLs that cannot be known by Next Image at build time.
             // eslint-disable-next-line @next/next/no-img-element
             return <img src={src} alt={alt || "게시글 이미지"} />;
           },

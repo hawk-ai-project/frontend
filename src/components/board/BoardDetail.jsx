@@ -9,7 +9,6 @@ import BoardArticleHeader from "./BoardArticleHeader";
 import BoardArticleContent from "./BoardArticleContent";
 import BoardArticleActions from "./BoardArticleActions";
 import BoardComments from "./BoardComments";
-import { sanitizeBoardDraft } from "./sanitizeBoardDraft";
 import CommonLoading from "@/components/common/CommonLoading";
 
 export default function BoardDetail({ id }) {
@@ -20,19 +19,26 @@ export default function BoardDetail({ id }) {
 
   useEffect(() => {
     let cancelled = false;
-    boardService.detail(id)
+    boardService
+      .detail(id)
       .then((data) => {
-        if (!cancelled) setPost(sanitizeBoardDraft(data));
+        // sanitizeBoardDraft(data) 대신 원본 data를 그대로 저장하여
+        // content 내의 /histories/96 링크 주소가 변형되지 않도록 보호합니다.
+        if (!cancelled) setPost(data);
       })
       .catch((requestError) => {
         if (!cancelled) {
-          setError(getApiErrorMessage(requestError, "게시글을 불러오지 못했습니다."));
+          setError(
+            getApiErrorMessage(requestError, "게시글을 불러오지 못했습니다."),
+          );
         }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) return <CommonLoading message="게시글을 불러오는 중..." />;
@@ -40,18 +46,20 @@ export default function BoardDetail({ id }) {
     return (
       <div className="board-state board-state-error">
         <p>{error || "게시글을 찾을 수 없습니다."}</p>
-        <Link className="btn btn-secondary" href="/boards">목록으로</Link>
+        <Link className="btn btn-secondary" href="/boards">
+          목록으로
+        </Link>
       </div>
     );
   }
 
-  const canEdit = Boolean(
-    user && Number(user.id) === Number(post.author?.id),
-  );
+  const canEdit = Boolean(user && Number(user.id) === Number(post.author?.id));
 
   return (
     <article className="board-article">
-      <Link className="board-list-link" href="/boards">← 게시판 목록</Link>
+      <Link className="board-list-link" href="/boards">
+        ← 게시판 목록
+      </Link>
       <BoardArticleHeader post={post} />
       <BoardArticleContent post={post} />
       <BoardArticleActions post={post} canEdit={canEdit} />
