@@ -139,7 +139,9 @@ export default function AnalyticsClient() {
             trends={data.trends}
             distribution={data.distribution}
           />
-          <AnalyticsMap items={data.items || data.inspections || []} />
+          <AnalyticsMap
+            items={data.locations || data.items || data.inspections || []}
+          />
           <AIAnalyticsInsights
             key={`${query.startDate}-${query.endDate}-${query.locationId || "all"}`}
             analytics={data}
