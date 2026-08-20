@@ -9,12 +9,25 @@ import { useAuth } from "@/hooks/useAuth";
 export default function MobileNavigation({ navigation = [] }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const { isAuthenticated, isLoading } = useAuth();
+  // ★ user 정보 추가 추출
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   const closeMenu = () => setOpen(false);
 
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  // ★ 모바일 메뉴 자체 2중 권한 필터링 (Header에서 넘어온 목록 필터링)
+  const visibleMenus = navigation
+    .filter((item) => !(item.is_admin_only && user?.role !== "ADMIN"))
+    .map((item) => ({
+      ...item,
+      children: item.children
+        ? item.children.filter(
+            (sub) => !(sub.is_admin_only && user?.role !== "ADMIN"),
+          )
+        : [],
+    }));
 
   return (
     <div className="mobile-navigation">
@@ -28,7 +41,8 @@ export default function MobileNavigation({ navigation = [] }) {
       </button>
       {open && (
         <nav className="mobile-nav-panel" aria-label="모바일 메뉴">
-          {navigation.map((item) => {
+          {/* ★ navigation 대신 visibleMenus 사용 */}
+          {visibleMenus.map((item) => {
             const hasChildren = Boolean(
               item.children && item.children.length > 0,
             );

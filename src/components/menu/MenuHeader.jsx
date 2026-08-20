@@ -12,12 +12,12 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
     description: "",
     sort_order: 1,
     is_use: true,
+    is_admin_only: false,
   });
 
   // 상위 메뉴(parent_id)에 따른 다음 정렬 순서 계산 함수
   const calculateNextSortOrder = useCallback((parentId, menuList) => {
     if (!parentId) {
-      // 1. 최상위 메뉴(그룹/단독 PAGE)인 경우: parent_id가 없는 항목들 중 최대값 + 1
       const topMenus = menuList.filter((m) => !m.parent_id);
       if (topMenus.length === 0) return 1;
       const maxOrder = Math.max(
@@ -25,7 +25,6 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
       );
       return maxOrder + 1;
     } else {
-      // 2. 특정 그룹 하위 메뉴인 경우: 해당 parent_id를 가진 항목들 중 최대값 + 1
       const childMenus = menuList.filter(
         (m) => String(m.parent_id) === String(parentId),
       );
@@ -37,12 +36,22 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
     }
   }, []);
 
-  // parent_id가 바뀌거나 메뉴 목록(menus)이 전달/갱신될 때 sort_order 자동 계산
+  // ★ parent_id 변경 시 sort_order 자동 계산 및 상위 메뉴 권한 연동
   useEffect(() => {
     const nextOrder = calculateNextSortOrder(formData.parent_id, menus);
+
+    // 선택된 상위 메뉴 객체 찾기
+    const parentMenu = menus.find(
+      (m) => String(m.id) === String(formData.parent_id),
+    );
+
+    // 상위 메뉴가 관리자 전용(true)이면 true, 아니거나 최상위 메뉴면 false
+    const parentIsAdminOnly = Boolean(parentMenu?.is_admin_only);
+
     setFormData((prev) => ({
       ...prev,
       sort_order: nextOrder,
+      is_admin_only: parentIsAdminOnly, // ★ 상위 메뉴 권한 상태에 따라 자동 변경
     }));
   }, [formData.parent_id, menus, calculateNextSortOrder]);
 
@@ -53,7 +62,7 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
       [name]:
         type === "checkbox"
           ? checked
-          : name === "is_use"
+          : name === "is_use" || name === "is_admin_only"
             ? value === "true"
             : value,
     }));
@@ -63,7 +72,6 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
     e.preventDefault();
     const success = await onCreateMenu(formData);
     if (success) {
-      // 등록 성공 시 폼 초기화 (parent_id를 비워 최상위 메뉴 기준으로 재설정)
       const nextOrder = calculateNextSortOrder("", menus);
       setFormData({
         parent_id: "",
@@ -74,6 +82,7 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
         description: "",
         sort_order: nextOrder,
         is_use: true,
+        is_admin_only: false,
       });
     }
   };
@@ -81,7 +90,6 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
   return (
     <article className="card card-pad" style={{ marginBottom: "24px" }}>
       <form onSubmit={handleFormSubmit}>
-        {/* 상단 라인: 좌측 제목 / 우측 메뉴 등록 버튼 */}
         <div
           style={{
             display: "flex",
@@ -98,7 +106,6 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
           </button>
         </div>
 
-        {/* 2열 입력 필드 레이아웃 */}
         <div
           style={{
             display: "grid",
@@ -129,7 +136,7 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
                 .filter((m) => !m.parent_id)
                 .map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name}
+                    {m.name} {m.is_admin_only ? "(관리자)" : ""}
                   </option>
                 ))}
             </select>
@@ -246,6 +253,37 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
             >
               <option value="true">사용</option>
               <option value="false">미사용</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "13px",
+                fontWeight: "500",
+                color: "#475569",
+              }}
+            >
+              접근 권한
+            </label>
+            <select
+              className="input"
+              name="is_admin_only"
+              value={formData.is_admin_only ? "true" : "false"}
+              onChange={handleFormChange}
+              style={{
+                color: formData.is_admin_only ? "#e11d48" : "#334155",
+                fontWeight: "600",
+              }}
+            >
+              <option value="false" style={{ color: "#334155" }}>
+                전체 (일반 사용자)
+              </option>
+              <option value="true" style={{ color: "#e11d48" }}>
+                관리자 전용 (ADMIN)
+              </option>
             </select>
           </div>
         </div>

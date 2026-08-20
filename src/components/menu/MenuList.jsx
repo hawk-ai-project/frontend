@@ -11,7 +11,6 @@ export default function MenuList({
   const [items, setItems] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
 
-  // 메뉴 목록 전달 시 내부 상태 및 기본 선택값 초기화
   useEffect(() => {
     setItems(menus);
     if (
@@ -22,7 +21,6 @@ export default function MenuList({
     }
   }, [menus]);
 
-  // Flat 메뉴 데이터를 Hierarchy Tree 구조로 변환하는 헬퍼
   const menuTree = useMemo(() => {
     const map = {};
     const roots = [];
@@ -42,12 +40,10 @@ export default function MenuList({
     return roots;
   }, [items]);
 
-  // 선택된 메뉴 객체
   const selectedMenu = useMemo(() => {
     return items.find((item) => item.id === selectedId) || null;
   }, [items, selectedId]);
 
-  // 필드 변경 처리
   const handleChange = (field, value) => {
     if (!selectedId) return;
     setItems((prev) =>
@@ -63,7 +59,6 @@ export default function MenuList({
     }
   };
 
-  // 재귀적 트리 노드 렌더링
   const renderTreeNode = (node, depth = 0) => {
     const isSelected = selectedId === node.id;
     const hasChildren = node.children && node.children.length > 0;
@@ -100,9 +95,24 @@ export default function MenuList({
           >
             {node.name}
           </span>
+
+          {/* ★ 트리 레이블 옆 관리자 전용 배지 추가[cite: 10] */}
+          {node.is_admin_only && (
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#e11d48",
+                fontWeight: "600",
+                marginLeft: "4px",
+              }}
+            >
+              (관리자)
+            </span>
+          )}
+
           {!node.is_use && (
             <span
-              style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "6px" }}
+              style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "4px" }}
             >
               (미사용)
             </span>
@@ -117,7 +127,6 @@ export default function MenuList({
 
   return (
     <article className="card card-pad">
-      {/* 상단 라인: 설명 및 일괄 저장 버튼 */}
       <div
         style={{
           display: "flex",
@@ -142,7 +151,6 @@ export default function MenuList({
         </button>
       </div>
 
-      {/* 좌우 2컬럼 레이아웃 */}
       <div
         style={{
           display: "grid",
@@ -151,7 +159,6 @@ export default function MenuList({
           minHeight: "420px",
         }}
       >
-        {/* 좌측: 메뉴 트리 영역 */}
         <div
           style={{
             borderRight: "1px solid #e2e8f0",
@@ -187,7 +194,6 @@ export default function MenuList({
           )}
         </div>
 
-        {/* 우측: 상세 정보 및 수정 폼 영역 */}
         <div>
           <h3
             style={{
@@ -345,7 +351,6 @@ export default function MenuList({
                     handleChange("is_use", e.target.value === "true")
                   }
                   style={{
-                    // 선택 상태에 따른 색상 (사용: 파란색, 미사용: 빨간색)
                     color: selectedMenu.is_use ? "#2563eb" : "#dc2626",
                     fontWeight: "600",
                   }}
@@ -361,6 +366,45 @@ export default function MenuList({
                     style={{ color: "#dc2626", fontWeight: "600" }}
                   >
                     미사용
+                  </option>
+                </select>
+              </div>
+
+              {/* ★ 상세 정보 수정용 접근 권한 드롭다운 추가[cite: 10] */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  접근 권한
+                </label>
+                <select
+                  className="input"
+                  value={selectedMenu.is_admin_only ? "true" : "false"}
+                  onChange={(e) =>
+                    handleChange("is_admin_only", e.target.value === "true")
+                  }
+                  style={{
+                    color: selectedMenu.is_admin_only ? "#e11d48" : "#334155",
+                    fontWeight: "600",
+                  }}
+                >
+                  <option
+                    value="false"
+                    style={{ color: "#334155", fontWeight: "600" }}
+                  >
+                    전체 (일반 사용자)
+                  </option>
+                  <option
+                    value="true"
+                    style={{ color: "#e11d48", fontWeight: "600" }}
+                  >
+                    관리자 전용 (ADMIN)
                   </option>
                 </select>
               </div>

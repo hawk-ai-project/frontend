@@ -7,9 +7,11 @@ import { useState, useRef, useEffect } from "react";
 import AuthNavigation from "./AuthNavigation";
 import MobileNavigation from "./MobileNavigation";
 import { menuService } from "@/services/menuService";
+import { useAuth } from "@/hooks/useAuth"; // ★ 1. useAuth hook 추가[cite: 12]
 
 export default function Header() {
   const pathname = usePathname();
+  const { user } = useAuth(); // ★ 2. 로그인 사용자 정보 가져오기[cite: 12]
   const [navigation, setNavigation] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -20,6 +22,18 @@ export default function Header() {
       .then((data) => setNavigation(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Menu fetch failed:", err));
   }, []);
+
+  // ★ 3. 상위 메뉴 및 하위(sub) 메뉴 권한 필터링
+  const visibleMenus = navigation
+    .filter((item) => !(item.is_admin_only && user?.role !== "ADMIN"))
+    .map((item) => ({
+      ...item,
+      children: item.children
+        ? item.children.filter(
+            (sub) => !(sub.is_admin_only && user?.role !== "ADMIN"),
+          )
+        : [],
+    }));
 
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -47,7 +61,8 @@ export default function Header() {
           />
         </Link>
         <nav className="nav" aria-label="주요 메뉴">
-          {navigation.map((item) => {
+          {/* ★ 4. navigation 대신 필터링된 visibleMenus 사용 */}
+          {visibleMenus.map((item) => {
             const hasChildren = Boolean(
               item.children && item.children.length > 0,
             );
@@ -97,7 +112,8 @@ export default function Header() {
         </nav>
         <div className="header-actions">
           <AuthNavigation />
-          <MobileNavigation navigation={navigation} />
+          {/* ★ 5. MobileNavigation으로 전달하는 props도 visibleMenus로 변경 */}
+          <MobileNavigation navigation={visibleMenus} />
         </div>
       </div>
     </header>
