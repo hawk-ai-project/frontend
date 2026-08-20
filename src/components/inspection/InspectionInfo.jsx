@@ -3,7 +3,7 @@
 "use client";
 
 import axios from "axios";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function InspectionInfo({
@@ -15,6 +15,31 @@ export default function InspectionInfo({
   setSubmitError,
 }) {
   const router = useRouter();
+  // 폐기물 목록
+  const [wasteTypes, setWasteTypes] = useState([]);
+  // 수동 탐지 데이터 관리
+  const [manualDetections, setManualDetections] = useState([
+    { waste_type_id: "", count: 1 },
+  ]);
+
+  // 컴포넌트 마운트 시 백엔드에서 폐기물 종류 목록 불러오기
+  useEffect(() => {
+    const fetchWasteTypes = async () => {
+      try {
+        const token = localStorage.getItem("hawk_ai_access_token");
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/waste_types`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        setWasteTypes(response.data);
+      } catch (error) {
+        console.error("폐기물 목록을 불러오는데 실패했습니다.", error);
+      }
+    };
+    fetchWasteTypes();
+  }, []);
 
   useEffect(() => {
     const fetchMyName = async () => {
@@ -26,11 +51,14 @@ export default function InspectionInfo({
           return;
         }
 
-        const response = await axios.get("http://127.0.0.1:8000/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
         setFormData((prev) => ({
           ...prev,
           inspector: response.data.name,
@@ -145,6 +173,24 @@ export default function InspectionInfo({
     }));
   };
 
+  //  수동 탐지 리스트 핸들러 함수
+  const handleDetectionChange = (index, field, value) => {
+    const newDetections = [...manualDetections];
+    newDetections[index][field] = value;
+    setManualDetections(newDetections);
+  };
+
+  // 줄 추가 함수
+  const addDetection = () => {
+    setManualDetections([...manualDetections, { waste_type_id: "", count: 1 }]);
+  };
+
+  // 줄 삭제 함수
+  const removeDetection = (index) => {
+    const newDetections = manualDetections.filter((_, i) => i !== index);
+    setManualDetections(newDetections);
+  };
+
   // 백엔드로 전달하는 함수
   const submitInspection = async () => {
     const location = formData.location?.trim();
@@ -165,6 +211,14 @@ export default function InspectionInfo({
 
       let convertedAddress = formData.address || "";
 
+      // 빈 값을 걸러내고, 숫자형으로 변환하여 백엔드가 원하는 포맷으로 맞춤
+      const validDetections = manualDetections
+        .filter((d) => d.waste_type_id !== "")
+        .map((d) => ({
+          waste_type_id: Number(d.waste_type_id),
+          count: Number(d.count),
+        }));
+
       // 백엔드의 /save API로 전달할 내용
       const finalPayload = {
         title: `${location} 현장 점검`,
@@ -175,11 +229,12 @@ export default function InspectionInfo({
         status: "REVIEW_REQUIRED",
         image: previewImage,
         ai_detections: [],
+        detections: validDetections, // 수동 입력 데이터 추가
       };
 
       // 백엔드로 보내기
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/inspection/save",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/inspection/save`,
         finalPayload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -245,6 +300,75 @@ export default function InspectionInfo({
           />
         </label>
 
+        {/* 수동 폐기물 입력 UI 영역 */}
+        <div style={{ marginTop: "10px", marginBottom: "10px" }}>
+          <label style={{ display: "block", marginBottom: "8px" }}>
+            수동 탐지 결과 (선택)
+          </label>
+          {manualDetections.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginBottom: "10px",
+                alignItems: "center",
+              }}
+            >
+              {/* 폐기물 종류 선택 드롭다운 */}
+              <select
+                value={item.waste_type_id}
+                onChange={(e) =>
+                  handleDetectionChange(index, "waste_type_id", e.target.value)
+                }
+                className="input"
+                style={{ flex: 5 }}
+              >
+                <option value="">폐기물 종류</option>
+                {wasteTypes.map((wt) => (
+                  <option key={wt.id} value={wt.id}>
+                    {/* 한글 이름으로 출력 */}
+                    {wt.name_ko}
+                  </option>
+                ))}
+              </select>
+
+              {/* 수량 입력 */}
+              <input
+                type="number"
+                min="1"
+                value={item.count}
+                onChange={(e) =>
+                  handleDetectionChange(index, "count", e.target.value)
+                }
+                className="input"
+                style={{ flex: 1 }}
+                placeholder="수량"
+              />
+
+              {/* 삭제 버튼 (2개 이상일때부터 등장) */}
+              {manualDetections.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeDetection(index)}
+                  className="btn btn-secondary"
+                  style={{ padding: "0 6px" }}
+                >
+                  삭제
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addDetection}
+            className="btn btn-soft"
+            style={{ width: "100%", fontSize: "0.9rem" }}
+          >
+            + 폐기물 추가하기
+          </button>
+        </div>
+
         <label htmlFor="memo">
           점검 메모
           <textarea
@@ -253,7 +377,7 @@ export default function InspectionInfo({
             value={formData.memo}
             onChange={handleChange}
             className="input"
-            style={{ minHeight: "150px" }}
+            style={{ minHeight: "50px" }}
             placeholder="특이사항을 메모해 주세요"
           />
         </label>

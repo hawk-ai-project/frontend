@@ -358,6 +358,7 @@ export default function HistoryDetailClient({
         </div>
       </div>
 
+      {/* 원본, 분석 이미지 */}
       <div className="compact-top-grid">
         <article className="card compact-image-card">
           <div className="detail-image-grid">
@@ -386,6 +387,8 @@ export default function HistoryDetailClient({
             />
           </div>
         </article>
+
+        {/* 점검 요약 */}
         <article className="card compact-summary-card">
           <h2>점검 요약</h2>
           <div className="compact-meta-grid">
@@ -409,7 +412,7 @@ export default function HistoryDetailClient({
               label="현장 위치"
               value={
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${detail.fullLocation}, 대한민국`)}`}
+                  href={`https://www.google.com/maps/place/${detail.coordinates}/@${detail.coordinates},18z`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -418,17 +421,24 @@ export default function HistoryDetailClient({
               }
             />
           </div>
-          <h3>탐지 결과</h3>
-          <div className="detection-tags">
-            {detail.detections.map(([name, count]) => (
-              <span key={name}>
-                {name} <b>{count}개</b>
-              </span>
-            ))}
+        </article>
+
+        {/* 탐지 결과 */}
+        <article className="card compact-summary-card">
+          <div className="detail-card-title">
+            <h2>탐지 결과</h2>
+            <div className="detection-tags">
+              {detail.detections.map(([name, count]) => (
+                <span key={name}>
+                  {name} <b>{count}개</b>
+                </span>
+              ))}
+            </div>
           </div>
         </article>
       </div>
 
+      {/* 수거 완료 증빙 사진 */}
       <div className="compact-action-grid">
         <article className="card card-pad after-card">
           <div className="detail-card-title">
@@ -473,6 +483,7 @@ export default function HistoryDetailClient({
           </label>
         </article>
 
+        {/* 점검 의견 및 후속 조치 */}
         <article className="card card-pad opinion-card">
           <div className="detail-card-title">
             <h2>점검 의견 및 후속 조치</h2>

@@ -51,6 +51,10 @@ export default function CameraPreview({ onCapture }) {
     }
     if (stream) stream.getTracks().forEach((track) => track.stop());
     try {
+      const videoConstraints = selectedDeviceId
+        ? { deviceId: { exact: selectedDeviceId } }
+        : { facingMode: "environment" };
+
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: {
           deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
@@ -273,6 +277,7 @@ export default function CameraPreview({ onCapture }) {
           <input
             type="file"
             accept="image/*"
+            capture="environment"
             ref={fileInputRef}
             style={{ display: "none" }}
             onChange={handleFileChange}
