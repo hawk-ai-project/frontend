@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const PAGE_SIZE = 10;
-
 export default function MenuList({
   menus = [],
   isLoading = false,
@@ -11,22 +9,50 @@ export default function MenuList({
   isSaving = false,
 }) {
   const [items, setItems] = useState([]);
-  const [page, setPage] = useState(1);
+  const [selectedId, setSelectedId] = useState(null);
 
+  // 메뉴 목록 전달 시 내부 상태 및 기본 선택값 초기화
   useEffect(() => {
     setItems(menus);
+    if (
+      menus.length > 0 &&
+      (!selectedId || !menus.some((m) => m.id === selectedId))
+    ) {
+      setSelectedId(menus[0].id);
+    }
   }, [menus]);
 
-  const handleChange = (id, field, value) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
-    );
-  };
+  // Flat 메뉴 데이터를 Hierarchy Tree 구조로 변환하는 헬퍼
+  const menuTree = useMemo(() => {
+    const map = {};
+    const roots = [];
 
-  const toggleUse = (id) => {
+    items.forEach((item) => {
+      map[item.id] = { ...item, children: [] };
+    });
+
+    items.forEach((item) => {
+      if (item.parent_id && map[item.parent_id]) {
+        map[item.parent_id].children.push(map[item.id]);
+      } else {
+        roots.push(map[item.id]);
+      }
+    });
+
+    return roots;
+  }, [items]);
+
+  // 선택된 메뉴 객체
+  const selectedMenu = useMemo(() => {
+    return items.find((item) => item.id === selectedId) || null;
+  }, [items, selectedId]);
+
+  // 필드 변경 처리
+  const handleChange = (field, value) => {
+    if (!selectedId) return;
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, is_use: !item.is_use } : item,
+        item.id === selectedId ? { ...item, [field]: value } : item,
       ),
     );
   };
@@ -37,23 +63,74 @@ export default function MenuList({
     }
   };
 
-  const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const pagedItems = useMemo(() => {
-    return items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  }, [items, page]);
+  // 재귀적 트리 노드 렌더링
+  const renderTreeNode = (node, depth = 0) => {
+    const isSelected = selectedId === node.id;
+    const hasChildren = node.children && node.children.length > 0;
+
+    return (
+      <div key={node.id}>
+        <div
+          onClick={() => setSelectedId(node.id)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "8px 12px",
+            paddingLeft: `${depth * 20 + 12}px`,
+            cursor: "pointer",
+            borderRadius: "6px",
+            marginBottom: "2px",
+            backgroundColor: isSelected ? "#eff6ff" : "transparent",
+            color: isSelected ? "#2563eb" : "#334155",
+            fontWeight: isSelected ? "600" : "400",
+            transition: "all 0.15s ease-in-out",
+          }}
+        >
+          <span style={{ marginRight: "8px", fontSize: "14px" }}>
+            {hasChildren ? "📁" : "📄"}
+          </span>
+          <span
+            style={{
+              fontSize: "14px",
+              flex: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {node.name}
+          </span>
+          {!node.is_use && (
+            <span
+              style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "6px" }}
+            >
+              (미사용)
+            </span>
+          )}
+        </div>
+
+        {hasChildren &&
+          node.children.map((child) => renderTreeNode(child, depth + 1))}
+      </div>
+    );
+  };
 
   return (
     <article className="card card-pad">
+      {/* 상단 라인: 설명 및 일괄 저장 버튼 */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "16px",
+          paddingBottom: "12px",
+          borderBottom: "1px solid #e2e8f0",
         }}
       >
         <div style={{ fontSize: "14px", color: "#64748b" }}>
-          항목 수정 후 우측 상단의 <b>저장</b> 버튼을 누르면 일괄 적용됩니다.
+          좌측 트리를 클릭하여 메뉴를 선택 후 수정한 뒤 <b>저장</b> 버튼을
+          누르세요.
         </div>
         <button
           type="button"
@@ -65,155 +142,243 @@ export default function MenuList({
         </button>
       </div>
 
-      <div className="table-wrap">
-        <table className="history-table">
-          <thead>
-            <tr>
-              <th style={{ width: "60px" }}>ID</th>
-              <th>메뉴명</th>
-              <th>경로</th>
-              <th style={{ width: "120px" }}>유형</th>
-              <th style={{ width: "90px" }}>순서</th>
-              <th style={{ width: "100px" }}>상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td className="history-empty" colSpan="6">
-                  로딩 중...
-                </td>
-              </tr>
-            ) : pagedItems.length ? (
-              pagedItems.map((menu) => (
-                <tr key={menu.id}>
-                  <td>{menu.id}</td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      {menu.parent_id && (
-                        <span style={{ color: "#94a3b8", marginRight: "6px" }}>
-                          └
-                        </span>
-                      )}
-                      <input
-                        className="input"
-                        type="text"
-                        value={menu.name || ""}
-                        onChange={(e) =>
-                          handleChange(menu.id, "name", e.target.value)
-                        }
-                        style={{ height: "34px", padding: "4px 8px" }}
-                      />
-                    </div>
-                  </td>
-                  <td>
-                    <input
-                      className="input"
-                      type="text"
-                      value={menu.path || ""}
-                      onChange={(e) =>
-                        handleChange(menu.id, "path", e.target.value)
-                      }
-                      style={{ height: "34px", padding: "4px 8px" }}
-                    />
-                  </td>
-                  <td>
-                    <select
-                      className="input"
-                      value={menu.menu_type || "PAGE"}
-                      onChange={(e) =>
-                        handleChange(menu.id, "menu_type", e.target.value)
-                      }
-                      style={{ height: "34px", padding: "4px 8px" }}
-                    >
-                      <option value="PAGE">PAGE</option>
-                      <option value="GROUP">GROUP</option>
-                      <option value="ACTION">ACTION</option>
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      className="input"
-                      type="number"
-                      value={menu.sort_order ?? 0}
-                      onChange={(e) =>
-                        handleChange(
-                          menu.id,
-                          "sort_order",
-                          Number(e.target.value),
-                        )
-                      }
-                      style={{
-                        height: "34px",
-                        padding: "4px 8px",
-                        textAlign: "center",
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => toggleUse(menu.id)}
-                      style={{
-                        border: "none",
-                        borderRadius: "16px",
-                        padding: "4px 14px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease-in-out",
-                        backgroundColor: menu.is_use ? "#e8f8f0" : "#fee2e2",
-                        color: menu.is_use ? "#0d7a5f" : "#dc2626",
-                      }}
-                    >
-                      {menu.is_use ? "사용" : "미사용"}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td className="history-empty" colSpan="6">
-                  등록된 메뉴가 없습니다.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <nav className="number-pagination" aria-label="메뉴 목록 페이지">
-        <button
-          className="pagination-arrow"
-          type="button"
-          aria-label="이전 페이지"
-          disabled={page === 1}
-          onClick={() => setPage((v) => v - 1)}
+      {/* 좌우 2컬럼 레이아웃 */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "280px 1fr",
+          gap: "24px",
+          minHeight: "420px",
+        }}
+      >
+        {/* 좌측: 메뉴 트리 영역 */}
+        <div
+          style={{
+            borderRight: "1px solid #e2e8f0",
+            paddingRight: "16px",
+            overflowY: "auto",
+            maxHeight: "calc(100vh - 250px)",
+          }}
         >
-          <span aria-hidden="true">‹</span>
-        </button>
-        {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-          (number) => (
-            <button
-              type="button"
-              key={number}
-              className={page === number ? "active" : ""}
-              onClick={() => setPage(number)}
+          <h3
+            style={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#475569",
+              marginBottom: "12px",
+            }}
+          >
+            메뉴 구조
+          </h3>
+          {isLoading ? (
+            <div
+              style={{ padding: "20px", color: "#94a3b8", fontSize: "13px" }}
             >
-              {number}
-            </button>
-          ),
-        )}
-        <button
-          className="pagination-arrow"
-          type="button"
-          aria-label="다음 페이지"
-          disabled={page === pageCount}
-          onClick={() => setPage((v) => v + 1)}
-        >
-          <span aria-hidden="true">›</span>
-        </button>
-      </nav>
+              메뉴를 불러오는 중...
+            </div>
+          ) : menuTree.length > 0 ? (
+            menuTree.map((node) => renderTreeNode(node, 0))
+          ) : (
+            <div
+              style={{ padding: "20px", color: "#94a3b8", fontSize: "13px" }}
+            >
+              등록된 메뉴가 없습니다.
+            </div>
+          )}
+        </div>
+
+        {/* 우측: 상세 정보 및 수정 폼 영역 */}
+        <div>
+          <h3
+            style={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#475569",
+              marginBottom: "16px",
+            }}
+          >
+            상세 정보 수정 {selectedMenu && `(ID: ${selectedMenu.id})`}
+          </h3>
+
+          {selectedMenu ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  상위 메뉴
+                </label>
+                <select
+                  className="input"
+                  value={selectedMenu.parent_id || ""}
+                  onChange={(e) =>
+                    handleChange(
+                      "parent_id",
+                      e.target.value ? Number(e.target.value) : null,
+                    )
+                  }
+                >
+                  <option value="">최상위 메뉴 (그룹)</option>
+                  {items
+                    .filter((m) => !m.parent_id && m.id !== selectedMenu.id)
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  메뉴명
+                </label>
+                <input
+                  className="input"
+                  type="text"
+                  value={selectedMenu.name || ""}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  경로 (Path)
+                </label>
+                <input
+                  className="input"
+                  type="text"
+                  value={selectedMenu.path || ""}
+                  onChange={(e) => handleChange("path", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  메뉴 유형
+                </label>
+                <select
+                  className="input"
+                  value={selectedMenu.menu_type || "PAGE"}
+                  onChange={(e) => handleChange("menu_type", e.target.value)}
+                >
+                  <option value="PAGE">PAGE</option>
+                  <option value="GROUP">GROUP</option>
+                  <option value="ACTION">ACTION</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  정렬 순서
+                </label>
+                <input
+                  className="input"
+                  type="number"
+                  value={selectedMenu.sort_order ?? 0}
+                  onChange={(e) =>
+                    handleChange("sort_order", Number(e.target.value))
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#475569",
+                  }}
+                >
+                  사용 여부
+                </label>
+                <select
+                  className="input"
+                  value={selectedMenu.is_use ? "true" : "false"}
+                  onChange={(e) =>
+                    handleChange("is_use", e.target.value === "true")
+                  }
+                  style={{
+                    // 선택 상태에 따른 색상 (사용: 파란색, 미사용: 빨간색)
+                    color: selectedMenu.is_use ? "#2563eb" : "#dc2626",
+                    fontWeight: "600",
+                  }}
+                >
+                  <option
+                    value="true"
+                    style={{ color: "#2563eb", fontWeight: "600" }}
+                  >
+                    사용
+                  </option>
+                  <option
+                    value="false"
+                    style={{ color: "#dc2626", fontWeight: "600" }}
+                  >
+                    미사용
+                  </option>
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: "40px 0",
+                color: "#94a3b8",
+                textAlign: "center",
+                fontSize: "14px",
+              }}
+            >
+              수정할 메뉴를 좌측 목록에서 선택하세요.
+            </div>
+          )}
+        </div>
+      </div>
     </article>
   );
 }
