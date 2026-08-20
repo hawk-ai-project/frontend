@@ -7,6 +7,7 @@ import { exportAnalyticsToExcel } from "@/utils/excelExport";
 import AnalyticsHeader from "./AnalyticsHeader";
 import AnalyticsSummaryCards from "./AnalyticsSummaryCards";
 import AnalyticsCharts from "./AnalyticsCharts";
+import AnalyticsMap from "./AnalyticsMap";
 import AIAnalyticsInsights from "./AIAnalyticsInsights";
 import CommonLoading from "@/components/common/CommonLoading";
 
@@ -36,8 +37,8 @@ export default function AnalyticsClient() {
   const [startDate, setStartDate] = useState(initialDates.startDate);
   const [endDate, setEndDate] = useState(initialDates.endDate);
   const [locationId, setLocationId] = useState("");
-  
-  // 1. 지역 기준정보 목록 저장용 State 추가
+
+  // 지역 기준정보 목록 저장용 State
   const [regions, setRegions] = useState([]);
 
   const [query, setQuery] = useState({
@@ -50,7 +51,7 @@ export default function AnalyticsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // 2. 마운트 시 지역 기준정보 목록(regions) API 호출
+  // 마운트 시 지역 기준정보 목록(regions) API 호출
   useEffect(() => {
     let cancelled = false;
 
@@ -70,7 +71,7 @@ export default function AnalyticsClient() {
     };
   }, []);
 
-  // 통계 데이터 조회 (기존 유지)
+  // 통계 데이터 조회
   useEffect(() => {
     let cancelled = false;
 
@@ -116,7 +117,6 @@ export default function AnalyticsClient() {
 
   return (
     <div className="page-shell">
-      {/* 3. regions 전달 */}
       <AnalyticsHeader
         regions={regions}
         startDate={startDate}
@@ -139,6 +139,7 @@ export default function AnalyticsClient() {
             trends={data.trends}
             distribution={data.distribution}
           />
+          <AnalyticsMap items={data.items || data.inspections || []} />
           <AIAnalyticsInsights
             key={`${query.startDate}-${query.endDate}-${query.locationId || "all"}`}
             analytics={data}
