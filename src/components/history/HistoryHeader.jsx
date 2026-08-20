@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { STATUS_OPTIONS } from "./historyData";
 import { analyticsService } from "@/services/analyticsService";
 
@@ -56,6 +57,8 @@ function formatInputDisplayDate(value) {
 }
 
 export default function HistoryHeader({ onSearch, wastes = [] }) {
+  const searchParams = useSearchParams();
+
   const [regions, setRegions] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [locationId, setLocationId] = useState("");
@@ -65,6 +68,7 @@ export default function HistoryHeader({ onSearch, wastes = [] }) {
 
   const hiddenDateInputRef = useRef(null);
 
+  // 1. 지역 목록 최초 조회
   useEffect(() => {
     let cancelled = false;
     analyticsService
@@ -80,6 +84,42 @@ export default function HistoryHeader({ onSearch, wastes = [] }) {
       cancelled = true;
     };
   }, []);
+
+  // 2. URL 파라미터 직접 파싱 및 State/조회 동기화
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pDate =
+      urlParams.get("date") ||
+      urlParams.get("startDate") ||
+      searchParams?.get("date") ||
+      "";
+    const pWaste =
+      urlParams.get("waste") ||
+      urlParams.get("wasteType") ||
+      searchParams?.get("waste") ||
+      "전체 폐기물";
+    const pLocationId =
+      urlParams.get("locationId") || searchParams?.get("locationId") || "";
+    const pHasWaste = urlParams.get("hasWaste") === "true"; // ★ hasWaste 파라미터 확인
+
+    if (pDate) setDate(pDate);
+    if (pWaste) setWaste(pWaste);
+    if (pLocationId) setLocationId(pLocationId);
+
+    if (pDate || pWaste !== "전체 폐기물" || pLocationId || pHasWaste) {
+      onSearch({
+        keyword: "",
+        locationId: pLocationId,
+        waste: pWaste,
+        status: "전체 상태",
+        date: normalizeSearchDate(pDate),
+        hasWaste: pHasWaste, // ★ 백엔드 API 조회 검색 조건으로 전달
+        regions,
+      });
+    }
+  }, [searchParams?.toString()]);
 
   const search = (event) => {
     if (event) event.preventDefault();

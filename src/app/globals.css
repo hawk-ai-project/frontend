@@ -3441,3 +3441,45 @@ textarea:focus {
     bottom: 88px !important; /* 모바일 바닥(16px) + 버튼높이(58px) + 간격(14px) */
   }
 }
+
+/* 내비게이션 드롭다운 그룹 */
+.nav .nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 하위 메뉴 팝업 (기준정보 왼쪽 시작선에 고정) */
+.nav .sub-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;                     /* 부모 메뉴의 왼쪽 시작선에 정렬 */
+  margin-top: 8px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  padding: 6px 0;
+  z-index: 1000;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 하위 메뉴 항목 */
+.nav .sub-menu-item {
+  display: block;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #334155;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.nav .sub-menu-item:hover,
+.nav .sub-menu-item.active {
+  background-color: #f1f5f9;
+  color: #2563eb;
+  font-weight: 600;
+}

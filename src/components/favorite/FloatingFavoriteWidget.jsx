@@ -3,16 +3,39 @@
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { favoriteService } from "@/services/favoriteService";
-import { NAVIGATION } from "@/constants/routes";
+import { menuService } from "@/services/menuService";
+
+// 트리 구조 메뉴에서 경로(path)에 맞는 메뉴명을 재귀적으로 탐색하는 함수
+const findMenuLabel = (items, path) => {
+  if (!Array.isArray(items)) return null;
+  for (const item of items) {
+    if (item.href === path || item.path === path)
+      return item.label || item.name;
+    if (item.children && item.children.length > 0) {
+      const found = findMenuLabel(item.children, path);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
 export const FloatingFavoriteWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [navigation, setNavigation] = useState([]);
   const pathname = usePathname();
 
   // 중복 호출 및 삭제 직후 재등록 방지용 Ref
   const lastRecordedPath = useRef(null);
   const deletedPaths = useRef(new Set());
+
+  // DB 메뉴 목록 동적 조회
+  useEffect(() => {
+    menuService
+      .getMenuTree()
+      .then((data) => setNavigation(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("메뉴 목록 조회 실패:", err));
+  }, []);
 
   // 즐겨찾기 목록 조회
   const fetchFavorites = async () => {
@@ -34,7 +57,6 @@ export const FloatingFavoriteWidget = () => {
   // 2. 경로(pathname) 변경 시 1회만 자동 수집 (중복 방지)
   useEffect(() => {
     if (!pathname) return;
-
     if (pathname === "/" || pathname === "") return;
 
     if (
@@ -55,8 +77,8 @@ export const FloatingFavoriteWidget = () => {
         lastRecordedPath.current = pathname;
 
         setTimeout(async () => {
-          const matchedNav = NAVIGATION.find((nav) => nav.href === pathname);
-          let pageTitle = matchedNav ? matchedNav.label : null;
+          // DB 메뉴 트리에서 현재 경로에 맞는 메뉴명 찾기
+          let pageTitle = findMenuLabel(navigation, pathname);
 
           if (!pageTitle) {
             pageTitle = document.title
@@ -84,7 +106,7 @@ export const FloatingFavoriteWidget = () => {
     };
 
     autoRecordVisit();
-  }, [pathname]);
+  }, [pathname, navigation, isOpen]);
 
   // 즐겨찾기 메뉴 클릭 시
   const handleFavoriteClick = async (fav) => {
@@ -124,7 +146,6 @@ export const FloatingFavoriteWidget = () => {
           <div className="favorite-popup-header">
             <div className="favorite-popup-title">
               <span>★</span>
-              {/* 💡 헤더 텍스트 Top 3로 변경 */}
               <span>자주 방문한 메뉴 (Top 3)</span>
             </div>
           </div>
@@ -135,7 +156,6 @@ export const FloatingFavoriteWidget = () => {
                 방문 기록이 없습니다.
               </p>
             ) : (
-              /* 💡 Top 3개만 노출되도록 slice(0, 3) 적용 */
               favorites.slice(0, 3).map((fav) => (
                 <div
                   key={fav.id}

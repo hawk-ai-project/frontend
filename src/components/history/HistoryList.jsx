@@ -156,12 +156,16 @@ export default function HistoryList({ searched, onWastesLoaded }) {
       const matchesDate =
         !searched.date || item.inspectedAt?.startsWith(searched.date);
 
+      // 6. 탐지 폐기물 유무 검색 (hasWaste 조건 추가) ★
+      const matchesHasWaste = !searched.hasWaste || item.detectedCount > 0;
+
       return (
         matchesKeyword &&
         matchesLocation &&
         matchesWaste &&
         matchesStatus &&
-        matchesDate
+        matchesDate &&
+        matchesHasWaste // ★ 필터링 조건 반영
       );
     });
   }, [items, searched]);

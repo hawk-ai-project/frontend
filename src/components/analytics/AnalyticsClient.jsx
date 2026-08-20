@@ -138,6 +138,7 @@ export default function AnalyticsClient() {
           <AnalyticsCharts
             trends={data.trends}
             distribution={data.distribution}
+            query={query} // query 전달 추가
           />
           <AnalyticsMap
             items={data.locations || data.items || data.inspections || []}
