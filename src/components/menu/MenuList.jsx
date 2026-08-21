@@ -96,7 +96,6 @@ export default function MenuList({
             {node.name}
           </span>
 
-          {/* ★ 삼항 연산자로 불리언 및 null 명시적 분기 */}
           {Boolean(node.is_admin_only) ? (
             <span
               style={{
@@ -131,6 +130,8 @@ export default function MenuList({
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
+          gap: "12px",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "16px",
@@ -154,14 +155,16 @@ export default function MenuList({
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "280px 1fr",
+          display: "flex",
+          flexWrap: "wrap",
           gap: "24px",
           minHeight: "420px",
         }}
       >
+        {/* 좌측 메뉴 구조 트리 영역 */}
         <div
           style={{
+            flex: "1 1 280px",
             borderRight: "1px solid #e2e8f0",
             paddingRight: "16px",
             overflowY: "auto",
@@ -195,7 +198,8 @@ export default function MenuList({
           )}
         </div>
 
-        <div>
+        {/* 우측 상세 정보 수정 영역 */}
+        <div style={{ flex: "1 1 400px", minWidth: 0 }}>
           <h3
             style={{
               fontSize: "14px",
@@ -208,13 +212,21 @@ export default function MenuList({
           </h3>
 
           {selectedMenu ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
+            <div className="menu-detail-grid">
+              {/* JSX 내장 CSS를 활용하여 PC 2열 고정 / 모바일 1열 분기 */}
+              <style jsx>{`
+                .menu-detail-grid {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 16px;
+                }
+                @media (max-width: 640px) {
+                  .menu-detail-grid {
+                    grid-template-columns: 1fr;
+                  }
+                }
+              `}</style>
+
               <div>
                 <label
                   style={{

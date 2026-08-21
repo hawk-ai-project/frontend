@@ -15,7 +15,6 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
     is_admin_only: false,
   });
 
-  // 상위 메뉴(parent_id)에 따른 다음 정렬 순서 계산 함수
   const calculateNextSortOrder = useCallback((parentId, menuList) => {
     if (!parentId) {
       const topMenus = menuList.filter((m) => !m.parent_id);
@@ -36,22 +35,19 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
     }
   }, []);
 
-  // ★ parent_id 변경 시 sort_order 자동 계산 및 상위 메뉴 권한 연동
   useEffect(() => {
     const nextOrder = calculateNextSortOrder(formData.parent_id, menus);
 
-    // 선택된 상위 메뉴 객체 찾기
     const parentMenu = menus.find(
       (m) => String(m.id) === String(formData.parent_id),
     );
 
-    // 상위 메뉴가 관리자 전용(true)이면 true, 아니거나 최상위 메뉴면 false
     const parentIsAdminOnly = Boolean(parentMenu?.is_admin_only);
 
     setFormData((prev) => ({
       ...prev,
       sort_order: nextOrder,
-      is_admin_only: parentIsAdminOnly, // ★ 상위 메뉴 권한 상태에 따라 자동 변경
+      is_admin_only: parentIsAdminOnly,
     }));
   }, [formData.parent_id, menus, calculateNextSortOrder]);
 
@@ -106,13 +102,21 @@ export default function MenuHeader({ onCreateMenu, menus = [] }) {
           </button>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "16px",
-          }}
-        >
+        <div className="new-menu-grid">
+          {/* JSX 내장 CSS를 활용하여 PC 2열 고정 / 모바일 1열 분기 */}
+          <style jsx>{`
+            .new-menu-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 16px;
+            }
+            @media (max-width: 640px) {
+              .new-menu-grid {
+                grid-template-columns: 1fr;
+              }
+            }
+          `}</style>
+
           <div>
             <label
               style={{

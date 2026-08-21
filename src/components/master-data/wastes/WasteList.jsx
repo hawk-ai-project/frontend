@@ -179,12 +179,14 @@ export default function WasteList({
   };
 
   return (
-    /* maxWidth 제한을 제거하여 메뉴관리와 동일한 전체 너비를 사용합니다 */
     <div style={{ width: "100%" }}>
       <article className="card card-pad">
+        {/* 1. 상단 타이틀 & 버튼 영역: flexWrap 및 gap 조정 */}
         <div
           style={{
             display: "flex",
+            flexWrap: "wrap",
+            gap: "12px",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: "16px",
@@ -193,7 +195,7 @@ export default function WasteList({
           <h2 style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>
             폐기물 유형 목록
           </h2>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             <button type="button" className="btn" onClick={handleAddRow}>
               + 행 추가
             </button>
@@ -220,10 +222,13 @@ export default function WasteList({
           </div>
         </div>
 
-        <div style={{ overflowX: "auto" }}>
+        {/* 2. 테이블 스크롤 영역 */}
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          {/* table에 minWidth: "900px" 추가하여 컬럼이 구겨지지 않게 보호 */}
           <table
             style={{
               width: "100%",
+              minWidth: "900px",
               borderCollapse: "collapse",
               textAlign: "left",
               fontSize: "14px",
@@ -254,7 +259,7 @@ export default function WasteList({
                 <th style={{ padding: "12px", width: "180px" }}>클래스 코드</th>
                 <th style={{ padding: "12px", width: "180px" }}>한글 이름</th>
                 <th style={{ padding: "12px", width: "180px" }}>영문 이름</th>
-                <th style={{ padding: "12px" }}>설명</th>
+                <th style={{ padding: "12px", minWidth: "200px" }}>설명</th>
                 <th style={{ padding: "12px", width: "120px" }}>사용 여부</th>
                 <th style={{ padding: "12px", width: "100px" }}>순서</th>
                 <th
