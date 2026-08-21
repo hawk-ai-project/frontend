@@ -13,7 +13,7 @@ export default function Header() {
   const pathname = usePathname();
   const { user } = useAuth(); // ★ 2. 로그인 사용자 정보 가져오기[cite: 12]
   const [navigation, setNavigation] = useState([]);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function Header() {
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
+        setOpenMenuId(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -60,7 +60,7 @@ export default function Header() {
             priority
           />
         </Link>
-        <nav className="nav" aria-label="주요 메뉴">
+        <nav className="nav" ref={dropdownRef} aria-label="주요 메뉴">
           {/* ★ 4. navigation 대신 필터링된 visibleMenus 사용 */}
           {visibleMenus.map((item) => {
             const hasChildren = Boolean(
@@ -69,19 +69,21 @@ export default function Header() {
 
             if (hasChildren) {
               return (
-                <div key={item.id} className="nav-dropdown" ref={dropdownRef}>
+                <div key={item.id} className="nav-dropdown">
                   <Link
                     href={item.href}
                     className={isActive(item.href) ? "active" : ""}
                     onClick={(e) => {
                       e.preventDefault();
-                      setDropdownOpen((prev) => !prev);
+                      setOpenMenuId((currentId) =>
+                        currentId === item.id ? null : item.id,
+                      );
                     }}
                   >
                     {item.label}
                   </Link>
 
-                  {dropdownOpen && (
+                  {openMenuId === item.id && (
                     <div className="sub-menu">
                       {item.children.map((sub) => (
                         <Link
