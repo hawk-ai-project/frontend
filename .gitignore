@@ -11,3 +11,5 @@ npm-debug.log*
 # Local AI assistant instructions
 AGENTS.md
 CLAUDE.md
+
+*.log
