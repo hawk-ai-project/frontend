@@ -140,9 +140,7 @@ export default function AnalyticsClient() {
             distribution={data.distribution}
             query={query} // query 전달 추가
           />
-          <AnalyticsMap
-            items={data.locations || data.items || data.inspections || []}
-          />
+          <AnalyticsMap items={data.locations || []} />
           <AIAnalyticsInsights
             key={`${query.startDate}-${query.endDate}-${query.locationId || "all"}`}
             analytics={data}

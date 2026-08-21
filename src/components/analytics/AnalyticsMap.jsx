@@ -7,13 +7,19 @@ export default function AnalyticsMap({ items = [] }) {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
 
-  // GPS 좌표 유효성 검사
-  const validItems = items.filter(
-    (item) =>
+  const validItems = items.filter((item) => {
+    const hasValidGps =
       (item.latitude || item.lat) &&
       (item.longitude || item.lng) &&
-      Number(item.latitude || item.lat) !== 0,
-  );
+      Number(item.latitude || item.lat) !== 0;
+
+    // 백엔드에서 내려주는 count 필드 확인
+    const wasteCount = Number(
+      item.waste_count ?? item.detection_count ?? item.count ?? 0,
+    );
+
+    return hasValidGps && wasteCount > 0;
+  });
 
   const [userLocation, setUserLocation] = useState(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
