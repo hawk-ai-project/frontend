@@ -61,7 +61,7 @@ export default function MenuList({
 
   const renderTreeNode = (node, depth = 0) => {
     const isSelected = selectedId === node.id;
-    const hasChildren = node.children && node.children.length > 0;
+    const hasChildren = Boolean(node.children && node.children.length > 0);
 
     return (
       <div key={node.id}>
@@ -96,8 +96,8 @@ export default function MenuList({
             {node.name}
           </span>
 
-          {/* ★ 트리 레이블 옆 관리자 전용 배지 추가[cite: 10] */}
-          {node.is_admin_only && (
+          {/* ★ 삼항 연산자로 불리언 및 null 명시적 분기 */}
+          {Boolean(node.is_admin_only) ? (
             <span
               style={{
                 fontSize: "11px",
@@ -108,19 +108,20 @@ export default function MenuList({
             >
               (관리자)
             </span>
-          )}
+          ) : null}
 
-          {!node.is_use && (
+          {!Boolean(node.is_use) ? (
             <span
               style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "4px" }}
             >
               (미사용)
             </span>
-          )}
+          ) : null}
         </div>
 
-        {hasChildren &&
-          node.children.map((child) => renderTreeNode(child, depth + 1))}
+        {hasChildren
+          ? node.children.map((child) => renderTreeNode(child, depth + 1))
+          : null}
       </div>
     );
   };
@@ -238,7 +239,7 @@ export default function MenuList({
                 >
                   <option value="">최상위 메뉴 (그룹)</option>
                   {items
-                    .filter((m) => !m.parent_id && m.id !== selectedMenu.id)
+                    .filter((m) => m.id !== selectedMenu.id)
                     .map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name}
@@ -370,7 +371,6 @@ export default function MenuList({
                 </select>
               </div>
 
-              {/* ★ 상세 정보 수정용 접근 권한 드롭다운 추가[cite: 10] */}
               <div>
                 <label
                   style={{
