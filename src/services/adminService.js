@@ -63,6 +63,8 @@ export const adminService = {
   getAiModels: () => apiClient.get("/admin/ai/models").then(({ data }) => data),
   selectAiModel: (modelId) => apiClient.post(`/admin/ai/models/${modelId}/select`).then(({ data }) => data),
   getAiSystem: () => apiClient.get("/admin/ai/system").then(({ data }) => data),
+  getAiModelDetail: (modelId) => apiClient.get(`/admin/ai/models/${modelId}`).then(({ data }) => data),
+  getAiArtifact: (path) => apiClient.get(`/admin/ai/artifacts/${path}`, { responseType: "blob" }).then(({ data }) => data),
   getAiClasses: () =>
     apiClient.get("/admin/ai/classes").then(({ data }) => data),
   getAiData: (params = {}) => {
