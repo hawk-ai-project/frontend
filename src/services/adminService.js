@@ -60,6 +60,9 @@ export const adminService = {
     apiClient.patch(`/admin/ai/detections/${id}`, payload).then(({ data }) => data),
   getAiStatistics: () =>
     apiClient.get("/admin/ai/statistics").then(({ data }) => data),
+  getAiModels: () => apiClient.get("/admin/ai/models").then(({ data }) => data),
+  selectAiModel: (modelId) => apiClient.post(`/admin/ai/models/${modelId}/select`).then(({ data }) => data),
+  getAiSystem: () => apiClient.get("/admin/ai/system").then(({ data }) => data),
   getAiClasses: () =>
     apiClient.get("/admin/ai/classes").then(({ data }) => data),
   getAiData: (params = {}) => {

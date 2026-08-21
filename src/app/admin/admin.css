@@ -185,6 +185,29 @@
 .permission-self-label { display: block; margin-top: 5px; color: #8994a6; font-size: 10px; }
 .permission-save-btn { min-height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--primary-dark); color: #fff; font-size: 11px; font-weight: 750; }
 .permission-save-btn:disabled { cursor: not-allowed; background: #e3e7ee; color: #98a2b2; }
+.ai-system-stats { grid-template-columns: repeat(3, 1fr); }
+.ai-online { color: #238460; }
+.ai-offline { color: #bd4c4c; }
+.ai-system-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; margin-bottom: 14px; }
+.ai-live-dot { padding: 5px 8px; border-radius: 7px; background: #e9f7f1; color: #23775d; font-size: 10px; font-weight: 850; }
+.ai-live-dot::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #2ca879; }
+.ai-system-details { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #edf0f5; }
+.ai-system-details div { min-height: 82px; padding: 15px 16px; background: #fff; }
+.ai-system-details span,.ai-selected-model small,.ai-experiment-table td small { display: block; margin-top: 4px; color: var(--text-3); font-size: 11px; }
+.ai-system-details strong { display: block; margin-top: 8px; color: var(--text); font-size: 18px; }
+.ai-selected-model { padding: 20px 18px; }
+.ai-selected-model strong { display: block; color: var(--primary-dark); font-size: 16px; }
+.ai-selected-model small { overflow-wrap: anywhere; }
+.ai-experiment-table { min-width: 1050px; }
+.ai-experiment-table td { vertical-align: top; }
+.ai-experiment-table td > strong { display: block; color: var(--text); }
+.ai-metrics { display: grid; gap: 3px; min-width: 150px; }
+.ai-metrics span { display: flex; justify-content: space-between; gap: 12px; color: var(--text-2); font-size: 11px; }
+.ai-metrics b { color: var(--text); }
+.ai-weight-ready { color: #238460 !important; font-weight: 700; }
+.ai-selected-row td { background: #f3f7ff; }
+.ai-select-btn { min-height: 32px; padding: 0 10px; border: 1px solid #cbd8ee; border-radius: 8px; background: #fff; color: var(--primary-dark); font-size: 11px; font-weight: 750; white-space: nowrap; }
+.ai-select-btn:disabled { cursor: not-allowed; border-color: #e4e8ef; background: #f6f7f9; color: #9aa4b4; }
 @keyframes admin-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 840px) {

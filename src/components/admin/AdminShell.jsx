@@ -18,6 +18,7 @@ const ADMIN_MENU = [
     children: [
       { href: ROUTES.adminDetections, label: "탐지 결과 검수" },
       { href: ROUTES.adminAiData, label: "Data Browser" },
+      { href: ROUTES.adminAiModels, label: "모델 실험·GPU" },
     ],
   },
   {
