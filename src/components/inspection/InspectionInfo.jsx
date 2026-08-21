@@ -301,7 +301,7 @@ export default function InspectionInfo({
         </label>
 
         {/* 수동 폐기물 입력 UI 영역 */}
-        <div style={{ marginTop: "10px", marginBottom: "10px" }}>
+        {/* <div style={{ marginTop: "10px", marginBottom: "10px" }}>
           <label style={{ display: "block", marginBottom: "8px" }}>
             수동 탐지 결과 (선택)
           </label>
@@ -314,9 +314,9 @@ export default function InspectionInfo({
                 marginBottom: "10px",
                 alignItems: "center",
               }}
-            >
-              {/* 폐기물 종류 선택 드롭다운 */}
-              <select
+            > */}
+        {/* 폐기물 종류 선택 드롭다운 */}
+        {/* <select
                 value={item.waste_type_id}
                 onChange={(e) =>
                   handleDetectionChange(index, "waste_type_id", e.target.value)
@@ -326,15 +326,15 @@ export default function InspectionInfo({
               >
                 <option value="">폐기물 종류</option>
                 {wasteTypes.map((wt) => (
-                  <option key={wt.id} value={wt.id}>
-                    {/* 한글 이름으로 출력 */}
-                    {wt.name_ko}
+                  <option key={wt.id} value={wt.id}> */}
+        {/* 한글 이름으로 출력 */}
+        {/* {wt.name_ko}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
-              {/* 수량 입력 */}
-              <input
+        {/* 수량 입력 */}
+        {/* <input
                 type="number"
                 min="1"
                 value={item.count}
@@ -344,10 +344,10 @@ export default function InspectionInfo({
                 className="input"
                 style={{ flex: 1 }}
                 placeholder="수량"
-              />
+              /> */}
 
-              {/* 삭제 버튼 (2개 이상일때부터 등장) */}
-              {manualDetections.length > 1 && (
+        {/* 삭제 버튼 (2개 이상일때부터 등장) */}
+        {/* {manualDetections.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeDetection(index)}
@@ -367,7 +367,7 @@ export default function InspectionInfo({
           >
             + 폐기물 추가하기
           </button>
-        </div>
+        </div> */}
 
         <label htmlFor="memo">
           점검 메모

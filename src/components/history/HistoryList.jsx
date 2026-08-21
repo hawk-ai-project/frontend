@@ -33,9 +33,10 @@ function inspectionToHistory(inspection) {
     0,
   );
   const statusMap = {
-    REVIEW_REQUIRED: STATUS_OPTIONS[0],
-    ACTION_REQUIRED: STATUS_OPTIONS[1],
-    RESOLVED: STATUS_OPTIONS[2],
+    DRAFT: "분석 대기",
+    REVIEW_REQUIRED: "진행 대기",
+    ACTION_REQUIRED: "진행",
+    RESOLVED: "완료",
   };
 
   const rawWasteString =

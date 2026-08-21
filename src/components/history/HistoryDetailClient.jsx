@@ -27,7 +27,17 @@ export default function HistoryDetailClient({
 }) {
   const localKey = `inspection_local_${history.id}`;
 
-  const [status, setStatus] = useState(history.status);
+  const statusTranslateMap = {
+    DRAFT: "분석 대기",
+    REVIEW_REQUIRED: "진행 대기",
+    RESOLVED: "진행",
+    COMPLETED: "완료",
+  };
+
+  const [status, setStatus] = useState(
+    statusTranslateMap[history.status] || history.status,
+  );
+
   const [opinion, setOpinion] = useState(detail.opinion);
   const [saved, setSaved] = useState(true);
   const [savingNotes, setSavingNotes] = useState(false);
@@ -125,8 +135,9 @@ export default function HistoryDetailClient({
     detail.annotatedImageUrl === source ||
     (source && detail.annotatedImageUrl.includes(source));
   const analyzedSource = isSameImage ? null : detail.annotatedImageUrl;
-  const currentStep =
-    status === "완료" ? "완료" : status === "진행" ? "진행" : "대기";
+  // const currentStep =
+  //   status === "완료" ? "완료" : status === "진행" ? "진행" : "대기";
+  const isProgressOrDone = status === "진행" || status === "완료";
 
   // 수거 작업 완료 처리 클릭 핸들러
   const handleCompleteWork = async () => {
@@ -524,7 +535,10 @@ export default function HistoryDetailClient({
         <div className="detail-process-steps">
           <Step label="1단계 · 점검 등록" value="AI 점검 결과 저장" />
           <Step label="2단계 · 담당자 배정" value={assigneeName} />
-          <Step label="3단계 · 수거/조치" value={currentStep} />
+          <Step
+            label="3단계 · 수거/조치"
+            value={isProgressOrDone ? "진행" : "대기"}
+          />
           <Step
             label="4단계 · 완료"
             value={status === "완료" ? "완료" : "대기"}

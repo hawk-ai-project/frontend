@@ -102,7 +102,7 @@ export default function HistoryHeader({ onSearch, wastes = [] }) {
       "전체 폐기물";
     const pLocationId =
       urlParams.get("locationId") || searchParams?.get("locationId") || "";
-    const pHasWaste = urlParams.get("hasWaste") === "true"; // ★ hasWaste 파라미터 확인
+    const pHasWaste = urlParams.get("hasWaste") === "true";
 
     if (pDate) setDate(pDate);
     if (pWaste) setWaste(pWaste);
@@ -115,11 +115,11 @@ export default function HistoryHeader({ onSearch, wastes = [] }) {
         waste: pWaste,
         status: "전체 상태",
         date: normalizeSearchDate(pDate),
-        hasWaste: pHasWaste, // ★ 백엔드 API 조회 검색 조건으로 전달
-        regions,
+        hasWaste: pHasWaste,
+        regions, // regions 데이터가 준비된 시점에 전달됨
       });
     }
-  }, [searchParams?.toString()]);
+  }, [searchParams?.toString(), regions]);
 
   const search = (event) => {
     if (event) event.preventDefault();
