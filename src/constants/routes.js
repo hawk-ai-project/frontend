@@ -17,11 +17,10 @@ export const ROUTES = Object.freeze({
   adminDetections: "/admin/ai/detections",
   adminAiData: "/admin/ai/data",
   adminAiModels: "/admin/ai/models",
+  adminWasteTypes: "/admin/ai/wastes",
   adminSettings: "/admin/settings",
   adminForbiddenWords: "/admin/settings/forbidden-words",
-
-  // ★ 동적 메뉴 관리 화면 경로 추가
-  adminMenus: "/menu",
+  adminMenus: "/admin/settings/menus",
 
   // masterData 경로
   masterData: "/master-data",

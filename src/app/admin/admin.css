@@ -569,3 +569,52 @@
   .monitor-setting-grid { grid-template-columns: 1fr 1fr; }
   .activity-presets { width: 100%; overflow-x: auto; }
 }
+
+/* Admin management pages */
+.admin-management-content { display: grid; gap: 14px; }
+.admin-management-content .card {
+  margin: 0 !important;
+  overflow: hidden;
+  border: 1px solid #e1e6ef;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(31,48,81,.04);
+}
+.admin-management-content .card-pad { padding: 18px; }
+.admin-management-content .card > form > div:first-child,
+.admin-management-content .card > div:first-child {
+  margin: -18px -18px 18px !important;
+  padding: 15px 18px 14px !important;
+  border-bottom: 1px solid #edf0f5 !important;
+}
+.admin-management-content .card h2 { color: var(--text); font-size: 16px !important; font-weight: 750 !important; }
+.admin-management-content .card h3 { color: #4a566a !important; font-weight: 750 !important; }
+.admin-management-content .input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid #d8dfeb;
+  border-radius: 9px;
+  background: #fff;
+  color: #354158;
+  font-size: 12px;
+  outline: none;
+}
+.admin-management-content .input:focus { border-color: #6e8ed1; box-shadow: 0 0 0 3px rgba(88,120,196,.12); }
+.admin-management-content .btn {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid #d8dfeb;
+  border-radius: 9px;
+  background: #fff;
+  color: #4a566a;
+  font-size: 12px;
+  font-weight: 750;
+}
+.admin-management-content .btn:hover { border-color: #b9c6dc; background: #f7f9fc; }
+.admin-management-content .btn-primary { border-color: var(--primary-dark); background: var(--primary-dark); color: #fff; }
+.admin-management-content .btn-primary:hover { background: var(--primary); }
+.admin-management-content table { font-size: 13px !important; }
+.admin-management-content table thead tr { border-bottom: 1px solid #e1e6ef !important; background: #fafbfc !important; }
+.admin-management-content table th { color: #778397; font-size: 11px; font-weight: 750; }
+.admin-management-content table tbody tr { border-bottom-color: #edf0f5 !important; }

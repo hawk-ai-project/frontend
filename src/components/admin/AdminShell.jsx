@@ -19,6 +19,7 @@ const ADMIN_MENU = [
       { href: ROUTES.adminDetections, label: "탐지 결과 검수" },
       { href: ROUTES.adminAiData, label: "Data Browser" },
       { href: ROUTES.adminAiModels, label: "모델 실험·GPU" },
+      { href: ROUTES.adminWasteTypes, label: "폐기물 유형 관리" },
     ],
   },
   {
@@ -40,6 +41,7 @@ const ADMIN_MENU = [
       { href: ROUTES.adminSettings, label: "서비스 설정" },
       { href: `${ROUTES.adminSettings}/security`, label: "세션 및 보안" },
       { href: ROUTES.adminForbiddenWords, label: "금칙어 관리" },
+      { href: ROUTES.adminMenus, label: "메뉴 관리" },
     ],
   },
 ];

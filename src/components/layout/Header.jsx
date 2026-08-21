@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import AuthNavigation from "./AuthNavigation";
 import MobileNavigation from "./MobileNavigation";
 import { menuService } from "@/services/menuService";
+import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth"; // ★ 1. useAuth hook 추가[cite: 12]
 
 export default function Header() {
@@ -25,6 +26,11 @@ export default function Header() {
 
   // ★ 3. 상위 메뉴 및 하위(sub) 메뉴 권한 필터링
   const visibleMenus = navigation
+    .filter(
+      (item) =>
+        item.label !== "기준정보" &&
+        !item.href?.startsWith(ROUTES.masterData),
+    )
     .filter((item) => !(item.is_admin_only && user?.role !== "ADMIN"))
     .map((item) => ({
       ...item,
@@ -90,7 +96,7 @@ export default function Header() {
                           key={sub.id}
                           href={sub.href}
                           className={`sub-menu-item ${isActive(sub.href) ? "active" : ""}`}
-                          onClick={() => setDropdownOpen(false)}
+                          onClick={() => setOpenMenuId(null)}
                         >
                           {sub.label}
                         </Link>
