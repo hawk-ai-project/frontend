@@ -47,18 +47,18 @@ export default function MenuClient() {
     try {
       setIsSaving(true);
 
-      // 5개 핵심 요소(메뉴명, 경로, 유형, 순서, 상태) 포함 전체 필드 업데이트
       await Promise.all(
         updatedMenus.map((item) =>
           menuService.updateMenu(item.id, {
             parent_id: item.parent_id ? Number(item.parent_id) : null,
-            name: item.name, // 1. 메뉴명
-            path: item.path, // 2. 경로
-            menu_type: item.menu_type, // 3. 유형
-            sort_order: Number(item.sort_order || 0), // 4. 순서
-            is_use: Boolean(item.is_use), // 5. 상태 (사용 여부)
+            name: item.name,
+            path: item.path,
+            menu_type: item.menu_type,
+            sort_order: Number(item.sort_order || 0),
+            is_use: Boolean(item.is_use),
             icon: item.icon || "",
             description: item.description || "",
+            is_admin_only: Boolean(item.is_admin_only), // ★ 이 부분을 추가해주시면 됩니다!
           }),
         ),
       );
