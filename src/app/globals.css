@@ -16,9 +16,13 @@
   --shadow-sm: 0 4px 12px rgba(38, 51, 82, 0.06);
   --shadow-md: 0 12px 30px rgba(38, 51, 82, 0.1);
   --shadow-lg: 0 24px 64px rgba(38, 51, 82, 0.14);
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 28px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --content-card-radius: 12px;
+  --content-panel-radius: 14px;
+  --analytics-card-radius: 6px;
+  --analytics-control-radius: 6px;
   --gradient: linear-gradient(135deg, #496fcb 0%, #6a62d4 48%, #df6f98 100%);
 }
 * {
@@ -527,11 +531,41 @@ main {
 .card {
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(222, 228, 240, 0.92);
-  border-radius: var(--radius-lg);
+  border-radius: var(--content-panel-radius);
   box-shadow: var(--shadow-sm);
 }
 .card-pad {
   padding: 26px;
+}
+
+.content-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--content-card-radius);
+  background: rgba(255, 255, 255, .96);
+  box-shadow: var(--shadow-sm);
+}
+.analytics-summary-card { position: relative; overflow: hidden; }
+.analytics-filter-card { width: 100%; box-sizing: border-box; }
+.analytics-page-wrapper .analytics-summary-card,
+.analytics-page-wrapper .analytics-filter-card,
+.analytics-page-wrapper .card {
+  border-radius: 10px;
+}
+.analytics-page-wrapper .analytics-filter-card input,
+.analytics-page-wrapper .analytics-filter-card select,
+.analytics-page-wrapper .analytics-filter-card .btn {
+  border-radius: 8px !important;
+}
+.board-page .board-filter,
+.board-page .board-row {
+  border-radius: 10px;
+}
+.board-page .board-filter input,
+.board-page .board-filter select,
+.board-page .board-filter .btn,
+.board-page .page-head .btn {
+  border-radius: 8px;
 }
 
 /* Inspection history: compact management layout */
@@ -1581,7 +1615,7 @@ main {
 }
 .hero-preview-image {
   min-height: 330px;
-  border-radius: 22px;
+  border-radius: 12px;
 }
 .hero-preview-bottom {
   margin-top: 14px;
@@ -1698,12 +1732,12 @@ main {
 }
 .mini-window-body {
   padding: 17px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: #f7f9fd;
 }
 .mini-image {
   height: 220px;
-  border-radius: 16px;
+  border-radius: 10px;
 }
 .mini-results {
   display: grid;
@@ -1869,7 +1903,7 @@ textarea:focus {
   align-items: center;
   gap: 14px;
   padding: 17px 18px;
-  border-radius: 16px;
+  border-radius: var(--content-card-radius);
   background: #fff;
   border: 1px solid var(--border);
   transition: 0.18s;
@@ -2517,7 +2551,7 @@ textarea:focus {
   margin: 0 auto 24px;
   display: grid;
   place-items: center;
-  border-radius: 22px;
+  border-radius: var(--content-card-radius);
   color: #fff;
   background: var(--gradient);
   box-shadow: 0 14px 28px rgba(91, 91, 214, 0.24);
@@ -2577,7 +2611,7 @@ textarea:focus {
 .markdown-editor {
   overflow: hidden;
   border: 1px solid #d9e0ec;
-  border-radius: 16px;
+  border-radius: 12px;
   background: #fff;
   transition: 0.18s;
 }
@@ -3072,7 +3106,7 @@ textarea:focus {
   max-height: 440px;
   margin: 28px 0 44px;
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 12px;
   box-shadow: var(--shadow-md);
 }
 .article-thumbnail img {
@@ -3180,7 +3214,7 @@ textarea:focus {
   justify-content: center;
   gap: 10px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--content-card-radius);
   background: rgba(255, 255, 255, 0.88);
   box-shadow: var(--shadow-sm);
   transition: 0.18s;
@@ -3376,7 +3410,7 @@ textarea:focus {
 .editor-preview-panel {
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--content-card-radius);
   background: #fff;
   overflow: hidden;
 }
@@ -3549,7 +3583,7 @@ textarea:focus {
   overflow: hidden;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: 14px;
   background: #fff;
   box-shadow: 0 24px 60px rgba(23, 43, 77, 0.28);
 }
@@ -3924,7 +3958,7 @@ textarea:focus {
 .comment-editor {
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--content-card-radius);
   background: #fff;
 }
 .comment-editor textarea {
@@ -3983,7 +4017,7 @@ textarea:focus {
   height: 58px;
   padding: 5px;
   border: 2px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--content-card-radius);
   background: #fff;
   cursor: pointer;
 }
@@ -4015,7 +4049,7 @@ textarea:focus {
 .comment-login-notice,
 .comment-empty {
   padding: 22px;
-  border-radius: 14px;
+  border-radius: var(--content-card-radius);
   background: #f6f8fb;
   color: var(--text-2);
   text-align: center;
@@ -4143,7 +4177,7 @@ textarea:focus {
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 12px;
   background: #fff;
   box-shadow: var(--shadow-sm);
   transition:
@@ -4229,7 +4263,7 @@ textarea:focus {
   min-height: 520px;
   overflow: visible;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 12px;
   background: #fff;
   box-shadow: var(--shadow-sm);
 }
@@ -4305,7 +4339,7 @@ textarea:focus {
     gap: 16px;
   }
   .hokeytoon-card {
-    border-radius: 16px;
+    border-radius: 12px;
   }
   .hokeytoon-card h2 {
     font-size: 17px;
@@ -4416,7 +4450,7 @@ textarea:focus {
 .mermaid-error {
   padding: 16px;
   border: 1px solid #efc9ce;
-  border-radius: 12px;
+  border-radius: var(--content-card-radius);
   background: #fff5f6;
   color: #a83744;
   font-size: 13px;
@@ -4669,7 +4703,7 @@ textarea:focus {
   margin-bottom: 14px;
   width: 320px;
   background-color: #ffffff;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 24px 60px rgba(23, 43, 77, 0.28);
   border: 1px solid var(--border, #e5e7eb);

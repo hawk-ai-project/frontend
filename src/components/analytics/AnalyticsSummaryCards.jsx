@@ -18,13 +18,8 @@ export default function AnalyticsSummaryCards({ summary }) {
 
   // 카드 공통 스타일 (모바일 여부에 따라 패딩 및 너비 자동 조절)
   const cardStyle = {
-    backgroundColor: '#ffffff',
-    borderRadius: '20px',
+    borderRadius: 'var(--analytics-card-radius)',
     padding: isMobile ? '16px' : '24px',
-    position: 'relative',
-    overflow: 'hidden',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-    border: '1px solid #f1f5f9',
     minWidth: 0, // Grid 내부 텍스트 초과로 인한 레이아웃 깨짐 방지
   };
 
@@ -53,7 +48,7 @@ export default function AnalyticsSummaryCards({ summary }) {
       }}
     >
       {/* 카드 1: 기간 내 점검 */}
-      <div style={cardStyle}>
+      <div className="content-card analytics-summary-card" style={cardStyle}>
         <div
           style={{
             position: 'absolute',
@@ -78,7 +73,7 @@ export default function AnalyticsSummaryCards({ summary }) {
       </div>
 
       {/* 카드 2: 탐지 폐기물 */}
-      <div style={cardStyle}>
+      <div className="content-card analytics-summary-card" style={cardStyle}>
         <div
           style={{
             position: 'absolute',
@@ -103,7 +98,7 @@ export default function AnalyticsSummaryCards({ summary }) {
       </div>
 
       {/* 카드 3: 최다 탐지 */}
-      <div style={cardStyle}>
+      <div className="content-card analytics-summary-card" style={cardStyle}>
         <div
           style={{
             position: 'absolute',
@@ -122,8 +117,7 @@ export default function AnalyticsSummaryCards({ summary }) {
           style={{
             ...valueStyle,
             fontSize: isMobile ? '18px' : '28px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+                    textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
           }}
         >
@@ -135,7 +129,7 @@ export default function AnalyticsSummaryCards({ summary }) {
       </div>
 
       {/* 카드 4: 처리 완료율 */}
-      <div style={cardStyle}>
+      <div className="content-card analytics-summary-card" style={cardStyle}>
         <div
           style={{
             position: 'absolute',

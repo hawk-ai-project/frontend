@@ -5,7 +5,7 @@ function PostLink({ post, direction }) {
     return <div className="post-navigation-card is-empty" aria-hidden="true" />;
   const isPrevious = direction === "previous";
   return (
-    <Link className="post-navigation-card" href={`/boards/${post.id}`}>
+    <Link className="content-card post-navigation-card" href={`/boards/${post.id}`}>
       <span>{isPrevious ? "이전 글" : "다음 글"}</span>
       <strong>
         {isPrevious ? "← " : ""}

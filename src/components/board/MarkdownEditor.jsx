@@ -182,7 +182,7 @@ export default function MarkdownEditor({
   return (
     <div className="editor-grid">
       <section
-        className="editor-work-panel"
+        className="content-card editor-work-panel"
         aria-labelledby="markdown-write-title"
       >
         <div className="editor-panel-head">
@@ -272,7 +272,7 @@ export default function MarkdownEditor({
       </section>
 
       <section
-        className="editor-preview-panel"
+        className="content-card editor-preview-panel"
         aria-labelledby="markdown-preview-title"
       >
         <div className="editor-panel-head">

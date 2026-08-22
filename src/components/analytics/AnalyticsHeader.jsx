@@ -53,10 +53,9 @@ export default function AnalyticsHeader({
           type="button"
           onClick={onExport}
           style={{
-            backgroundColor: '#ffffff',
-            color: '#1e293b',
+              color: '#1e293b',
             border: '1px solid #e2e8f0',
-            borderRadius: '12px',
+            borderRadius: 'var(--analytics-control-radius)',
             padding: '10px 20px',
             fontSize: '14px',
             fontWeight: '600',
@@ -73,17 +72,15 @@ export default function AnalyticsHeader({
 
       {/* 3. 하단 필터 검색 영역 */}
       <form
+        className="content-card analytics-filter-card"
         onSubmit={onSearch}
         style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '20px',
+          borderRadius: 'var(--analytics-card-radius)',
           padding: '16px 20px',
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           gap: '12px',
           alignItems: 'center',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-          border: '1px solid #f1f5f9',
           width: '100%',
           boxSizing: 'border-box',
         }}
@@ -95,13 +92,12 @@ export default function AnalyticsHeader({
             onChange={(e) => setStartDate(e.target.value)}
             style={{
               width: '100%',
-              borderRadius: '12px',
+              borderRadius: 'var(--analytics-control-radius)',
               border: '1px solid #e2e8f0',
               padding: '10px 14px',
               fontSize: '14px',
               color: '#1e293b',
-              backgroundColor: '#ffffff',
-              outline: 'none',
+                  outline: 'none',
               boxSizing: 'border-box',
             }}
           />
@@ -113,13 +109,12 @@ export default function AnalyticsHeader({
             onChange={(e) => setEndDate(e.target.value)}
             style={{
               width: '100%',
-              borderRadius: '12px',
+              borderRadius: 'var(--analytics-control-radius)',
               border: '1px solid #e2e8f0',
               padding: '10px 14px',
               fontSize: '14px',
               color: '#1e293b',
-              backgroundColor: '#ffffff',
-              outline: 'none',
+                  outline: 'none',
               boxSizing: 'border-box',
             }}
           />
@@ -131,13 +126,12 @@ export default function AnalyticsHeader({
             onChange={(e) => setLocationId(e.target.value)}
             style={{
               width: '100%',
-              borderRadius: '12px',
+              borderRadius: 'var(--analytics-control-radius)',
               border: '1px solid #e2e8f0',
               padding: '10px 14px',
               fontSize: '14px',
               color: '#1e293b',
-              backgroundColor: '#ffffff',
-              outline: 'none',
+                  outline: 'none',
               boxSizing: 'border-box',
             }}
           >
