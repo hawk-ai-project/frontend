@@ -4874,7 +4874,9 @@ textarea:focus {
   body:has(.field-mobile-navigation) .favorite-floating-container,
   body:has(.field-mobile-navigation) .chatbot-launcher,
   body:has(.field-mobile-navigation) .chatbot-panel { display: none !important; }
-  body:has(.field-mobile-navigation) main { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
+  body:has(.field-mobile-navigation) main { padding-bottom: calc(88px + env(safe-area-inset-bottom) + var(--field-browser-bottom,0px)); }
+  body:has(.field-mobile-navigation) .chatbot-root { right: 14px; bottom: calc(80px + env(safe-area-inset-bottom) + var(--field-browser-bottom,0px)); }
+  body:has(.field-mobile-navigation) .chatbot-panel { height: min(560px, calc(100dvh - 170px - var(--field-browser-bottom,0px))); }
   body:has(.field-mobile-navigation) .page-shell { padding-top: 20px; }
   .field-mobile-header {
     position: sticky; z-index: 110; top: 0; height: 58px; padding: 0 16px;
@@ -4886,7 +4888,7 @@ textarea:focus {
   .field-mobile-header > a:first-child strong { color: #172033; font-size: 15px; }
   .field-mobile-account { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #e9eff9; color: var(--primary-dark); font-size: 13px; font-weight: 850; }
   .field-mobile-navigation {
-    position: fixed; z-index: 1000; right: 0; bottom: 0; left: 0;
+    position: fixed; z-index: 1000; right: 0; bottom: var(--field-browser-bottom,0px); left: 0;
     min-height: calc(68px + env(safe-area-inset-bottom));
     padding: 7px 12px max(7px,env(safe-area-inset-bottom));
     display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); align-items: end;

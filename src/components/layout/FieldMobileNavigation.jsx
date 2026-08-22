@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +17,31 @@ const ITEMS = [
 export default function FieldMobileNavigation() {
   const pathname = usePathname() || ROUTES.home;
   const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated || !isFieldInspectorRole(user?.role)) return undefined;
+    const updateViewportOffset = () => {
+      const viewport = window.visualViewport;
+      const measuredHeight = viewport
+        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+        : 0;
+      const isWhale = /Whale/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+      const whaleToolbarFallback = isWhale && !isStandalone ? 64 : 0;
+      const coveredHeight = Math.max(measuredHeight, whaleToolbarFallback);
+      document.documentElement.style.setProperty("--field-browser-bottom", `${Math.round(coveredHeight)}px`);
+    };
+    updateViewportOffset();
+    window.visualViewport?.addEventListener("resize", updateViewportOffset);
+    window.visualViewport?.addEventListener("scroll", updateViewportOffset);
+    window.addEventListener("orientationchange", updateViewportOffset);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateViewportOffset);
+      window.visualViewport?.removeEventListener("scroll", updateViewportOffset);
+      window.removeEventListener("orientationchange", updateViewportOffset);
+      document.documentElement.style.removeProperty("--field-browser-bottom");
+    };
+  }, [isAuthenticated, user?.role]);
   if (!isAuthenticated || !isFieldInspectorRole(user?.role) || pathname.startsWith("/admin")) return null;
 
   const active = (href) => href === ROUTES.home ? pathname === href : pathname.startsWith(href);
