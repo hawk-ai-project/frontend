@@ -1,7 +1,7 @@
 import axios from "axios";
 import { tokenStorage } from "@/utils/tokenStorage";
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 export const apiClient = axios.create({ baseURL, timeout: 10000, withCredentials: true });
 const refreshClient = axios.create({ baseURL, timeout: 10000, withCredentials: true });
 let refreshPromise = null;
