@@ -5,6 +5,7 @@ export const ROUTES = Object.freeze({
   profile: "/profile",
   inspection: "/inspection",
   histories: "/histories",
+  reinspections: "/reinspections",
   analytics: "/analytics",
   boards: "/boards",
   hokeytoon: "/hokeytoon",

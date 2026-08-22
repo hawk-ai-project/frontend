@@ -226,7 +226,7 @@ export default function InspectionInfo({
         address: convertedAddress,
         coordinates: formData.coordinates || "",
         notes: formData.memo || "",
-        status: "REVIEW_REQUIRED",
+        status: "DRAFT",
         image: previewImage,
         ai_detections: [],
         detections: validDetections, // 수동 입력 데이터 추가

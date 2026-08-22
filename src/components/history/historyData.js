@@ -41,15 +41,25 @@
 //   },
 // ];
 
-export const STATUS_OPTIONS = ["분석 대기", "진행 대기", "진행", "완료"];
+export const INSPECTION_STATUS_LABELS = {
+  ANALYZING: "AI 분석 중",
+  DRAFT: "점검 대기",
+  REVIEW_REQUIRED: "진행 대기",
+  ACTION_REQUIRED: "진행",
+  RESOLVED: "완료",
+  FAILED: "분석 실패",
+};
+
+export const STATUS_OPTIONS = ["점검 대기", "진행 대기", "진행", "완료", "AI 분석 중", "분석 실패"];
 
 export function statusClass(status) {
   const classMap = {
-    "분석 대기": "draft",
+    "AI 분석 중": "analyzing",
+    "점검 대기": "draft",
     "진행 대기": "pending",
     진행: "progress",
     완료: "done",
+    "분석 실패": "failed",
   };
-
   return classMap[status] || "pending";
 }

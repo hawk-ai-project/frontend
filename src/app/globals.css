@@ -4818,3 +4818,6 @@ textarea:focus {
   color: #2563eb;
   font-weight: 600;
 }
+
+.badge.analyzing { background: #eef3ff; color: #3d64b1; }
+.badge.failed { background: #fff0f0; color: #b33a3a; }

@@ -28,10 +28,12 @@ export default function HistoryDetailClient({
   const localKey = `inspection_local_${history.id}`;
 
   const statusTranslateMap = {
-    DRAFT: "분석 대기",
+    ANALYZING: "AI 분석 중",
+    DRAFT: "점검 대기",
     REVIEW_REQUIRED: "진행 대기",
-    RESOLVED: "진행",
-    COMPLETED: "완료",
+    ACTION_REQUIRED: "진행",
+    RESOLVED: "완료",
+    FAILED: "분석 실패",
   };
 
   const [status, setStatus] = useState(

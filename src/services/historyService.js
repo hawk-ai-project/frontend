@@ -71,4 +71,14 @@ export const historyService = {
     apiClient
       .post(`/inspection/histories/${id}/analyze`)
       .then(({ data }) => data),
+  getReinspectionTargets: () =>
+    apiClient.get("/inspection/reinspection-targets").then(({ data }) => data),
+  approveReinspectionTargets: (inspectionIds) =>
+    apiClient.patch("/inspection/reinspection-targets/approve", { inspectionIds }).then(({ data }) => data),
+  getReinspectionDetail: (id) =>
+    apiClient.get(`/inspection/reinspection-targets/${id}`).then(({ data }) => data),
+  getReinspectionClasses: () =>
+    apiClient.get("/inspection/reinspection-targets/classes").then(({ data }) => data),
+  saveReinspectionAnnotations: (id, payload) =>
+    apiClient.put(`/inspection/reinspection-targets/${id}/annotations`, payload).then(({ data }) => data),
 };
