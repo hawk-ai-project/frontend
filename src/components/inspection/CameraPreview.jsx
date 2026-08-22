@@ -319,6 +319,7 @@ export default function CameraPreview({ onCapture }) {
       <div className={styles.controlsWrapper}>
         <div className={styles.selectGroup}>
           {/* 카메라 선택 */}
+          {devices.length > 1 && (
           <select
             className={`input ${styles.selectInput}`}
             value={selectedDeviceId}
@@ -331,6 +332,7 @@ export default function CameraPreview({ onCapture }) {
               </option>
             ))}
           </select>
+          )}
 
           {/* 카메라 ON/OFF 버튼 */}
           <button onClick={toggleCamera} className="btn btn-secondary">

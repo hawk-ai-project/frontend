@@ -123,9 +123,7 @@
   }
 
   .selectInput {
-    width: 100%;
-    min-width: 0;
-    grid-column: 1 / -1;
+    display: none;
   }
 
   .selectGroup button,
