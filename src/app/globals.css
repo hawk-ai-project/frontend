@@ -4570,12 +4570,17 @@ textarea:focus {
 
 /* 현장점검 반응형 css */
 .inspection-grid {
+  width: 100%;
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
-.inspection-location-field {
+.inspection-grid > * {
+  min-width: 0;
+  max-width: 100%;
+}.inspection-location-field {
   display: grid;
   gap: 8px;
   color: #25324a;
@@ -4588,8 +4593,12 @@ textarea:focus {
 
 @media (max-width: 900px) {
   .inspection-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
+}
+@media (max-width: 600px) {
+  .inspection-grid { gap: 16px; }
+  .inspection-grid .card-pad { width: 100%; min-width: 0; padding: 16px; }
 }
 
 /* ==========================================================================

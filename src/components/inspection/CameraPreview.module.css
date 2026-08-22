@@ -90,3 +90,48 @@
   width: auto;
   min-width: 160px;
 }
+
+@media (max-width: 600px) {
+  .container {
+    min-width: 0;
+    gap: 14px;
+  }
+
+  .videoWrapper {
+    min-width: 0;
+    border-radius: 12px;
+  }
+
+  .statusWrapper {
+    top: 10px;
+    left: 10px;
+  }
+
+  .controlsWrapper {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selectGroup {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .selectInput {
+    width: 100%;
+    min-width: 0;
+    grid-column: 1 / -1;
+  }
+
+  .selectGroup button,
+  .controlsWrapper > button {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 10px;
+  }
+}
