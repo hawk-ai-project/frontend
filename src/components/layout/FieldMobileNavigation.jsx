@@ -22,14 +22,10 @@ export default function FieldMobileNavigation() {
     if (!isAuthenticated || !isFieldInspectorRole(user?.role)) return undefined;
     const updateViewportOffset = () => {
       const viewport = window.visualViewport;
-      const measuredHeight = viewport
+      const coveredHeight = viewport
         ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
         : 0;
-      const isWhale = /Whale/i.test(navigator.userAgent);
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-      const whaleToolbarFallback = isWhale && !isStandalone ? 64 : 0;
-      const coveredHeight = Math.max(measuredHeight, whaleToolbarFallback);
-      document.documentElement.style.setProperty("--field-browser-bottom", `${Math.round(coveredHeight)}px`);
+      document.documentElement.style.setProperty("--field-browser-bottom", `${coveredHeight}px`);
     };
     updateViewportOffset();
     window.visualViewport?.addEventListener("resize", updateViewportOffset);

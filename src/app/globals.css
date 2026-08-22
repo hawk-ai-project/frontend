@@ -4875,11 +4875,11 @@ textarea:focus {
   body:has(.field-mobile-navigation) .chatbot-launcher,
   body:has(.field-mobile-navigation) .chatbot-panel { display: none !important; }
   body:has(.field-mobile-navigation) main { padding-bottom: calc(88px + env(safe-area-inset-bottom) + var(--field-browser-bottom,0px)); }
-  body:has(.field-mobile-navigation) .chatbot-root { right: 14px; bottom: calc(80px + env(safe-area-inset-bottom) + var(--field-browser-bottom,0px)); }
+  body:has(.field-mobile-navigation) .chatbot-root { right: 14px; bottom: calc(76px + env(safe-area-inset-bottom) + var(--field-browser-bottom,0px)); }
   body:has(.field-mobile-navigation) .chatbot-panel { height: min(560px, calc(100dvh - 170px - var(--field-browser-bottom,0px))); }
   body:has(.field-mobile-navigation) .page-shell { padding-top: 20px; }
   .field-mobile-header {
-    position: sticky; z-index: 110; top: 0; height: 58px; padding: 0 16px;
+    position: sticky; z-index: 900; top: 0; height: 58px; padding: 0 16px;
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid #e4e9f1; background: rgba(255,255,255,.94); backdrop-filter: blur(14px);
   }

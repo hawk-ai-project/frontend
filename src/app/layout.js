@@ -19,9 +19,9 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
           <AppHeader />
+          <FieldMobileNavigation />
           <main>{children}</main>
           <AppFooter />
-          <FieldMobileNavigation />
           <HawkWalkingLoader />
           <FloatingFavoriteWidget />
           <Chatbot />
