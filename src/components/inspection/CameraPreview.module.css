@@ -69,11 +69,11 @@
 .cameraEmptyState {
   position: relative;
   z-index: 1;
-  width: min(88%, 360px);
-  padding: 24px 22px;
+  width: min(78%, 300px);
+  padding: 17px 18px;
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 6px;
   border: 1px solid rgba(110, 142, 209, .22);
   border-radius: 16px;
   background: rgba(255, 255, 255, .78);
@@ -82,10 +82,10 @@
   box-shadow: 0 12px 30px rgba(42, 71, 112, .08);
   backdrop-filter: blur(8px);
 }
-.cameraEmptyIcon { width: 52px; height: 52px; margin-bottom: 3px; display: grid; place-items: center; border-radius: 15px; background: #edf3fc; color: var(--primary-dark); }
-.cameraEmptyIcon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.cameraEmptyState strong { font-size: 14px; font-weight: 800; }
-.cameraEmptyState p { margin: 0; color: #667085; font-size: 12px; line-height: 1.55; }
+.cameraEmptyIcon { width: 42px; height: 42px; margin-bottom: 2px; display: grid; place-items: center; border-radius: 15px; background: #edf3fc; color: var(--primary-dark); }
+.cameraEmptyIcon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.cameraEmptyState strong { font-size: 13px; font-weight: 800; }
+.cameraEmptyState p { margin: 0; color: #667085; font-size: 11px; line-height: 1.55; }
 
 /* 하단 버튼 및 셀렉트 박스 영역 */
 .controlsWrapper {
@@ -98,7 +98,7 @@
 
 .selectGroup {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .selectInput {
@@ -134,7 +134,7 @@
     min-width: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
   }
 
   .selectInput {
