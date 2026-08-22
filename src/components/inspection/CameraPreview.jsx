@@ -63,6 +63,10 @@ export default function CameraPreview({ onCapture }) {
       setStream(newStream);
       streamRef.current = newStream;
       if (videoRef.current) videoRef.current.srcObject = newStream;
+      const refreshedDevices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === "videoinput");
+      setDevices(refreshedDevices);
+      const activeDeviceId = newStream.getVideoTracks()[0]?.getSettings().deviceId;
+      if (activeDeviceId) setSelectedDeviceId(activeDeviceId);
       return true;
     } catch (err) {
       console.error("카메라 권한이 없거나 오류가 발생했습니다.", err);
@@ -217,9 +221,15 @@ export default function CameraPreview({ onCapture }) {
           <div className={styles.mobileCameraTopbar}>
             <button type="button" onClick={stopCamera} aria-label="카메라 닫기">×</button>
             <span>현장 사진 촬영</span>
-            <button type="button" onClick={switchCamera} disabled={devices.length < 2} aria-label="카메라 전환">↻</button>
+            <span aria-hidden="true" />
           </div>
-          <div className={styles.mobileCameraBottomBar}><button type="button" className={styles.mobileShutter} onClick={captureImage} aria-label="사진 촬영"><span /></button></div>
+          <div className={styles.mobileCameraBottomBar}>
+            <span className={styles.mobileCameraControlSpacer} />
+            <button type="button" className={styles.mobileShutter} onClick={captureImage} aria-label="사진 촬영"><span /></button>
+            <button type="button" className={styles.mobileSwitchCamera} onClick={switchCamera} disabled={devices.length < 2} aria-label="전·후면 카메라 전환" title="카메라 전환">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h2l1.2-2h3.6L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z"/><path d="M9 13a3 3 0 0 0 5.2 2M15 12a3 3 0 0 0-5.2-2M9 10H7v-2M15 15h2v2"/></svg>
+            </button>
+          </div>
         </>}
 
         {/* 상태 표시 */}

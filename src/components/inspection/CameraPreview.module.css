@@ -215,6 +215,40 @@
     background: linear-gradient(0deg, rgba(0,0,0,.7), transparent);
   }
 
+  .mobileCameraControlSpacer {
+    width: 52px;
+    height: 52px;
+  }
+
+  .mobileSwitchCamera {
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.34);
+    border-radius: 50%;
+    background: rgba(22,22,22,.5);
+    color: #fff;
+  }
+
+  .mobileSwitchCamera svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mobileSwitchCamera:active:not(:disabled) {
+    transform: rotate(18deg) scale(.94);
+  }
+
+  .mobileSwitchCamera:disabled {
+    opacity: .35;
+  }
   .mobileShutter {
     width: 76px;
     height: 76px;
