@@ -291,43 +291,31 @@ export default function HistoryDetailClient({
 
   const submitAssignment = async () => {
     if (!selectedAssigneeId) return;
+    const targetId = inspectionId || history.id;
+    if (!targetId) {
+      setAssignmentError("서버에 저장된 점검에서만 담당자를 지정할 수 있습니다.");
+      return;
+    }
+
     setAssignmentLoading(true);
     setAssignmentError("");
-
-    let targetName = assigneeName;
-    const targetId = inspectionId || history.id;
-
     try {
-      if (targetId) {
-        const result = await historyService.assignHistory(
-          targetId,
-          Number(selectedAssigneeId),
-        );
-        targetName = result.assignee.name;
-      } else {
-        const selectedObj = assignees.find(
-          (a) => String(a.id) === String(selectedAssigneeId),
-        );
-        if (selectedObj) targetName = selectedObj.name;
-      }
-    } catch (error) {
-      console.warn("담당자 지정 API 실패, 로컬 상태만 반영합니다:", error);
-      const selectedObj = assignees.find(
-        (a) => String(a.id) === String(selectedAssigneeId),
+      const result = await historyService.assignHistory(
+        targetId,
+        Number(selectedAssigneeId),
       );
-      if (selectedObj) targetName = selectedObj.name;
-    } finally {
+      const targetName = result.assignee.name;
       setAssigneeName(targetName);
       setStatus("진행");
-
-      saveLocalState({
-        assigneeName: targetName,
-        status: "진행",
-      });
-
+      saveLocalState({ assigneeName: targetName, status: "진행" });
       setAssignmentOpen(false);
-      setAssignmentLoading(false);
       alert(`${targetName} 님이 담당자로 지정되었습니다. (상태: 진행)`);
+    } catch (error) {
+      setAssignmentError(
+        getApiErrorMessage(error, "담당자를 지정하지 못했습니다."),
+      );
+    } finally {
+      setAssignmentLoading(false);
     }
   };
 
