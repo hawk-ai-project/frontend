@@ -65,12 +65,27 @@
   object-fit: cover;
 }
 
-/* 카메라 꺼져있을 때 가운데 나오는 글씨 */
-.placeholderBadge {
+/* 카메라가 꺼져 있을 때 안내 영역 */
+.cameraEmptyState {
+  position: relative;
   z-index: 1;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  width: min(88%, 360px);
+  padding: 24px 22px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  border: 1px solid rgba(110, 142, 209, .22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .78);
+  color: #344054;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(42, 71, 112, .08);
+  backdrop-filter: blur(8px);
 }
+.cameraEmptyIcon { width: 52px; height: 52px; margin-bottom: 3px; display: grid; place-items: center; border-radius: 15px; background: #edf3fc; color: var(--primary-dark); }
+.cameraEmptyIcon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.cameraEmptyState strong { font-size: 14px; font-weight: 800; }
+.cameraEmptyState p { margin: 0; color: #667085; font-size: 12px; line-height: 1.55; }
 
 /* 하단 버튼 및 셀렉트 박스 영역 */
 .controlsWrapper {

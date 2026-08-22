@@ -298,19 +298,12 @@ export default function CameraPreview({ onCapture }) {
 
         {/* 카메라 출력 안하고 있을 때 */}
         {!stream && !previewImage && (
-          <div
-            className={`badge ${styles.placeholderBadge}`}
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: "bold",
-              padding: "12px 24px",
-              lineHeight: "1.5",
-              textAlign: "center",
-            }}
-          >
-            [카메라 ON] 버튼 또는
-            <br />
-            [사진 첨부] 버튼을 눌러주세요
+          <div className={styles.cameraEmptyState}>
+            <span className={styles.cameraEmptyIcon} aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 7.5h3.2L8.8 5h6.4l1.6 2.5H20a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13.5" r="4"/></svg>
+            </span>
+            <strong>촬영할 이미지를 준비해 주세요</strong>
+            <p>카메라를 실행하거나 저장된 사진을 선택할 수 있습니다.</p>
           </div>
         )}
       </div>
