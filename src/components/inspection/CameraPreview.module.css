@@ -209,9 +209,11 @@
     left: 0;
     min-height: 126px;
     padding: 20px 16px max(24px, env(safe-area-inset-bottom));
-    display: flex;
+    display: grid;
+    grid-template-columns: 52px 76px 52px;
     align-items: center;
     justify-content: center;
+    gap: 44px;
     background: linear-gradient(0deg, rgba(0,0,0,.7), transparent);
   }
 

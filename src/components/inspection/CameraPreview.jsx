@@ -128,12 +128,28 @@ export default function CameraPreview({ onCapture }) {
 
     // 카메라가 켜있을때만 캡쳐
     if (!image && videoRef.current && stream) {
+      const video = videoRef.current;
       const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      canvas
-        .getContext("2d")
-        .drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const context = canvas.getContext("2d");
+      const sourceWidth = video.videoWidth;
+      const sourceHeight = video.videoHeight;
+      const landscapeScreen = window.matchMedia("(orientation: landscape)").matches;
+      const rotateToLandscape = landscapeScreen && sourceHeight > sourceWidth;
+
+      if (rotateToLandscape) {
+        canvas.width = sourceHeight;
+        canvas.height = sourceWidth;
+        const orientationAngle = window.screen.orientation?.angle ?? 90;
+        const rotation = orientationAngle === 270 ? -Math.PI / 2 : Math.PI / 2;
+        context.translate(canvas.width / 2, canvas.height / 2);
+        context.rotate(rotation);
+        context.drawImage(video, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
+      } else {
+        canvas.width = sourceWidth;
+        canvas.height = sourceHeight;
+        context.drawImage(video, 0, 0, sourceWidth, sourceHeight);
+      }
+
       image = canvas.toDataURL("image/jpeg", 0.85);
 
       // 캡쳐된 이미지를 state에 저장
