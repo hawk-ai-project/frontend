@@ -618,3 +618,40 @@
 .admin-management-content table thead tr { border-bottom: 1px solid #e1e6ef !important; background: #fafbfc !important; }
 .admin-management-content table th { color: #778397; font-size: 11px; font-weight: 750; }
 .admin-management-content table tbody tr { border-bottom-color: #edf0f5 !important; }
+/* Menu manager */
+.admin-menu-manager { overflow: visible; }
+.admin-menu-toolbar { border-radius: 13px 13px 0 0; }
+.admin-menu-toolbar h2 { margin: 0; }
+.admin-menu-guide { color: var(--text-2); font-size: 12px; line-height: 1.55; }
+.admin-menu-layout { display: grid; grid-template-columns: minmax(280px,.8fr) minmax(420px,1.2fr); min-height: 430px; }
+.admin-menu-tree,.admin-menu-detail { min-width: 0; padding: 18px; }
+.admin-menu-tree { border-right: 1px solid #edf0f5; overflow-y: auto; max-height: 560px; }
+.admin-menu-tree h3,.admin-menu-detail h3 { margin: 0 0 14px; color: var(--text); font-size: 14px; font-weight: 750; }
+.admin-menu-tree-head { min-height: 30px; margin-bottom: 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.admin-menu-tree-head h3 { margin: 3px 0 0; }
+.admin-menu-tree-head button { min-height: 30px; padding: 0 10px; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; color: #59677e; font-size: 11px; font-weight: 750; cursor: pointer; }
+.admin-menu-tree-head button:hover { border-color: #b9c6dc; background: #f7f9fc; }
+.admin-menu-tree-head button.active { border-color: #6e8ed1; background: #f2f6fd; color: #315a9e; }
+.admin-menu-tree-row { min-height: 38px; padding: 5px 9px; display: flex; align-items: center; border: 1px solid transparent; border-radius: 8px; color: #4a566a; cursor: pointer; transition: background .15s,border-color .15s,color .15s; }
+.admin-menu-tree-row + .admin-menu-tree-row { margin-top: 2px; }
+.admin-menu-tree-row:hover { background: #f7f9fc; }
+.admin-menu-tree-row.selected { border-color: #d7e2f5; background: #f2f6fd; color: #315a9e; font-weight: 750; }
+.admin-menu-tree-row.reorder-mode { cursor: grab; }
+.admin-menu-tree-row.reorder-mode:active { cursor: grabbing; }
+.admin-menu-tree-row.drag-over { border-color: #6e8ed1; box-shadow: 0 0 0 3px rgba(88,120,196,.1); }
+.admin-menu-drag-handle { margin-right: 7px; color: #a1acbd; cursor: grab; font-size: 16px; }
+.admin-menu-drag-handle:active { cursor: grabbing; }
+.admin-menu-collapse { width: 24px; height: 24px; margin-right: 3px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: #738096; cursor: pointer; }
+.admin-menu-collapse:hover { background: #e8eef9; color: var(--primary-dark); }
+.admin-menu-folder,.admin-menu-leaf { width: 20px; height: 20px; margin-right: 7px; display: grid; place-items: center; color: #8296ba; }
+.admin-menu-folder svg,.admin-menu-leaf svg { width: 17px; height: 17px; fill: rgba(88,120,196,.14); stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.admin-menu-leaf { margin-left: 27px; color: #a1acbd; }
+.admin-menu-leaf svg { fill: none; }
+.admin-menu-node-name { flex: 1; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.admin-menu-badge { margin-left: 6px; color: #8995a8; font-size: 10px; font-weight: 750; }
+.admin-menu-badge.admin { color: #b74863; }
+.admin-menu-detail-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+.admin-menu-detail-grid label > span { display: block; margin-bottom: 6px; color: #66738a; font-size: 11px; font-weight: 750; }
+.admin-menu-empty { padding: 36px 16px; color: var(--text-2); font-size: 12px; text-align: center; }
+@media (max-width: 900px) { .admin-menu-layout { grid-template-columns: 1fr; } .admin-menu-tree { max-height: 380px; border-right: 0; border-bottom: 1px solid #edf0f5; } }
+@media (max-width: 620px) { .admin-menu-detail-grid { grid-template-columns: 1fr; } }
