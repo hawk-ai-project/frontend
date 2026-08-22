@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 const parentKey = (value) => value ?? null;
 const byOrder = (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0) || a.id - b.id;
 
-export default function MenuList({ menus = [], isLoading, onSaveBatch, isSaving }) {
+export default function MenuList({ menus = [], isLoading, onSaveBatch, isSaving, onCreateClick }) {
   const [items, setItems] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [collapsed, setCollapsed] = useState(() => new Set());
@@ -100,7 +100,7 @@ export default function MenuList({ menus = [], isLoading, onSaveBatch, isSaving 
       <button type="button" className="admin-primary-btn" disabled={isSaving || isLoading || !items.length} onClick={() => onSaveBatch?.(items)}>{isSaving ? "저장 중..." : "변경사항 저장"}</button>
     </div>
     <div className="admin-menu-layout">
-      <section className="admin-menu-tree"><div className="admin-menu-tree-head"><h3>메뉴 구조</h3><button type="button" className={reorderMode ? "active" : ""} onClick={() => { setReorderMode((value) => !value); setDraggedId(null); setOverId(null); }}>{reorderMode ? "순서 변경 완료" : "순서 변경"}</button></div>{isLoading ? <div className="admin-menu-empty">불러오는 중...</div> : tree.length ? tree.map((node) => nodeView(node)) : <div className="admin-menu-empty">등록된 메뉴가 없습니다.</div>}</section>
+      <section className="admin-menu-tree"><div className="admin-menu-tree-head"><h3>메뉴 구조</h3><div className="admin-menu-tree-actions"><button type="button" className={reorderMode ? "active" : ""} onClick={() => { setReorderMode((value) => !value); setDraggedId(null); setOverId(null); }}>{reorderMode ? "순서 변경 완료" : "순서 변경"}</button><button type="button" className="admin-menu-add-button" onClick={onCreateClick} aria-label="신규 메뉴 등록" title="신규 메뉴 등록">+</button></div></div>{isLoading ? <div className="admin-menu-empty">불러오는 중...</div> : tree.length ? tree.map((node) => nodeView(node)) : <div className="admin-menu-empty">등록된 메뉴가 없습니다.</div>}</section>
       <section className="admin-menu-detail"><h3>상세 정보 수정 {selected && `(ID: ${selected.id})`}</h3>
         {selected ? <div className="admin-menu-detail-grid">
           <label><span>상위 메뉴</span><select className="input" value={selected.parent_id || ""} onChange={(e) => change("parent_id", e.target.value ? Number(e.target.value) : null)}><option value="">최상위 메뉴</option>{items.filter((item) => item.id !== selected.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>

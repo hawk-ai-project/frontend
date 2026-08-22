@@ -9,6 +9,7 @@ export default function MenuClient() {
   const [menus, setMenus] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const fetchMenus = async () => {
     try {
@@ -23,7 +24,8 @@ export default function MenuClient() {
   };
 
   useEffect(() => {
-    fetchMenus();
+    const timer = setTimeout(fetchMenus, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleCreateMenu = async (formData) => {
@@ -75,12 +77,13 @@ export default function MenuClient() {
 
   return (
     <>
-      <MenuHeader onCreateMenu={handleCreateMenu} menus={menus} />
+      {createOpen && <MenuHeader onCreateMenu={handleCreateMenu} menus={menus} onClose={() => setCreateOpen(false)} />}
       <MenuList
         menus={menus}
         isLoading={isLoading}
         onSaveBatch={handleSaveBatch}
         isSaving={isSaving}
+        onCreateClick={() => setCreateOpen(true)}
       />
     </>
   );

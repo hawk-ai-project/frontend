@@ -655,3 +655,20 @@
 .admin-menu-empty { padding: 36px 16px; color: var(--text-2); font-size: 12px; text-align: center; }
 @media (max-width: 900px) { .admin-menu-layout { grid-template-columns: 1fr; } .admin-menu-tree { max-height: 380px; border-right: 0; border-bottom: 1px solid #edf0f5; } }
 @media (max-width: 620px) { .admin-menu-detail-grid { grid-template-columns: 1fr; } }
+.admin-menu-tree-actions { display: flex; align-items: center; gap: 10px; }
+.admin-menu-tree-head .admin-menu-add-button { width: 30px; padding: 0; border-color: var(--primary-dark); background: var(--primary-dark); color: #fff; font-size: 18px; line-height: 1; }
+.admin-menu-tree-head .admin-menu-add-button:hover { border-color: var(--primary); background: var(--primary); }
+.admin-menu-modal-backdrop { position: fixed; z-index: 1200; inset: 0; padding: 24px; display: grid; place-items: center; background: rgba(20,29,45,.52); backdrop-filter: blur(3px); }
+.admin-menu-modal { width: min(680px,100%); max-height: calc(100vh - 48px); overflow-y: auto; border: 1px solid #dce3ed; border-radius: 14px; background: #fff; box-shadow: 0 24px 70px rgba(20,29,45,.22); }
+.admin-menu-modal-head { padding: 18px 20px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; border-bottom: 1px solid #edf0f5; }
+.admin-menu-modal-head h2 { margin: 3px 0 3px; font-size: 19px; }
+.admin-menu-modal-head p { margin: 0; color: var(--text-2); font-size: 12px; }
+.admin-menu-modal-close { width: 32px; height: 32px; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; color: #66738a; font-size: 20px; cursor: pointer; }
+.admin-menu-modal form { padding: 18px 20px 20px; }
+.admin-menu-modal-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+.admin-menu-modal-grid label > span { display: block; margin-bottom: 6px; color: #66738a; font-size: 11px; font-weight: 750; }
+.admin-menu-modal .input { width: 100%; min-height: 38px; padding: 0 11px; border: 1px solid #d8dfeb; border-radius: 9px; background: #fff; color: #354158; font-size: 12px; outline: none; }
+.admin-menu-modal .input:focus { border-color: #6e8ed1; box-shadow: 0 0 0 3px rgba(88,120,196,.12); }
+.admin-menu-modal-actions { margin-top: 20px; padding-top: 16px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #edf0f5; }
+.admin-menu-modal-actions > button:not(.admin-primary-btn) { min-height: 38px; padding: 0 14px; border: 1px solid #d8dfeb; border-radius: 9px; background: #fff; color: #59677e; font-size: 12px; font-weight: 750; cursor: pointer; }
+@media (max-width: 620px) { .admin-menu-modal-backdrop { padding: 12px; } .admin-menu-modal-grid { grid-template-columns: 1fr; } }

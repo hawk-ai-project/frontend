@@ -1,297 +1,63 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 
-export default function MenuHeader({ onCreateMenu, menus = [] }) {
-  const [formData, setFormData] = useState({
-    parent_id: "",
-    name: "",
-    path: "",
-    icon: "",
-    menu_type: "PAGE",
-    description: "",
-    sort_order: 1,
-    is_use: true,
-    is_admin_only: false,
-  });
+const nextSortOrder = (parentId, menus) => {
+  const siblings = menus.filter((menu) => parentId
+    ? String(menu.parent_id) === String(parentId)
+    : !menu.parent_id);
+  return siblings.length ? Math.max(...siblings.map((menu) => Number(menu.sort_order) || 0)) + 1 : 1;
+};
 
-  const calculateNextSortOrder = useCallback((parentId, menuList) => {
-    if (!parentId) {
-      const topMenus = menuList.filter((m) => !m.parent_id);
-      if (topMenus.length === 0) return 1;
-      const maxOrder = Math.max(
-        ...topMenus.map((m) => Number(m.sort_order) || 0),
-      );
-      return maxOrder + 1;
-    } else {
-      const childMenus = menuList.filter(
-        (m) => String(m.parent_id) === String(parentId),
-      );
-      if (childMenus.length === 0) return 1;
-      const maxOrder = Math.max(
-        ...childMenus.map((m) => Number(m.sort_order) || 0),
-      );
-      return maxOrder + 1;
-    }
-  }, []);
+export default function MenuHeader({ onCreateMenu, menus = [], onClose }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState(() => ({
+    parent_id: "", name: "", path: "", icon: "", menu_type: "PAGE",
+    description: "", sort_order: nextSortOrder("", menus), is_use: true, is_admin_only: false,
+  }));
 
   useEffect(() => {
-    const nextOrder = calculateNextSortOrder(formData.parent_id, menus);
+    const closeOnEscape = (event) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
 
-    const parentMenu = menus.find(
-      (m) => String(m.id) === String(formData.parent_id),
-    );
-
-    const parentIsAdminOnly = Boolean(parentMenu?.is_admin_only);
-
-    setFormData((prev) => ({
-      ...prev,
-      sort_order: nextOrder,
-      is_admin_only: parentIsAdminOnly,
-    }));
-  }, [formData.parent_id, menus, calculateNextSortOrder]);
-
-  const handleFormChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : name === "is_use" || name === "is_admin_only"
-            ? value === "true"
-            : value,
-    }));
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    const success = await onCreateMenu(formData);
-    if (success) {
-      const nextOrder = calculateNextSortOrder("", menus);
-      setFormData({
-        parent_id: "",
-        name: "",
-        path: "",
-        icon: "",
-        menu_type: "PAGE",
-        description: "",
-        sort_order: nextOrder,
-        is_use: true,
-        is_admin_only: false,
-      });
+  const change = (event) => {
+    const { name, value } = event.target;
+    if (name === "parent_id") {
+      const parent = menus.find((menu) => String(menu.id) === String(value));
+      setFormData((prev) => ({ ...prev, parent_id: value, sort_order: nextSortOrder(value, menus), is_admin_only: Boolean(parent?.is_admin_only) }));
+      return;
     }
+    setFormData((prev) => ({ ...prev, [name]: name === "is_use" || name === "is_admin_only" ? value === "true" : name === "sort_order" ? Number(value) : value }));
   };
 
-  return (
-    <article className="card card-pad" style={{ marginBottom: "24px" }}>
-      <form onSubmit={handleFormSubmit}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <h2 style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>
-            신규 메뉴 등록
-          </h2>
-          <button className="btn btn-primary" type="submit">
-            메뉴 등록
-          </button>
+  const submit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    const success = await onCreateMenu(formData);
+    setSubmitting(false);
+    if (success) onClose();
+  };
+
+  return <div className="admin-menu-modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <section className="admin-menu-modal" role="dialog" aria-modal="true" aria-labelledby="new-menu-title" onMouseDown={(event) => event.stopPropagation()}>
+      <header className="admin-menu-modal-head">
+        <div><span className="admin-kicker">SYSTEM MENU</span><h2 id="new-menu-title">신규 메뉴 등록</h2><p>메뉴 정보와 접근 권한을 설정합니다.</p></div>
+        <button type="button" className="admin-menu-modal-close" onClick={onClose} aria-label="닫기">×</button>
+      </header>
+      <form onSubmit={submit}>
+        <div className="admin-menu-modal-grid">
+          <label><span>상위 메뉴</span><select className="input" name="parent_id" value={formData.parent_id} onChange={change}><option value="">최상위 메뉴</option>{menus.filter((menu) => !menu.parent_id).map((menu) => <option key={menu.id} value={menu.id}>{menu.name}{menu.is_admin_only ? " (관리자)" : ""}</option>)}</select></label>
+          <label><span>메뉴명</span><input className="input" name="name" value={formData.name} onChange={change} required placeholder="예: 메뉴 관리" autoFocus /></label>
+          <label><span>경로 (Path)</span><input className="input" name="path" value={formData.path} onChange={change} required placeholder="예: /menus" /></label>
+          <label><span>메뉴 유형</span><select className="input" name="menu_type" value={formData.menu_type} onChange={change}><option value="PAGE">PAGE</option><option value="GROUP">GROUP</option><option value="ACTION">ACTION</option></select></label>
+          <label><span>정렬 순서</span><input className="input" type="number" name="sort_order" value={formData.sort_order} onChange={change} min="1" /></label>
+          <label><span>사용 여부</span><select className="input" name="is_use" value={String(formData.is_use)} onChange={change}><option value="true">사용</option><option value="false">미사용</option></select></label>
+          <label><span>접근 권한</span><select className="input" name="is_admin_only" value={String(formData.is_admin_only)} onChange={change}><option value="false">전체 사용자</option><option value="true">관리자 전용</option></select></label>
         </div>
-
-        <div className="new-menu-grid">
-          {/* JSX 내장 CSS를 활용하여 PC 2열 고정 / 모바일 1열 분기 */}
-          <style jsx>{`
-            .new-menu-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 16px;
-            }
-            @media (max-width: 640px) {
-              .new-menu-grid {
-                grid-template-columns: 1fr;
-              }
-            }
-          `}</style>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              상위 메뉴
-            </label>
-            <select
-              className="input"
-              name="parent_id"
-              value={formData.parent_id}
-              onChange={handleFormChange}
-            >
-              <option value="">최상위 메뉴 (그룹)</option>
-              {menus
-                .filter((m) => !m.parent_id)
-                .map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} {m.is_admin_only ? "(관리자)" : ""}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              메뉴명
-            </label>
-            <input
-              className="input"
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleFormChange}
-              required
-              placeholder="예: 메뉴 관리"
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              경로 (Path)
-            </label>
-            <input
-              className="input"
-              type="text"
-              name="path"
-              value={formData.path}
-              onChange={handleFormChange}
-              required
-              placeholder="예: /menus"
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              메뉴 유형
-            </label>
-            <select
-              className="input"
-              name="menu_type"
-              value={formData.menu_type}
-              onChange={handleFormChange}
-            >
-              <option value="PAGE">PAGE</option>
-              <option value="GROUP">GROUP</option>
-              <option value="ACTION">ACTION</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              정렬 순서
-            </label>
-            <input
-              className="input"
-              type="number"
-              name="sort_order"
-              value={formData.sort_order}
-              onChange={handleFormChange}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              사용 여부
-            </label>
-            <select
-              className="input"
-              name="is_use"
-              value={formData.is_use ? "true" : "false"}
-              onChange={handleFormChange}
-            >
-              <option value="true">사용</option>
-              <option value="false">미사용</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#475569",
-              }}
-            >
-              접근 권한
-            </label>
-            <select
-              className="input"
-              name="is_admin_only"
-              value={formData.is_admin_only ? "true" : "false"}
-              onChange={handleFormChange}
-              style={{
-                color: formData.is_admin_only ? "#e11d48" : "#334155",
-                fontWeight: "600",
-              }}
-            >
-              <option value="false" style={{ color: "#334155" }}>
-                전체 (일반 사용자)
-              </option>
-              <option value="true" style={{ color: "#e11d48" }}>
-                관리자 전용 (ADMIN)
-              </option>
-            </select>
-          </div>
-        </div>
+        <footer className="admin-menu-modal-actions"><button type="button" onClick={onClose}>취소</button><button type="submit" className="admin-primary-btn" disabled={submitting}>{submitting ? "등록 중..." : "메뉴 등록"}</button></footer>
       </form>
-    </article>
-  );
+    </section>
+  </div>;
 }
