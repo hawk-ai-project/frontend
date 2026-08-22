@@ -7,7 +7,8 @@ import styles from "./CameraPreview.module.css";
 
 export default function CameraPreview({ onCapture }) {
   const videoRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
   const streamRef = useRef(null);
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
@@ -140,7 +141,12 @@ export default function CameraPreview({ onCapture }) {
         canvas.width = sourceHeight;
         canvas.height = sourceWidth;
         const orientationAngle = window.screen.orientation?.angle ?? 90;
-        const rotation = orientationAngle === 270 ? Math.PI / 2 : -Math.PI / 2;
+        const activeTrack = stream.getVideoTracks()[0];
+        const facingMode = activeTrack?.getSettings().facingMode;
+        const selectedDevice = devices.find((device) => device.deviceId === selectedDeviceId);
+        const isFrontCamera = facingMode === "user" || /front|user|전면/i.test(selectedDevice?.label || "");
+        const rearRotation = orientationAngle === 270 ? Math.PI / 2 : -Math.PI / 2;
+        const rotation = isFrontCamera ? -rearRotation : rearRotation;
         context.translate(canvas.width / 2, canvas.height / 2);
         context.rotate(rotation);
         context.drawImage(video, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
@@ -164,8 +170,8 @@ export default function CameraPreview({ onCapture }) {
   };
 
   const selectImage = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    if (galleryInputRef.current) {
+      galleryInputRef.current.click();
     }
   };
 
@@ -208,11 +214,14 @@ export default function CameraPreview({ onCapture }) {
 
   // 카메라 ON/OFF 토글
   const toggleCamera = async () => {
+    if (window.matchMedia("(max-width: 600px)").matches) {
+      cameraInputRef.current?.click();
+      return;
+    }
     if (stream) {
       stopCamera();
       return;
     }
-    if (window.matchMedia("(max-width: 600px)").matches) setMobileCameraOpen(true);
     await startCamera();
   };
 
@@ -335,7 +344,14 @@ export default function CameraPreview({ onCapture }) {
             type="file"
             accept="image/*"
             capture="environment"
-            ref={fileInputRef}
+            ref={cameraInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            ref={galleryInputRef}
             style={{ display: "none" }}
             onChange={handleFileChange}
           />
