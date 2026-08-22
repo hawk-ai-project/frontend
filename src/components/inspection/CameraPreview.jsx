@@ -140,7 +140,7 @@ export default function CameraPreview({ onCapture }) {
         canvas.width = sourceHeight;
         canvas.height = sourceWidth;
         const orientationAngle = window.screen.orientation?.angle ?? 90;
-        const rotation = orientationAngle === 270 ? -Math.PI / 2 : Math.PI / 2;
+        const rotation = orientationAngle === 270 ? Math.PI / 2 : -Math.PI / 2;
         context.translate(canvas.width / 2, canvas.height / 2);
         context.rotate(rotation);
         context.drawImage(video, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
