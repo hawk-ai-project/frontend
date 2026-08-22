@@ -5,7 +5,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Chatbot from "@/components/chat/Chatbot";
 import HawkWalkingLoader from "@/components/common/HawkWalkingLoader";
 import { FloatingFavoriteWidget } from "@/components/favorite/FloatingFavoriteWidget";
-import FieldMobileNavigation from "@/components/layout/FieldMobileNavigation";
 
 export const metadata = {
   title: { default: "Hawk-AI", template: "%s | Hawk-AI" },
@@ -19,7 +18,6 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
           <AppHeader />
-          <FieldMobileNavigation />
           <main>{children}</main>
           <AppFooter />
           <HawkWalkingLoader />
