@@ -135,3 +135,104 @@
     padding-inline: 10px;
   }
 }
+.mobileCameraTopbar,
+.mobileCameraBottomBar {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .videoWrapper.mobileCameraOpen {
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    aspect-ratio: auto;
+    border-radius: 0;
+    background: #000;
+  }
+
+  .mobileCameraOpen .videoElement {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mobileCameraOpen .statusWrapper {
+    display: none;
+  }
+
+  .mobileCameraTopbar {
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    right: 0;
+    left: 0;
+    min-height: 76px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 10px;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    background: linear-gradient(180deg, rgba(0,0,0,.66), transparent);
+  }
+
+  .mobileCameraTopbar span {
+    font-size: 15px;
+    font-weight: 750;
+    text-align: center;
+  }
+
+  .mobileCameraTopbar button {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 50%;
+    background: rgba(0,0,0,.32);
+    color: #fff;
+    font-size: 25px;
+    line-height: 1;
+  }
+
+  .mobileCameraTopbar button:disabled {
+    opacity: .35;
+  }
+
+  .mobileCameraBottomBar {
+    position: absolute;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    min-height: 126px;
+    padding: 20px 16px max(24px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(0deg, rgba(0,0,0,.7), transparent);
+  }
+
+  .mobileShutter {
+    width: 76px;
+    height: 76px;
+    padding: 5px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    background: rgba(255,255,255,.18);
+  }
+
+  .mobileShutter span {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .mobileShutter:active span {
+    transform: scale(.9);
+  }
+}

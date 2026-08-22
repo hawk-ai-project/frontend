@@ -13,6 +13,7 @@ export default function CameraPreview({ onCapture }) {
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [stream, setStream] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [mobileCameraOpen, setMobileCameraOpen] = useState(false);
 
   // 카메라 불러오기
   useEffect(() => {
@@ -24,8 +25,8 @@ export default function CameraPreview({ onCapture }) {
           (device) => device.kind === "videoinput",
         );
         setDevices(videoDevices);
-        if (videoDevices.length > 0)
-          setSelectedDeviceId(videoDevices[0].deviceId);
+        const rearCamera = videoDevices.find((device) => /back|rear|environment|후면/i.test(device.label));
+        if (rearCamera) setSelectedDeviceId(rearCamera.deviceId);
       } catch (err) {
         console.error("카메라 장치를 가져오는 데 실패했습니다.", err);
       }
@@ -53,18 +54,20 @@ export default function CameraPreview({ onCapture }) {
     try {
       const videoConstraints = selectedDeviceId
         ? { deviceId: { exact: selectedDeviceId } }
-        : { facingMode: "environment" };
+        : { facingMode: { ideal: "environment" } };
 
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-        },
+        video: videoConstraints,
+        audio: false,
       });
       setStream(newStream);
       streamRef.current = newStream;
       if (videoRef.current) videoRef.current.srcObject = newStream;
+      return true;
     } catch (err) {
       console.error("카메라 권한이 없거나 오류가 발생했습니다.", err);
+      setMobileCameraOpen(false);
+      return false;
     }
   };
 
@@ -133,6 +136,10 @@ export default function CameraPreview({ onCapture }) {
       setPreviewImage(image);
 
       sendDataToParent(image);
+      if (mobileCameraOpen) {
+        setMobileCameraOpen(false);
+        stopCamera();
+      }
     }
   };
 
@@ -171,6 +178,7 @@ export default function CameraPreview({ onCapture }) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       setStream(null);
+      setMobileCameraOpen(false);
 
       if (videoRef.current) {
         videoRef.current.srcObject = null;
@@ -179,18 +187,41 @@ export default function CameraPreview({ onCapture }) {
   };
 
   // 카메라 ON/OFF 토글
-  const toggleCamera = () => {
+  const toggleCamera = async () => {
     if (stream) {
       stopCamera();
-    } else {
-      startCamera();
+      return;
     }
+    if (window.matchMedia("(max-width: 600px)").matches) setMobileCameraOpen(true);
+    await startCamera();
   };
+
+  const switchCamera = () => {
+    if (devices.length < 2) return;
+    const currentIndex = devices.findIndex((device) => device.deviceId === selectedDeviceId);
+    setSelectedDeviceId(devices[(currentIndex + 1 + devices.length) % devices.length].deviceId);
+  };
+
+  useEffect(() => {
+    if (!mobileCameraOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [mobileCameraOpen]);
 
   return (
     <div className={`card card-pad ${styles.container}`}>
       {/* 카메라 미리보기 영역 (비디오 래퍼) */}
-      <div className={styles.videoWrapper}>
+      <div className={`${styles.videoWrapper} ${mobileCameraOpen ? styles.mobileCameraOpen : ""}`}>
+        {mobileCameraOpen && <>
+          <div className={styles.mobileCameraTopbar}>
+            <button type="button" onClick={stopCamera} aria-label="카메라 닫기">×</button>
+            <span>현장 사진 촬영</span>
+            <button type="button" onClick={switchCamera} disabled={devices.length < 2} aria-label="카메라 전환">↻</button>
+          </div>
+          <div className={styles.mobileCameraBottomBar}><button type="button" className={styles.mobileShutter} onClick={captureImage} aria-label="사진 촬영"><span /></button></div>
+        </>}
+
         {/* 상태 표시 */}
         <div className={styles.statusWrapper}>
           {stream ? (
