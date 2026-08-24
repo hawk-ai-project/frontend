@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "@/services/apiClient";
 import "./reinspections.css";
 
 const COLORS = ["#36a2eb", "#ff6384", "#4bc0c0", "#ff9f40", "#9966ff"];
+const PAGE_SIZE = 6;
 const date = (value) => new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
 function ReviewCard({ item, checked, onCheck }) {
@@ -30,10 +31,13 @@ function ReviewCard({ item, checked, onCheck }) {
 }
 
 export default function ReinspectionsPage() {
-  const [items, setItems] = useState([]), [selected, setSelected] = useState([]), [loading, setLoading] = useState(true), [saving, setSaving] = useState(false), [error, setError] = useState("");
+  const [items, setItems] = useState([]), [selected, setSelected] = useState([]), [page, setPage] = useState(1), [loading, setLoading] = useState(true), [saving, setSaving] = useState(false), [error, setError] = useState("");
   const load = async () => { setLoading(true); try { setItems(await historyService.getReinspectionTargets()); setError(""); } catch (e) { setError(getApiErrorMessage(e, "재점검 대상을 불러오지 못했습니다.")); } finally { setLoading(false); } };
   useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, []);
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedItems = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const toggle = (id) => setSelected((value) => value.includes(id) ? value.filter((item) => item !== id) : [...value, id]);
   const save = async () => { if (!selected.length) return; setSaving(true); try { await historyService.approveReinspectionTargets(selected); setSelected([]); await load(); } catch (e) { setError(getApiErrorMessage(e, "상태 변경에 실패했습니다.")); } finally { setSaving(false); } };
-  return <main className="page-shell reinspection-page"><header className="reinspection-head"><div><span>FIELD REVIEW</span><h1>재점검 대상이력</h1><p>AI 라벨을 확인하고 검수 완료된 이미지를 진행 대기 상태로 전환합니다.</p></div><button className="btn btn-primary" disabled={!selected.length || saving} onClick={save}>{saving ? "저장 중..." : `선택 저장${selected.length ? ` (${selected.length})` : ""}`}</button></header><ErrorMessage message={error} />{loading ? <div className="reinspection-empty">재점검 대상을 불러오는 중입니다.</div> : <section className="reinspection-grid">{items.map((item) => <ReviewCard key={item.inspectionId} item={item} checked={selected.includes(item.inspectionId)} onCheck={toggle} />)}{!items.length && <div className="reinspection-empty">점검 대기 중인 이미지가 없습니다.</div>}</section>}</main>;
+  return <main className="page-shell reinspection-page"><header className="reinspection-head"><div><span>FIELD REVIEW</span><h1>재점검 대상이력</h1><p>AI 라벨을 확인하고 검수 완료된 이미지를 진행 대기 상태로 전환합니다.</p></div><button className="btn btn-primary" disabled={!selected.length || saving} onClick={save}>{saving ? "저장 중..." : `선택 저장${selected.length ? ` (${selected.length})` : ""}`}</button></header><ErrorMessage message={error} />{loading ? <div className="reinspection-empty">재점검 대상을 불러오는 중입니다.</div> : <><section className="reinspection-grid">{pagedItems.map((item) => <ReviewCard key={item.inspectionId} item={item} checked={selected.includes(item.inspectionId)} onCheck={toggle} />)}{!items.length && <div className="reinspection-empty">점검 대기 중인 이미지가 없습니다.</div>}</section><nav className="reinspection-pagination" aria-label="재점검 대상 페이지"><button type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}>이전</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => <button type="button" key={pageNumber} className={pageNumber === currentPage ? "active" : ""} aria-current={pageNumber === currentPage ? "page" : undefined} onClick={() => setPage(pageNumber)}>{pageNumber}</button>)}<button type="button" disabled={currentPage >= totalPages} onClick={() => setPage((value) => value + 1)}>다음</button><span>총 {items.length.toLocaleString()}건</span></nav></>}</main>;
 }
