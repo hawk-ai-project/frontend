@@ -62,6 +62,8 @@ export const adminService = {
     apiClient.get("/admin/ai/statistics").then(({ data }) => data),
   getAiModels: () => apiClient.get("/admin/ai/models").then(({ data }) => data),
   selectAiModel: (modelId) => apiClient.post(`/admin/ai/models/${modelId}/select`).then(({ data }) => data),
+  setAiModelCandidate: (modelId, candidate) => apiClient.patch(`/admin/ai/models/${modelId}/candidate`, { candidate }).then(({ data }) => data),
+  setAiModelCandidates: (modelIds, candidate) => apiClient.patch("/admin/ai/models/candidates", { modelIds, candidate }).then(({ data }) => data),
   getAiSystem: () => apiClient.get("/admin/ai/system").then(({ data }) => data),
   getAiModelDetail: (modelId) => apiClient.get(`/admin/ai/models/${modelId}`).then(({ data }) => data),
   getAiArtifact: (path) => apiClient.get(`/admin/ai/artifacts/${path}`, { responseType: "blob" }).then(({ data }) => data),
