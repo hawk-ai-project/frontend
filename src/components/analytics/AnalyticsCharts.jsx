@@ -91,23 +91,36 @@ export default function AnalyticsCharts({
 
     const params = new URLSearchParams();
     params.set("date", formattedDate);
-    params.set("hasWaste", "true"); // ★ 탐지된 폐기물이 있는 데이터만 조회하도록 조건 추가
+    params.set("hasWaste", "true");
     if (query.locationId) params.set("locationId", query.locationId);
 
     router.push(`/histories?${params.toString()}`);
   };
 
-  // 도넛그래프(폐기물 항목) 클릭 이벤트
+  // ★ 도넛그래프(폐기물 항목) 클릭 이벤트 수정
   const handlePieClick = (entry) => {
     if (!entry || !entry.name) return;
 
     const params = new URLSearchParams();
-    if (query.startDate) params.set("startDate", query.startDate);
-    if (query.endDate) params.set("endDate", query.endDate);
-    if (query.locationId) params.set("locationId", query.locationId);
-    params.set("wasteType", entry.name); // 예: '유리', '기타 플라스틱'
 
-    router.push(`/inspections?${params.toString()}`);
+    // 1. 폐기물 종류 전달 (HistoryHeader의 waste state와 매핑)
+    params.set("waste", entry.name);
+
+    // 2. 지역 선택 정보 전달
+    if (query.locationId) {
+      params.set("locationId", query.locationId);
+    }
+
+    // 3. 날짜 조건 전달 (startDate가 있을 경우 점검이력 날짜 입력란에 맞게 전달)
+    if (query.startDate) {
+      params.set("date", query.startDate.replace(/-/g, "."));
+    }
+
+    // 탐지 폐기물이 있는 항목 조건 설정
+    params.set("hasWaste", "true");
+
+    // 점검이력(/histories) 화면으로 이동
+    router.push(`/histories?${params.toString()}`);
   };
 
   const renderCenterLabel = ({ cx, cy, index }) => {
