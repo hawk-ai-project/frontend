@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { STATUS_OPTIONS } from "./historyData";
 import { analyticsService } from "@/services/analyticsService";
+import { historyService } from "@/services/historyService";
 
 function normalizeSearchDate(value) {
   if (!value) return "";
@@ -66,7 +67,25 @@ export default function HistoryHeader({ onSearch, wastes = [] }) {
   const [status, setStatus] = useState("전체 상태");
   const [date, setDate] = useState("");
 
+  const [wasteList, setWasteList] = useState([]);
+
   const hiddenDateInputRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    historyService
+      .getWasteNames()
+      .then((list) => {
+        if (!cancelled && Array.isArray(list)) {
+          setWasteList(list);
+        }
+      })
+      .catch((err) => console.error("폐기물 목록 조회 실패:", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 1. 지역 목록 최초 조회
   useEffect(() => {
@@ -192,9 +211,11 @@ export default function HistoryHeader({ onSearch, wastes = [] }) {
         onChange={(e) => setWaste(e.target.value)}
         aria-label="폐기물 종류"
       >
-        <option>전체 폐기물</option>
-        {wastes.map((name) => (
-          <option key={name}>{name}</option>
+        <option value="전체 폐기물">전체 폐기물</option>
+        {wasteList.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
         ))}
       </select>
       <select value={status} onChange={(e) => setStatus(e.target.value)}>

@@ -5,6 +5,9 @@ export const historyService = {
   getHistories: (params) =>
     apiClient.get("/inspection/histories", { params }).then(({ data }) => data),
 
+  getWasteNames: () =>
+    apiClient.get("/inspection/waste-types").then(({ data }) => data),
+
   // 2. 점검 이력 상세 조회
   getHistoryById: (id) =>
     apiClient.get(`/inspection/histories/${id}`).then(({ data }) => data),
@@ -74,15 +77,30 @@ export const historyService = {
   getReinspectionTargets: () =>
     apiClient.get("/inspection/reinspection-targets").then(({ data }) => data),
   approveReinspectionTargets: (inspectionIds) =>
-    apiClient.patch("/inspection/reinspection-targets/approve", { inspectionIds }).then(({ data }) => data),
+    apiClient
+      .patch("/inspection/reinspection-targets/approve", { inspectionIds })
+      .then(({ data }) => data),
   getReinspectionDetail: (id) =>
-    apiClient.get(`/inspection/reinspection-targets/${id}`).then(({ data }) => data),
+    apiClient
+      .get(`/inspection/reinspection-targets/${id}`)
+      .then(({ data }) => data),
   getReinspectionModelDetail: (inspectionId) =>
-    apiClient.get(`/inspection/reinspection-targets/${inspectionId}/model`).then(({ data }) => data),
+    apiClient
+      .get(`/inspection/reinspection-targets/${inspectionId}/model`)
+      .then(({ data }) => data),
   getReinspectionModelArtifact: (inspectionId, path) =>
-    apiClient.get(`/inspection/reinspection-targets/${inspectionId}/model/artifacts/${path}`, { responseType: "blob" }).then(({ data }) => data),
+    apiClient
+      .get(
+        `/inspection/reinspection-targets/${inspectionId}/model/artifacts/${path}`,
+        { responseType: "blob" },
+      )
+      .then(({ data }) => data),
   getReinspectionClasses: () =>
-    apiClient.get("/inspection/reinspection-targets/classes").then(({ data }) => data),
+    apiClient
+      .get("/inspection/reinspection-targets/classes")
+      .then(({ data }) => data),
   saveReinspectionAnnotations: (id, payload) =>
-    apiClient.put(`/inspection/reinspection-targets/${id}/annotations`, payload).then(({ data }) => data),
+    apiClient
+      .put(`/inspection/reinspection-targets/${id}/annotations`, payload)
+      .then(({ data }) => data),
 };
