@@ -104,9 +104,11 @@ export default function InspectionInfo({
               },
             );
 
-            // 3. "시", "구", "동" 조합
+            // 3. "도", "시", "구", "동" 조합
             const addr = geoResponse.data?.address;
             if (addr) {
+              // 도 / 특별시 / 광역시 (예: 경기도, 서울특별시 등)
+              const province = addr.province || addr.state || "";
               // 시
               const city = addr.city || addr.town || "";
               // 구
@@ -125,10 +127,10 @@ export default function InspectionInfo({
                 "";
 
               // 주소 조합 (예: 수원시 팔달구 화서동)
-              convertedAddress = `${city} ${borough} ${dong}`
+              convertedAddress = `${province} ${city} ${borough} ${dong}`
                 .trim()
                 .replace(/\s+/g, " ");
-              console.log("주소 변환 성공 (시/구/동):", convertedAddress);
+              console.log("주소 변환 성공 (도/시/구/동):", convertedAddress);
 
               // 완성된 convertedAddress를 화면과 데이터에 즉시 꽂아주기
               setFormData((prev) => {
