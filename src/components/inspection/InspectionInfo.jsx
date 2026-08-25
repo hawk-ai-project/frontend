@@ -13,6 +13,7 @@ export default function InspectionInfo({
   submitting,
   setSubmitting,
   setSubmitError,
+  onInspectionCreated,
 }) {
   const router = useRouter();
   // 폐기물 목록
@@ -244,14 +245,15 @@ export default function InspectionInfo({
       );
 
       console.log("백엔드 저장 완벽하게 성공!", response.data);
-      alert("현장 점검이 등록되었습니다! 점검이력 페이지로 이동합니다.");
+      alert(onInspectionCreated ? "현장 점검이 등록되었습니다. AI 모델 추천을 확인해 주세요." : "현장 점검이 등록되었습니다! 점검이력 페이지로 이동합니다.");
 
       // 지금 만든 점검번호 꺼내기
       const newInspectionId = response.data.inspectionId;
 
       // 해당 점검번호 상페 페이지로 이동
       if (newInspectionId) {
-        router.push(`/histories/${newInspectionId}`);
+        if (onInspectionCreated) onInspectionCreated(newInspectionId);
+        else router.push(`/histories/${newInspectionId}`);
       } else {
         // 혹시 번호가 없을경우 전체 목록으로 이동
         router.push("/histories");

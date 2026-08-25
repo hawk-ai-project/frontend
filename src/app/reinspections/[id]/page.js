@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import ModelRecommendationCard from "@/components/ai/ModelRecommendationCard";
 import { historyService } from "@/services/historyService";
+import { modelRecommendationService } from "@/services/modelRecommendationService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import "../reinspections.css";
 
@@ -69,6 +71,28 @@ export default function ReinspectionLabelEditor() {
   const [deletedIds, setDeletedIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [recommendation, setRecommendation] = useState(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationError, setRecommendationError] = useState("");
+
+  const loadRecommendation = useCallback(async () => {
+    if (!inspectionId) return;
+    setRecommendationLoading(true);
+    setRecommendationError("");
+    try {
+      setRecommendation(
+        await modelRecommendationService.recommendReinspection(inspectionId),
+      );
+    } catch (requestError) {
+      setRecommendationError(
+        requestError.response?.status === 400
+          ? "선정 후보 모델이 없습니다. 관리자 AI 관리에서 비교할 모델을 후보로 등록해 주세요."
+          : getApiErrorMessage(requestError, "AI 모델 추천을 불러오지 못했습니다."),
+      );
+    } finally {
+      setRecommendationLoading(false);
+    }
+  }, [inspectionId]);
 
   const load = useCallback(async () => {
     try {
@@ -97,6 +121,11 @@ export default function ReinspectionLabelEditor() {
     const timer = setTimeout(() => void load(), 0);
     return () => clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => void loadRecommendation(), 0);
+    return () => clearTimeout(timer);
+  }, [loadRecommendation]);
 
   useEffect(() => {
     return () => {
@@ -288,6 +317,14 @@ export default function ReinspectionLabelEditor() {
           )}
         </section>
       )}
+      <ModelRecommendationCard
+        recommendation={recommendation}
+        loading={recommendationLoading}
+        error={recommendationError}
+        title="재점검 AI 추천"
+        description="이 재점검에서 확인된 탐지 오류와 후보 모델의 클래스별 성능을 기준으로 추천합니다."
+        onRefresh={() => void loadRecommendation()}
+      />
       <section className="reinspection-editor-toolbar">
         <div>
           <button
