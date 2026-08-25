@@ -68,6 +68,20 @@ export default function HistoryDetailClient({
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [assignmentError, setAssignmentError] = useState("");
 
+  const [showMap, setShowMap] = useState(false);
+
+  // '위도 : 37.xxx, 경도 : 127.xxx' 형태나 '37.xxx, 127.xxx' 형태에서 순수 숫자 좌표만 추출
+  const rawCoords = detail.coordinates || "";
+  const parsedCoords = (() => {
+    if (!rawCoords || rawCoords === "좌표 미등록") return null;
+    // 숫자, 마이너스, 점, 쉼표를 기준으로 위도/경도 매칭
+    const matches = rawCoords.match(/[-+]?[0-9]*\.?[0-9]+/g);
+    if (matches && matches.length >= 2) {
+      return `${matches[0]},${matches[1]}`;
+    }
+    return rawCoords.trim();
+  })();
+
   // 등록된 수거 완료 증빙사진(COLLECTION_PROOF) 불러오기
   const fetchProofImage = async () => {
     const targetId = inspectionId || history.id;
@@ -414,16 +428,58 @@ export default function HistoryDetailClient({
             <Meta
               label="현장 위치"
               value={
-                <a
-                  href={`https://www.google.com/maps/place/${detail.coordinates}/@${detail.coordinates},18z`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  지도 보기
-                </a>
+                parsedCoords ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowMap((prev) => !prev)}
+                    style={{
+                      background: showMap ? "#eff6ff" : "transparent",
+                      color: "#2563eb",
+                      border: "1px solid #bfdbfe",
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span>📍 {showMap ? "지도 닫기 ▲" : "지도 보기 ▼"}</span>
+                  </button>
+                ) : (
+                  <span style={{ color: "#9ca3af", fontSize: "0.85rem" }}>
+                    좌표 없음
+                  </span>
+                )
               }
             />
           </div>
+          {/* 지도 보기를 눌렀을 때 펼쳐지는 지도 뷰어 */}
+          {showMap && parsedCoords && (
+            <div
+              style={{
+                marginTop: "16px",
+                borderRadius: "12px",
+                overflow: "hidden",
+                border: "1px solid #e2e8f0",
+                height: "350px",
+                position: "relative",
+              }}
+            >
+              <iframe
+                title="현장 GPS 위치 지도"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(parsedCoords)}&hl=ko&z=17&output=embed`}
+              />
+            </div>
+          )}
         </article>
 
         {/* 탐지 결과 */}
