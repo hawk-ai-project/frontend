@@ -76,6 +76,7 @@ export default function ReinspectionLabelEditor() {
   const [recommendationError, setRecommendationError] = useState("");
   const [models, setModels] = useState([]);
   const [selectedModelId, setSelectedModelId] = useState("");
+  const [selectingModelId, setSelectingModelId] = useState("");
   const [detecting, setDetecting] = useState(false);
 
   const loadRecommendation = useCallback(async () => {
@@ -132,17 +133,6 @@ export default function ReinspectionLabelEditor() {
     const timer = setTimeout(() => void loadRecommendation(), 0);
     return () => clearTimeout(timer);
   }, [loadRecommendation]);
-
-  useEffect(() => {
-    const recommendedId =
-      recommendation?.recommendedModelId ||
-      recommendation?.recommendations?.[0]?.modelId;
-    if (recommendedId && models.some((model) => model.id === recommendedId)) {
-      const timer = setTimeout(() => setSelectedModelId(recommendedId), 0);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [models, recommendation]);
 
   useEffect(() => {
     return () => {
@@ -281,7 +271,6 @@ export default function ReinspectionLabelEditor() {
     setDetecting(true);
     setError("");
     try {
-      await historyService.selectReinspectionModel(inspectionId, selectedModelId);
       await historyService.analyzeImage(inspectionId);
       setDeletedIds([]);
       setSelected(null);
@@ -291,6 +280,27 @@ export default function ReinspectionLabelEditor() {
       setError(getApiErrorMessage(e, "선택한 모델로 다시 탐지하지 못했습니다."));
     } finally {
       setDetecting(false);
+    }
+  };
+
+  const selectRecommendedModel = async (modelId) => {
+    const recommendedIds = new Set(
+      (recommendation?.recommendations || []).map((item) => item.modelId),
+    );
+    if (recommendation?.recommendedModelId) {
+      recommendedIds.add(recommendation.recommendedModelId);
+    }
+    if (!recommendedIds.has(modelId)) return;
+
+    setSelectingModelId(modelId);
+    setError("");
+    try {
+      await historyService.selectReinspectionModel(inspectionId, modelId);
+      setSelectedModelId(modelId);
+    } catch (e) {
+      setError(getApiErrorMessage(e, "추천 모델을 선택하지 못했습니다."));
+    } finally {
+      setSelectingModelId("");
     }
   };
 
@@ -357,44 +367,24 @@ export default function ReinspectionLabelEditor() {
         loading={recommendationLoading}
         error={recommendationError}
         title="재점검 AI 추천"
-        description="이 재점검에서 확인된 탐지 오류와 후보 모델의 클래스별 성능을 기준으로 추천합니다."
+        description="AI가 이 재점검에 적합하다고 판단한 추천 모델만 선택할 수 있습니다."
         onRefresh={() => void loadRecommendation()}
+        onSelectModel={(modelId) => void selectRecommendedModel(modelId)}
+        selectedModelId={selectedModelId}
+        selectableModels={models}
+        selectingModelId={selectingModelId}
       />
-      <section className="reinspection-model-picker">
-        <label htmlFor="reinspection-model">AI 추천 모델 선택</label>
-        <select
-          id="reinspection-model"
-          value={selectedModelId}
-          onChange={(event) => setSelectedModelId(event.target.value)}
-          disabled={detecting}
-        >
-          <option value="">모델을 선택해 주세요</option>
-          <optgroup label="AI 추천">
-            {models.filter((model) =>
-              (recommendation?.recommendations || []).some(
-                (item) => item.modelId === model.id,
-              ) || recommendation?.recommendedModelId === model.id,
-            ).map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.name || model.id} · 추천
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="기타 사용 가능 모델">
-            {models.filter((model) =>
-              !(recommendation?.recommendations || []).some(
-                (item) => item.modelId === model.id,
-              ) && recommendation?.recommendedModelId !== model.id,
-            ).map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.name || model.id}
-              </option>
-            ))}
-          </optgroup>
-        </select>
+      <section className="reinspection-redetect-action">
+        <div>
+          <strong>선택 모델로 재탐지</strong>
+          <span>
+            {models.find((model) => model.id === selectedModelId)?.name ||
+              "위 추천 카드에서 모델을 선택해 주세요."}
+          </span>
+        </div>
         <button
           type="button"
-          disabled={!selectedModelId || detecting}
+          disabled={!selectedModelId || detecting || Boolean(selectingModelId)}
           onClick={redetect}
         >
           {detecting ? "다시 탐지 중..." : "선택 모델로 다시 탐지"}
