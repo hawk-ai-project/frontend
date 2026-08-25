@@ -9,7 +9,9 @@ const recommend = (contextType, inspectionId) =>
     .then(({ data }) => data);
 
 export const modelRecommendationService = {
-  recommendGlobal: () => recommend("GLOBAL"),
+  recommendGlobal: () =>
+    apiClient.get("/ai/model-recommendations/cached/global").then(({ data }) => data),
   recommendInspection: (inspectionId) => recommend("INSPECTION", inspectionId),
-  recommendReinspection: (inspectionId) => recommend("REINSPECTION", inspectionId),
+  recommendReinspection: (inspectionId) =>
+    apiClient.get(`/ai/model-recommendations/cached/reinspections/${inspectionId}`).then(({ data }) => data),
 };

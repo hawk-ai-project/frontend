@@ -89,7 +89,9 @@ export default function ReinspectionLabelEditor() {
       );
     } catch (requestError) {
       setRecommendationError(
-        requestError.response?.status === 400
+        requestError.response?.status === 404
+          ? "정기 AI 추천이 아직 생성되지 않았습니다. 잠시 후 다시 확인해 주세요."
+          : requestError.response?.status === 400
           ? "선정 후보 모델이 없습니다. 관리자 AI 관리에서 비교할 모델을 후보로 등록해 주세요."
           : getApiErrorMessage(requestError, "AI 모델 추천을 불러오지 못했습니다."),
       );
@@ -367,8 +369,7 @@ export default function ReinspectionLabelEditor() {
         loading={recommendationLoading}
         error={recommendationError}
         title="재점검 AI 추천"
-        description="AI가 이 재점검에 적합하다고 판단한 추천 모델만 선택할 수 있습니다."
-        onRefresh={() => void loadRecommendation()}
+        description="정기적으로 갱신되는 공통 AI 추천 모델만 선택할 수 있습니다."
         onSelectModel={(modelId) => void selectRecommendedModel(modelId)}
         selectedModelId={selectedModelId}
         selectableModels={models}
