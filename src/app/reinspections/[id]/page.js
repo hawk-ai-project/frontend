@@ -74,6 +74,9 @@ export default function ReinspectionLabelEditor() {
   const [recommendation, setRecommendation] = useState(null);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
+  const [models, setModels] = useState([]);
+  const [selectedModelId, setSelectedModelId] = useState("");
+  const [detecting, setDetecting] = useState(false);
 
   const loadRecommendation = useCallback(async () => {
     if (!inspectionId) return;
@@ -96,10 +99,11 @@ export default function ReinspectionLabelEditor() {
 
   const load = useCallback(async () => {
     try {
-      const [item, types, blob] = await Promise.all([
+      const [item, types, blob, catalog] = await Promise.all([
         historyService.getReinspectionDetail(inspectionId),
         historyService.getReinspectionClasses(),
         historyService.getHistoryImage(inspectionId, "ORIGINAL"),
+        historyService.getReinspectionModels(),
       ]);
 
       setDetail(item);
@@ -109,6 +113,8 @@ export default function ReinspectionLabelEditor() {
         ? types.map((t) => (typeof t === "string" ? { id: t, name: t } : t))
         : [];
       setClasses(classList);
+      setModels(catalog.models || []);
+      setSelectedModelId((current) => current || catalog.selectedModelId || item.modelExternalId || "");
 
       setBoxes(parseDetectionsToBoxes(item.detections));
       setImageUrl(URL.createObjectURL(blob));
@@ -126,6 +132,17 @@ export default function ReinspectionLabelEditor() {
     const timer = setTimeout(() => void loadRecommendation(), 0);
     return () => clearTimeout(timer);
   }, [loadRecommendation]);
+
+  useEffect(() => {
+    const recommendedId =
+      recommendation?.recommendedModelId ||
+      recommendation?.recommendations?.[0]?.modelId;
+    if (recommendedId && models.some((model) => model.id === recommendedId)) {
+      const timer = setTimeout(() => setSelectedModelId(recommendedId), 0);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [models, recommendation]);
 
   useEffect(() => {
     return () => {
@@ -259,6 +276,24 @@ export default function ReinspectionLabelEditor() {
     }
   };
 
+  const redetect = async () => {
+    if (!selectedModelId) return;
+    setDetecting(true);
+    setError("");
+    try {
+      await historyService.selectReinspectionModel(inspectionId, selectedModelId);
+      await historyService.analyzeImage(inspectionId);
+      setDeletedIds([]);
+      setSelected(null);
+      await load();
+      await loadRecommendation();
+    } catch (e) {
+      setError(getApiErrorMessage(e, "선택한 모델로 다시 탐지하지 못했습니다."));
+    } finally {
+      setDetecting(false);
+    }
+  };
+
   const current = boxes.find((b) => b.id === selected);
   const aiBoxes = boxes.filter((b) => !b.manuallyAdded && b.confidence != null);
   const averageConfidence = aiBoxes.length
@@ -325,6 +360,46 @@ export default function ReinspectionLabelEditor() {
         description="이 재점검에서 확인된 탐지 오류와 후보 모델의 클래스별 성능을 기준으로 추천합니다."
         onRefresh={() => void loadRecommendation()}
       />
+      <section className="reinspection-model-picker">
+        <label htmlFor="reinspection-model">AI 추천 모델 선택</label>
+        <select
+          id="reinspection-model"
+          value={selectedModelId}
+          onChange={(event) => setSelectedModelId(event.target.value)}
+          disabled={detecting}
+        >
+          <option value="">모델을 선택해 주세요</option>
+          <optgroup label="AI 추천">
+            {models.filter((model) =>
+              (recommendation?.recommendations || []).some(
+                (item) => item.modelId === model.id,
+              ) || recommendation?.recommendedModelId === model.id,
+            ).map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name || model.id} · 추천
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="기타 사용 가능 모델">
+            {models.filter((model) =>
+              !(recommendation?.recommendations || []).some(
+                (item) => item.modelId === model.id,
+              ) && recommendation?.recommendedModelId !== model.id,
+            ).map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name || model.id}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+        <button
+          type="button"
+          disabled={!selectedModelId || detecting}
+          onClick={redetect}
+        >
+          {detecting ? "다시 탐지 중..." : "선택 모델로 다시 탐지"}
+        </button>
+      </section>
       <section className="reinspection-editor-toolbar">
         <div>
           <button

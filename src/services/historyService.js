@@ -182,6 +182,18 @@ export const historyService = {
     }
   },
 
+  getReinspectionModels: () =>
+    apiClient
+      .get("/inspection/reinspection-targets/models")
+      .then(({ data }) => data),
+
+  selectReinspectionModel: (inspectionId, modelId) =>
+    apiClient
+      .post(`/inspection/reinspection-targets/${inspectionId}/model/select`, {
+        modelId,
+      })
+      .then(({ data }) => data),
+
   /**
    * 재점검 수동 라벨링 데이터 저장
    */

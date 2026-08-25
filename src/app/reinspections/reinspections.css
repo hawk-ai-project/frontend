@@ -22,3 +22,41 @@
 .reinspection-artifact-modal img { display: block; max-width: 90vw; max-height: 80vh; object-fit: contain; }
 .reinspection-artifact-modal p { display: flex; justify-content: space-between; gap: 20px; margin: 0; padding: 14px 18px; color: #fff; }
 .reinspection-artifact-modal p small { color: #aeb8c7; }
+
+.reinspection-model-picker {
+  margin-bottom: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #dbe4f1;
+  border-radius: 11px;
+  background: #fff;
+}
+.reinspection-model-picker label { color: #516078; font-size: 11px; font-weight: 800; }
+.reinspection-model-picker select {
+  min-width: 240px;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid #d8dfeb;
+  border-radius: 8px;
+  background: #fff;
+  color: #344054;
+  font-size: 10px;
+}
+.reinspection-model-picker button {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #4164a5;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.reinspection-model-picker button:disabled { cursor: not-allowed; background: #aeb9ca; }
+@media (max-width: 800px) {
+  .reinspection-model-picker { align-items: stretch; flex-direction: column; }
+  .reinspection-model-picker select { min-width: 0; width: 100%; }
+}
