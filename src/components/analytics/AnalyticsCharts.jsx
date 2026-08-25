@@ -25,6 +25,19 @@ const COLORS = [
   "#ec4899",
 ];
 
+// YYYY.MM.DD 또는 YYYY-MM-DD 스트링에 N일을 더해주는 헬퍼 함수
+const addDays = (dateStr, days = 1) => {
+  if (!dateStr) return "";
+  const cleanDateStr = dateStr.replace(/\./g, "-");
+  const date = new Date(cleanDateStr);
+  date.setDate(date.getDate() + days);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}.${month}.${day}`;
+};
+
 export default function AnalyticsCharts({
   trends = [],
   distribution = [],
@@ -61,7 +74,8 @@ export default function AnalyticsCharts({
     0,
   );
 
-  // 막대그래프(날짜) 클릭 이벤트
+  // 1. 막대그래프(날짜) 클릭 이벤트
+  // 선택한 당일을 startDate로, 미만(<) 검색 백엔드에 맞추어 endDate는 당일 + 1일 설정
   const handleBarClick = (data) => {
     if (!data || !data.date) return;
 
@@ -87,23 +101,28 @@ export default function AnalyticsCharts({
       }
     }
 
-    const formattedDate = `${targetYear}.${formattedMMDD.replace("-", ".")}`;
+    // 선택한 당일 포맷 (YYYY.MM.DD)
+    const startDateFormatted = `${targetYear}.${formattedMMDD.replace("-", ".")}`;
+    // 백엔드 미만(<) 조건 처리용: 선택일 + 1일
+    const endDateFormatted = addDays(startDateFormatted, 1);
 
     const params = new URLSearchParams();
-    params.set("date", formattedDate);
+    params.set("startDate", startDateFormatted);
+    params.set("endDate", endDateFormatted);
     params.set("hasWaste", "true");
     if (query.locationId) params.set("locationId", query.locationId);
 
     router.push(`/histories?${params.toString()}`);
   };
 
-  // ★ 도넛그래프(폐기물 항목) 클릭 이벤트 수정
+  // 2. 도넛그래프(폐기물 항목) 클릭 이벤트
+  // 헤더에서 설정된 전체 기간(startDate, endDate)을 원본 그대로 넘김
   const handlePieClick = (entry) => {
     if (!entry || !entry.name) return;
 
     const params = new URLSearchParams();
 
-    // 1. 폐기물 종류 전달 (HistoryHeader의 waste state와 매핑)
+    // 1. 폐기물 종류 전달
     params.set("waste", entry.name);
 
     // 2. 지역 선택 정보 전달
@@ -111,9 +130,12 @@ export default function AnalyticsCharts({
       params.set("locationId", query.locationId);
     }
 
-    // 3. 날짜 조건 전달 (startDate가 있을 경우 점검이력 날짜 입력란에 맞게 전달)
+    // 3. 통계분석 헤더의 시작일/종료일 기간을 변경 없이 그대로 전달 (YYYY.MM.DD)
     if (query.startDate) {
-      params.set("date", query.startDate.replace(/-/g, "."));
+      params.set("startDate", query.startDate.replace(/-/g, "."));
+    }
+    if (query.endDate) {
+      params.set("endDate", query.endDate.replace(/-/g, "."));
     }
 
     // 탐지 폐기물이 있는 항목 조건 설정

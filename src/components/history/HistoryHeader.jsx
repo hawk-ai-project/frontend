@@ -1,280 +1,198 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { STATUS_OPTIONS } from "./historyData";
-import { analyticsService } from "@/services/analyticsService";
-import { historyService } from "@/services/historyService";
 
-function normalizeSearchDate(value) {
-  if (!value) return "";
-  const trimmed = value.trim();
-  if (!trimmed) return "";
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-  const digits = trimmed.replace(/\D/g, "");
+const getInitialDates = () => {
+  const today = new Date();
+  const weekAgo = new Date();
+  weekAgo.setDate(today.getDate() - 7);
 
-  let year = "",
-    month = "",
-    day = "";
+  return {
+    startDate: formatDate(weekAgo),
+    endDate: formatDate(today),
+  };
+};
 
-  if (digits.length === 8) {
-    year = digits.substring(0, 4);
-    month = digits.substring(4, 6);
-    day = digits.substring(6, 8);
-  } else if (digits.length === 6) {
-    year = digits.substring(0, 4);
-    month = digits.substring(4, 5).padStart(2, "0");
-    day = digits.substring(5, 6).padStart(2, "0");
-  } else if (digits.length === 7) {
-    year = digits.substring(0, 4);
-    const rest = digits.substring(4);
-    if (rest.startsWith("0")) {
-      month = rest.substring(0, 2);
-      day = rest.substring(2).padStart(2, "0");
-    } else {
-      month = rest.substring(0, 1).padStart(2, "0");
-      day = rest.substring(1).padStart(2, "0");
-    }
-  } else {
-    const parts = trimmed.match(/\d+/g);
-    if (!parts || parts[0].length !== 4) return trimmed;
-    year = parts[0];
-    if (parts.length >= 2) month = parts[1].padStart(2, "0");
-    if (parts.length >= 3) day = parts[2].padStart(2, "0");
-  }
+export default function HistoryHeader({
+  onSearch,
+  regions = [],
+  wasteList = [],
+  initialValues = {},
+}) {
+  const defaultDates = getInitialDates();
 
-  if (year && month && day) return `${year}-${month}-${day}`;
-  if (year && month) return `${year}-${month}`;
-  if (year) return year;
-
-  return trimmed;
-}
-
-function formatInputDisplayDate(value) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length <= 4) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 4)}.${digits.slice(4)}`;
-  return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6, 8)}`;
-}
-
-export default function HistoryHeader({ onSearch, wastes = [] }) {
-  const searchParams = useSearchParams();
-
-  const [regions, setRegions] = useState([]);
-  const [keyword, setKeyword] = useState("");
-  const [locationId, setLocationId] = useState("");
-  const [waste, setWaste] = useState("전체 폐기물");
-  const [status, setStatus] = useState("전체 상태");
-  const [date, setDate] = useState("");
-
-  const [wasteList, setWasteList] = useState([]);
-
-  const hiddenDateInputRef = useRef(null);
+  const [keyword, setKeyword] = useState(initialValues.keyword || "");
+  const [locationId, setLocationId] = useState(initialValues.locationId || "");
+  const [waste, setWaste] = useState(initialValues.waste || "전체 폐기물");
+  const [status, setStatus] = useState(initialValues.status || "전체 상태");
+  const [startDate, setStartDate] = useState(
+    initialValues.startDate || defaultDates.startDate,
+  );
+  const [endDate, setEndDate] = useState(
+    initialValues.endDate || defaultDates.endDate,
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    historyService
-      .getWasteNames()
-      .then((list) => {
-        if (!cancelled && Array.isArray(list)) {
-          setWasteList(list);
-        }
-      })
-      .catch((err) => console.error("폐기물 목록 조회 실패:", err));
+    setKeyword(initialValues.keyword || "");
+    setLocationId(initialValues.locationId || "");
+    setWaste(initialValues.waste || "전체 폐기물");
+    setStatus(initialValues.status || "전체 상태");
+    setStartDate(initialValues.startDate || defaultDates.startDate);
+    setEndDate(initialValues.endDate || defaultDates.endDate);
+  }, [
+    initialValues.keyword,
+    initialValues.locationId,
+    initialValues.waste,
+    initialValues.status,
+    initialValues.startDate,
+    initialValues.endDate,
+  ]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // 1. 지역 목록 최초 조회
-  useEffect(() => {
-    let cancelled = false;
-    analyticsService
-      .getRegions()
-      .then((regionList) => {
-        if (!cancelled && Array.isArray(regionList)) {
-          setRegions(regionList);
-        }
-      })
-      .catch((err) => console.error("지역 목록 오류:", err));
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // 2. URL 파라미터 직접 파싱 및 State/조회 동기화
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const pDate =
-      urlParams.get("date") ||
-      urlParams.get("startDate") ||
-      searchParams?.get("date") ||
-      "";
-    const pWaste =
-      urlParams.get("waste") ||
-      urlParams.get("wasteType") ||
-      searchParams?.get("waste") ||
-      "전체 폐기물";
-    const pLocationId =
-      urlParams.get("locationId") || searchParams?.get("locationId") || "";
-    const pHasWaste = urlParams.get("hasWaste") === "true";
-
-    if (pDate) setDate(pDate);
-    if (pWaste) setWaste(pWaste);
-    if (pLocationId) setLocationId(pLocationId);
-
-    if (pDate || pWaste !== "전체 폐기물" || pLocationId || pHasWaste) {
-      onSearch({
-        keyword: "",
-        locationId: pLocationId,
-        waste: pWaste,
-        status: "전체 상태",
-        date: normalizeSearchDate(pDate),
-        hasWaste: pHasWaste,
-        regions, // regions 데이터가 준비된 시점에 전달됨
-      });
-    }
-  }, [searchParams?.toString(), regions]);
-
-  const search = (event) => {
-    if (event) event.preventDefault();
-    const normalizedDate = normalizeSearchDate(date);
-
-    if (normalizedDate && normalizedDate.includes("-")) {
-      setDate(normalizedDate.replace(/-/g, "."));
-    }
-
+  const handleSubmit = (e) => {
+    e.preventDefault();
     onSearch({
       keyword: keyword.trim(),
       locationId,
       waste,
       status,
-      date: normalizedDate,
-      regions,
+      startDate,
+      endDate,
     });
   };
 
-  const handleDateChange = (e) => {
-    setDate(formatInputDisplayDate(e.target.value));
-  };
-
-  const handleDateBlur = () => {
-    const normalized = normalizeSearchDate(date);
-    if (normalized && normalized.includes("-")) {
-      setDate(normalized.replace(/-/g, "."));
-    }
-  };
-
-  const openCalendarPicker = () => {
-    if (hiddenDateInputRef.current) {
-      if (typeof hiddenDateInputRef.current.showPicker === "function") {
-        hiddenDateInputRef.current.showPicker();
-      } else {
-        hiddenDateInputRef.current.focus();
-      }
-    }
-  };
-
-  const handleCalendarSelect = (e) => {
-    const selectedVal = e.target.value;
-    if (selectedVal) {
-      setDate(selectedVal.replace(/-/g, "."));
-    }
+  const inputStyle = {
+    width: "100%",
+    height: "42px",
+    borderRadius: "var(--analytics-control-radius, 8px)",
+    border: "1px solid #e2e8f0",
+    padding: "0 14px",
+    fontSize: "14px",
+    color: "#1e293b",
+    outline: "none",
+    boxSizing: "border-box",
+    backgroundColor: "#ffffff",
   };
 
   return (
-    <form className="card history-filter" onSubmit={search}>
-      <select
-        value={locationId}
-        onChange={(e) => setLocationId(e.target.value)}
-        aria-label="지역 선택"
-      >
-        <option value="">전체 지역</option>
-        {regions.map((region) => (
-          <option key={region.id} value={region.id}>
-            {region.name}
-          </option>
-        ))}
-      </select>
-      <input
-        className="input"
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        placeholder="장소 또는 점검번호 검색"
-      />
-      <select
-        value={waste}
-        onChange={(e) => setWaste(e.target.value)}
-        aria-label="폐기물 종류"
-      >
-        <option value="전체 폐기물">전체 폐기물</option>
-        {wasteList.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
-      <select value={status} onChange={(e) => setStatus(e.target.value)}>
-        <option>전체 상태</option>
-        {STATUS_OPTIONS.map((name) => (
-          <option key={name}>{name}</option>
-        ))}
-      </select>
-
-      <div style={{ position: "relative", display: "inline-block" }}>
+    <form
+      className="card history-filter"
+      onSubmit={handleSubmit}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: "12px",
+        marginBottom: "24px",
+        padding: "20px",
+        alignItems: "center",
+      }}
+    >
+      {/* 1행 - 1열: 검색어 입력 (2칸) */}
+      <div style={{ gridColumn: "span 2" }}>
         <input
           className="input"
-          type="text"
-          value={date}
-          onChange={handleDateChange}
-          onBlur={handleDateBlur}
-          placeholder="YYYY.MM.DD"
-          aria-label="점검 날짜"
-          style={{ paddingRight: "36px" }}
-        />
-        <button
-          type="button"
-          onClick={openCalendarPicker}
-          style={{
-            position: "absolute",
-            right: "8px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "4px",
-            display: "flex",
-            alignItems: "center",
-            color: "#64748b",
-          }}
-          title="달력에서 선택"
-        >
-          📅
-        </button>
-        <input
-          ref={hiddenDateInputRef}
-          type="date"
-          onChange={handleCalendarSelect}
-          style={{
-            position: "absolute",
-            opacity: 0,
-            width: 0,
-            height: 0,
-            pointerEvents: "none",
-            bottom: 0,
-            left: 0,
-          }}
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="장소 또는 점검번호 검색"
+          style={inputStyle}
         />
       </div>
 
-      <button className="btn btn-primary" type="submit">
-        검색
-      </button>
+      {/* 1행 - 2열: 전체 지역 (1칸) */}
+      <div>
+        <select
+          value={locationId}
+          onChange={(e) => setLocationId(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">전체 지역</option>
+          {regions.map((region) => (
+            <option key={region.id} value={region.id}>
+              {region.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 1행 - 3열: 전체 폐기물 (1칸) */}
+      <div>
+        <select
+          value={waste}
+          onChange={(e) => setWaste(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="전체 폐기물">전체 폐기물</option>
+          {wasteList.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 2행 - 1열: 전체 상태 (1칸) */}
+      <div>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="전체 상태">전체 상태</option>
+          {STATUS_OPTIONS.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 2행 - 2열: 날짜 범위 (2칸) */}
+      <div
+        style={{
+          gridColumn: "span 2",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          style={inputStyle}
+        />
+        <span style={{ color: "#94a3b8", fontWeight: "bold" }}>~</span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
+
+      {/* 2행 - 3열: 검색 버튼 (1칸 우측 정렬) */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          style={{
+            height: "42px",
+            padding: "0 28px",
+            fontSize: "14px",
+            fontWeight: "600",
+            whiteSpace: "nowrap",
+          }}
+        >
+          검색
+        </button>
+      </div>
     </form>
   );
 }

@@ -6,111 +6,58 @@ import { useEffect, useMemo, useState } from "react";
 import { STATUS_OPTIONS, statusClass } from "./historyData";
 import { historyService } from "@/services/historyService";
 
-const formatDateTime = (value) =>
-  new Intl.DateTimeFormat("ko-KR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    hour12: false,
-  }).format(new Date(value));
+// 백엔드 상태 영문 코드를 UI용 한글 레이블로 매핑
+const STATUS_LABEL_MAP = {
+  DRAFT: "점검 대기",
+  ACTION_REQUIRED: "조치 필요",
+  IN_PROGRESS: "조치 중",
+  COMPLETED: "조치 완료",
+  ON_HOLD: "보류",
+};
+
+const getStatusLabel = (status) => {
+  if (!status) return "점검 대기";
+  return STATUS_LABEL_MAP[status] || status;
+};
+
+const formatDateTime = (value) => {
+  if (!value || value === "-") return "-";
+
+  try {
+    const rawDateStr = String(value).replace(/\.\s?/g, "-").replace(" ", "T");
+    const dateObj = new Date(rawDateStr);
+
+    if (isNaN(dateObj.getTime())) {
+      return value;
+    }
+
+    // YYYY. M. D. HH:mm 형식으로 출력
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth() + 1;
+    const date = dateObj.getDate();
+    const hours = String(dateObj.getHours()).padStart(2, "0");
+    const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+
+    return `${year}. ${month}. ${date}. ${hours}:${minutes}`;
+  } catch {
+    return value;
+  }
+};
 
 const PAGE_SIZE = 10;
 const imageCache = new Map();
 
-function parseWasteTypes(wasteStr) {
-  if (!wasteStr) return [];
-  return wasteStr
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function inspectionToHistory(inspection) {
-  const detections = Array.isArray(inspection.detections)
-    ? inspection.detections
-    : [];
-  const detectedCount = detections.reduce(
-    (total, item) => total + (Number(item.count) || 0),
-    0,
-  );
-  const statusMap = {
-    ANALYZING: "AI 분석 중",
-    DRAFT: "점검 대기",
-    REVIEW_REQUIRED: "진행 대기",
-    ACTION_REQUIRED: "진행",
-    RESOLVED: "완료",
-    FAILED: "분석 실패",
-  };
-
-  const rawWasteString =
-    inspection.wasteSummary || inspection.waste || "탐지 결과 없음";
-  const extractedFromText = parseWasteTypes(rawWasteString);
-
-  const wasteTypes = [
-    ...new Set([
-      ...detections.map((item) => item.className).filter(Boolean),
-      ...extractedFromText,
-    ]),
-  ];
-
-  return {
-    id: `INSPECTION-${inspection.id}`,
-    inspectionId: inspection.id,
-    inspectedAt: inspection.capturedAt,
-    location:
-      inspection.location && inspection.location !== "미지정 위치"
-        ? inspection.location
-        : inspection.title,
-    locationId: inspection.locationId || inspection.regionId,
-    region: inspection.regionName || inspection.location || "기타 지역",
-    detectedCount,
-    waste: rawWasteString,
-    wasteTypes: wasteTypes.length ? wasteTypes : [rawWasteString],
-    status:
-      statusMap[inspection.status] || inspection.status || STATUS_OPTIONS[0],
-  };
-}
-
-export default function HistoryList({ searched, onWastesLoaded }) {
-  const [items, setItems] = useState([]);
+export default function HistoryList({
+  items = [],
+  isLoading = false,
+  isDeleting = false,
+  searched,
+  onDeleteSelected,
+  onUpdateStatus,
+}) {
   const [selected, setSelected] = useState([]);
   const [bulkStatus, setBulkStatus] = useState("");
-  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    let cancelled = false;
-    historyService
-      .getHistories({ limit: 100 })
-      .then((data) => {
-        if (cancelled) return;
-        const liveHistories = Array.isArray(data)
-          ? data.map(inspectionToHistory)
-          : [];
-        setItems(liveHistories);
-      })
-      .catch((err) => {
-        console.error("점검 이력 DB 조회 실패:", err);
-        if (!cancelled) setItems([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    const wastes = [
-      ...new Set(
-        items
-          .flatMap((item) => item.wasteTypes || parseWasteTypes(item.waste))
-          .filter((name) => name && name !== "탐지 결과 없음"),
-      ),
-    ].sort();
-
-    if (onWastesLoaded) {
-      onWastesLoaded(wastes);
-    }
-  }, [items, onWastesLoaded]);
 
   useEffect(() => {
     setPage(1);
@@ -121,23 +68,31 @@ export default function HistoryList({ searched, onWastesLoaded }) {
     if (!searched) return items;
 
     return items.filter((item) => {
-      // 1. 키워드 검색
+      // 1. 키워드 필터링
       const matchesKeyword =
         !searched.keyword ||
-        `${item.id} ${item.location}`
+        `${item.id || ""} ${item.location || ""}`
           .toLowerCase()
           .includes(searched.keyword.toLowerCase());
 
-      // 2. 지역 검색
+      // 2. 지역 필터링
       const selectedRegionObj = (searched.regions || []).find(
         (r) => String(r.id) === String(searched.locationId),
       );
+
       const matchesLocation =
         !searched.locationId ||
         String(item.locationId) === String(searched.locationId) ||
-        (selectedRegionObj && item.location?.includes(selectedRegionObj.name));
+        String(item.regionId) === String(searched.locationId) ||
+        (selectedRegionObj &&
+          item.location?.includes(selectedRegionObj.name)) ||
+        (isNaN(Number(searched.locationId))
+          ? Boolean(
+              item.location && item.location.includes(searched.locationId),
+            )
+          : true);
 
-      // 3. 폐기물 검색
+      // 3. 주요 폐기물 필터링
       const targetWaste = (searched.waste || "").trim().toLowerCase();
       const itemWasteList = (item.wasteTypes || []).map((w) =>
         String(w).toLowerCase(),
@@ -149,18 +104,45 @@ export default function HistoryList({ searched, onWastesLoaded }) {
         itemWasteList.some((w) => w.includes(targetWaste)) ||
         (item.waste && String(item.waste).toLowerCase().includes(targetWaste));
 
-      // 4. 상태 검색
+      // 4. 상태 필터링 (한글/영문 모두 비교 가능하도록 처리)
+      const mappedStatus = getStatusLabel(item.status);
       const matchesStatus =
         !searched.status ||
         searched.status === "전체 상태" ||
-        item.status === searched.status;
+        item.status === searched.status ||
+        mappedStatus === searched.status;
 
-      // 5. 날짜 검색
-      const matchesDate =
-        !searched.date || item.inspectedAt?.startsWith(searched.date);
+      // 5. 날짜 범위 필터링
+      let matchesDate = true;
+      if (searched.startDate || searched.endDate) {
+        const rawDate = item.inspectedAt || item.capturedAt;
+        if (!rawDate) {
+          matchesDate = false;
+        } else {
+          const rawDateStr = String(rawDate)
+            .replace(/\.\s?/g, "-")
+            .replace(" ", "T");
+          const itemTime = new Date(rawDateStr).getTime();
 
-      // 6. 탐지 폐기물 유무 검색 (hasWaste 조건 추가) ★
-      const matchesHasWaste = !searched.hasWaste || item.detectedCount > 0;
+          if (searched.startDate) {
+            const startTime = new Date(
+              `${searched.startDate}T00:00:00`,
+            ).getTime();
+            if (!isNaN(startTime) && itemTime < startTime) matchesDate = false;
+          }
+          if (searched.endDate) {
+            const endTime = new Date(
+              `${searched.endDate}T23:59:59.999`,
+            ).getTime();
+            if (!isNaN(endTime) && itemTime > endTime) matchesDate = false;
+          }
+        }
+      }
+
+      // 6. 폐기물 유무 검사
+      const count =
+        item.detectedCount ?? item.detectionCount ?? item.detection_count ?? 0;
+      const matchesHasWaste = !searched.hasWaste || count > 0;
 
       return (
         matchesKeyword &&
@@ -168,7 +150,7 @@ export default function HistoryList({ searched, onWastesLoaded }) {
         matchesWaste &&
         matchesStatus &&
         matchesDate &&
-        matchesHasWaste // ★ 필터링 조건 반영
+        matchesHasWaste
       );
     });
   }, [items, searched]);
@@ -178,6 +160,7 @@ export default function HistoryList({ searched, onWastesLoaded }) {
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE,
   );
+
   const allSelected =
     pagedItems.length > 0 &&
     pagedItems.every((item) => selected.includes(item.id));
@@ -198,51 +181,22 @@ export default function HistoryList({ searched, onWastesLoaded }) {
 
   const applyStatus = () => {
     if (!bulkStatus || !selected.length) return;
-    setItems((current) =>
-      current.map((item) =>
-        selected.includes(item.id) ? { ...item, status: bulkStatus } : item,
-      ),
-    );
+    onUpdateStatus(selected, bulkStatus);
     setSelected([]);
     setBulkStatus("");
   };
 
-  const deleteSelected = async () => {
+  const deleteSelected = () => {
     const targets = items.filter(
       (item) => selected.includes(item.id) && item.inspectionId,
     );
-    if (!targets.length || deleting) return;
-    if (
-      !window.confirm(
-        `선택한 점검 이력 ${targets.length}건을 삭제하시겠습니까?`,
-      )
-    )
-      return;
+    if (!targets.length || isDeleting) return;
 
-    setDeleting(true);
-    try {
-      await Promise.all(
-        targets.map((item) => historyService.deleteHistory(item.inspectionId)),
-      );
-      const deletedIds = new Set(targets.map((item) => item.id));
-      setItems((current) => current.filter((item) => !deletedIds.has(item.id)));
-      setSelected((current) => current.filter((id) => !deletedIds.has(id)));
-      setPage((current) =>
-        Math.min(
-          current,
-          Math.max(
-            1,
-            Math.ceil((filteredItems.length - targets.length) / PAGE_SIZE),
-          ),
-        ),
-      );
-    } catch (error) {
-      window.alert(
-        error?.response?.data?.detail ||
-          "점검 이력을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      );
-    } finally {
-      setDeleting(false);
+    if (
+      window.confirm(`선택한 점검 이력 ${targets.length}건을 삭제하시겠습니까?`)
+    ) {
+      onDeleteSelected(targets.map((t) => t.inspectionId));
+      setSelected([]);
     }
   };
 
@@ -297,42 +251,51 @@ export default function HistoryList({ searched, onWastesLoaded }) {
             </tr>
           </thead>
           <tbody>
-            {pagedItems.length ? (
-              pagedItems.map((item) => (
-                <tr
-                  className={selected.includes(item.id) ? "selected" : ""}
-                  key={item.id}
-                >
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(item.id)}
-                      onChange={() => toggleItem(item.id)}
-                      aria-label={`${item.id} 선택`}
-                    />
-                  </td>
-                  <td>
-                    <HistoryThumbnail inspectionId={item.inspectionId} />
-                  </td>
-                  <td>
-                    <Link
-                      className="history-link"
-                      href={`/histories/${item.inspectionId}`}
-                    >
-                      {item.id}
-                    </Link>
-                  </td>
-                  <td>{formatDateTime(item.inspectedAt)}</td>
-                  <td>{item.location}</td>
-                  <td>{item.detectedCount}개</td>
-                  <td>{item.waste}</td>
-                  <td>
-                    <span className={`badge ${statusClass(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                </tr>
-              ))
+            {isLoading ? (
+              <tr>
+                <td className="history-empty" colSpan="8">
+                  불러오는 중...
+                </td>
+              </tr>
+            ) : pagedItems.length ? (
+              pagedItems.map((item) => {
+                const displayStatus = getStatusLabel(item.status);
+                return (
+                  <tr
+                    className={selected.includes(item.id) ? "selected" : ""}
+                    key={item.id}
+                  >
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(item.id)}
+                        onChange={() => toggleItem(item.id)}
+                        aria-label={`${item.id} 선택`}
+                      />
+                    </td>
+                    <td>
+                      <HistoryThumbnail inspectionId={item.inspectionId} />
+                    </td>
+                    <td>
+                      <Link
+                        className="history-link"
+                        href={`/histories/${item.inspectionId}`}
+                      >
+                        {item.id}
+                      </Link>
+                    </td>
+                    <td>{formatDateTime(item.inspectedAt)}</td>
+                    <td>{item.location}</td>
+                    <td>{item.detectedCount ?? 0}개</td>
+                    <td>{item.waste || "탐지 결과 없음"}</td>
+                    <td>
+                      <span className={`badge ${statusClass(displayStatus)}`}>
+                        {displayStatus}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td className="history-empty" colSpan="8">
@@ -383,10 +346,10 @@ export default function HistoryList({ searched, onWastesLoaded }) {
           <button
             className="history-delete-button"
             type="button"
-            disabled={!selected.length || deleting}
+            disabled={!selected.length || isDeleting}
             onClick={deleteSelected}
           >
-            {deleting ? "삭제 중..." : "삭제"}
+            {isDeleting ? "삭제 중..." : "삭제"}
           </button>
           <span className="history-total-count">
             전체 {filteredItems.length}건
@@ -397,7 +360,6 @@ export default function HistoryList({ searched, onWastesLoaded }) {
   );
 }
 
-// 인증 토큰 포함 + 불필요한 더미 이미지 전환을 방지하도록 처리한 썸네일 컴포넌트
 function HistoryThumbnail({ inspectionId }) {
   const [src, setSrc] = useState(() => imageCache.get(inspectionId) || null);
   const [loading, setLoading] = useState(!imageCache.has(inspectionId));
