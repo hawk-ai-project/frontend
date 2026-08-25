@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import { INSPECTION_STATUS_LABELS } from "@/components/history/historyData";
 import { historyService } from "@/services/historyService";
 import { getApiErrorMessage } from "@/services/apiClient";
 import "./reinspections.css";
@@ -115,10 +116,10 @@ function ReviewCard({ item, checked, onCheck }) {
         </label>
       </div>
       <div className="reinspection-card-body">
-        <small>
-          #{targetId} ·{" "}
+        <p>
+          <span className="bold-colored">#{targetId}</span> ·{" "}
           {formatDate(item.capturedAt || item.createdAt || item.inspectedAt)}
-        </small>
+        </p>
         <h2>{item.title || item.location || "점검 항목"}</h2>
         <p>{item.location || "위치 정보 없음"}</p>
         <div className="reinspection-labels">
@@ -131,7 +132,9 @@ function ReviewCard({ item, checked, onCheck }) {
           {!detections.length && <span>탐지 객체 없음</span>}
         </div>
         <footer>
-          <span>{item.status || "점검 대기"}</span>
+          <span>
+            {INSPECTION_STATUS_LABELS[item.status] || item.status || "점검 대기"}
+          </span>
           <Link href={`/reinspections/${targetId}`}>직접 라벨링</Link>
         </footer>
       </div>
