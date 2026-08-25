@@ -247,6 +247,8 @@ export default function HistoryDetailClient({
     try {
       await historyService.analyzeImage(targetId);
       alert("분석이 성공적으로 생성되었습니다.");
+      // 현재 화면은 최초 로드 시 만든 Blob URL을 유지하므로, 새 분석 이미지를 다시 조회한다.
+      window.location.reload();
     } catch (error) {
       alert(
         getApiErrorMessage(error, "수동 분석 실행 중 오류가 발생했습니다."),
