@@ -29,7 +29,10 @@ function toHistory(inspection) {
     ),
     waste:
       inspection.wasteSummary ||
-      detections.map((item) => item.className).join(", ") ||
+      detections
+        .map((item) => item.name_ko || item.className || item.name)
+        .filter(Boolean)
+        .join(", ") ||
       "탐지 결과 없음",
     status: statusMap[inspection.status] || STATUS_OPTIONS[0],
   };
@@ -102,10 +105,12 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
     inspector: inspection.inspectorName,
     fullLocation: inspection.location || inspection.title,
     coordinates: inspection.coordinates || "",
+    // DB의 name_ko, className, name 모두 대응하여 [이름, 수량] 형태로 안전하게 전달
     detections: (inspection.detections || []).map((item) => [
-      item.className,
-      item.count,
+      item.name_ko || item.className || item.name || "폐기물",
+      Number(item.count) || 1,
     ]),
+    wasteSummary: inspection.wasteSummary || history.waste,
     opinion:
       inspection.aiOpinion ||
       inspection.notes ||

@@ -433,25 +433,60 @@ export default function HistoryDetailClient({
                 parsedCoords ? (
                   <button
                     type="button"
+                    className={`btn btn-sm ${showMap ? "btn-primary" : "btn-soft"}`}
                     onClick={() => setShowMap((prev) => !prev)}
                     style={{
-                      background: showMap ? "#eff6ff" : "transparent",
-                      color: "#2563eb",
-                      border: "1px solid #bfdbfe",
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      fontSize: "1rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
+                      marginTop: "6px",
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "4px",
+                      gap: "6px",
+                      padding: "5px 12px",
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      borderRadius: "6px",
+                      transition: "all 0.2s ease",
                     }}
                   >
-                    <span>📍 {showMap ? "지도 닫기 ▲" : "지도 보기 ▼"}</span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span>{showMap ? "지도 닫기" : "위치 확인"}</span>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{
+                        transform: showMap ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.2s ease",
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
                   </button>
                 ) : (
-                  <span style={{ color: "#9ca3af", fontSize: "0.85rem" }}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginTop: "4px",
+                      color: "#9ca3af",
+                      fontSize: "0.85rem",
+                    }}
+                  >
                     좌표 없음
                   </span>
                 )
@@ -488,7 +523,7 @@ export default function HistoryDetailClient({
         <article className="card compact-summary-card">
           <div className="detail-card-title">
             {(() => {
-              // detections 배열에서 { name, count } 추출
+              // 1. detections 원본 데이터 파싱
               const rawDetections = Array.isArray(detail?.detections)
                 ? detail.detections
                 : Array.isArray(history?.detections)
@@ -497,38 +532,54 @@ export default function HistoryDetailClient({
 
               const parsedFromDetections = rawDetections
                 .map((item) => {
-                  if (typeof item === "object" && item !== null) {
-                    const name = item.className || item.name_ko || item.name;
-                    const count = Number(item.count) || 1;
+                  if (!item) return null;
+                  if (Array.isArray(item)) {
+                    const name = item[0] ? String(item[0]) : null;
+                    const count = Number(item[1]) || 1;
                     return name ? { name, count } : null;
                   }
-                  return item ? { name: String(item), count: 1 } : null;
+                  if (typeof item === "object") {
+                    const name =
+                      item.className ||
+                      item.class_name ||
+                      item.name_ko ||
+                      item.name ||
+                      item.waste_type_name ||
+                      item.label;
+                    const count = Number(item.count) || 1;
+                    return name ? { name: String(name), count } : null;
+                  }
+                  return { name: String(item), count: 1 };
                 })
                 .filter(Boolean);
 
-              // wasteSummary 문자열("플라스틱 1개, 캔 2개")에서도 { name, count } 분리 추출
-              const rawSummary = detail?.wasteSummary || history?.waste || "";
-              const parsedFromSummary =
-                rawSummary && rawSummary !== "탐지 결과 없음"
-                  ? rawSummary
-                      .split(",")
-                      .map((s) => {
-                        const match = s.trim().match(/^(.*?)\s*(\d+)개$/);
-                        if (match) {
-                          return { name: match[1], count: Number(match[2]) };
-                        }
-                        return s.trim() ? { name: s.trim(), count: 1 } : null;
-                      })
-                      .filter(Boolean)
-                  : [];
-
-              // 같은 이름의 폐기물은 중복을 합치고 수량을 더해줌
+              // 2. 같은 이름의 폐기물 수량을 누적 합산 (+)
               const wasteMap = new Map();
-              [...parsedFromDetections, ...parsedFromSummary].forEach(
-                ({ name, count }) => {
-                  wasteMap.set(name, (wasteMap.get(name) || 0) + count);
-                },
-              );
+
+              if (parsedFromDetections.length > 0) {
+                // detections 배열이 존재하면 각각의 수량을 누적 덧셈
+                parsedFromDetections.forEach(({ name, count }) => {
+                  if (name) {
+                    wasteMap.set(name, (wasteMap.get(name) || 0) + count);
+                  }
+                });
+              } else {
+                // detections 배열이 없을 경우에만 wasteSummary 문자열 파싱
+                const rawSummary = detail?.wasteSummary || history?.waste || "";
+                if (rawSummary && rawSummary !== "탐지 결과 없음") {
+                  rawSummary.split(",").forEach((s) => {
+                    const trimmed = s.trim();
+                    const match = trimmed.match(/^(.*?)\s*(\d+)개$/);
+                    if (match) {
+                      const name = match[1].trim();
+                      const count = Number(match[2]) || 1;
+                      wasteMap.set(name, (wasteMap.get(name) || 0) + count);
+                    } else if (trimmed) {
+                      wasteMap.set(trimmed, (wasteMap.get(trimmed) || 0) + 1);
+                    }
+                  });
+                }
+              }
 
               const uniqueWastes = Array.from(wasteMap.entries()).map(
                 ([name, count]) => ({
