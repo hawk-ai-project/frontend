@@ -293,7 +293,9 @@ export default function HistoryDetailClient({
     if (!selectedAssigneeId) return;
     const targetId = inspectionId || history.id;
     if (!targetId) {
-      setAssignmentError("서버에 저장된 점검에서만 담당자를 지정할 수 있습니다.");
+      setAssignmentError(
+        "서버에 저장된 점검에서만 담당자를 지정할 수 있습니다.",
+      );
       return;
     }
 
@@ -427,14 +429,145 @@ export default function HistoryDetailClient({
         {/* 탐지 결과 */}
         <article className="card compact-summary-card">
           <div className="detail-card-title">
-            <h2>탐지 결과</h2>
-            <div className="detection-tags">
-              {detail.detections.map(([name, count]) => (
-                <span key={name}>
-                  {name} <b>{count}개</b>
-                </span>
-              ))}
-            </div>
+            {(() => {
+              // detections 배열에서 { name, count } 추출
+              const rawDetections = Array.isArray(detail?.detections)
+                ? detail.detections
+                : Array.isArray(history?.detections)
+                  ? history.detections
+                  : [];
+
+              const parsedFromDetections = rawDetections
+                .map((item) => {
+                  if (typeof item === "object" && item !== null) {
+                    const name = item.className || item.name_ko || item.name;
+                    const count = Number(item.count) || 1;
+                    return name ? { name, count } : null;
+                  }
+                  return item ? { name: String(item), count: 1 } : null;
+                })
+                .filter(Boolean);
+
+              // wasteSummary 문자열("플라스틱 1개, 캔 2개")에서도 { name, count } 분리 추출
+              const rawSummary = detail?.wasteSummary || history?.waste || "";
+              const parsedFromSummary =
+                rawSummary && rawSummary !== "탐지 결과 없음"
+                  ? rawSummary
+                      .split(",")
+                      .map((s) => {
+                        const match = s.trim().match(/^(.*?)\s*(\d+)개$/);
+                        if (match) {
+                          return { name: match[1], count: Number(match[2]) };
+                        }
+                        return s.trim() ? { name: s.trim(), count: 1 } : null;
+                      })
+                      .filter(Boolean)
+                  : [];
+
+              // 같은 이름의 폐기물은 중복을 합치고 수량을 더해줌
+              const wasteMap = new Map();
+              [...parsedFromDetections, ...parsedFromSummary].forEach(
+                ({ name, count }) => {
+                  wasteMap.set(name, (wasteMap.get(name) || 0) + count);
+                },
+              );
+
+              const uniqueWastes = Array.from(wasteMap.entries()).map(
+                ([name, count]) => ({
+                  name,
+                  count,
+                }),
+              );
+
+              // 전체 수량 합계
+              const totalCount = uniqueWastes.reduce(
+                (sum, item) => sum + item.count,
+                0,
+              );
+
+              return (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      marginBottom: "14px",
+                    }}
+                  >
+                    <h2>탐지 결과</h2>
+                    {uniqueWastes.length > 0 && (
+                      <span
+                        style={{
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          color: "#2563eb",
+                          backgroundColor: "#eff6ff",
+                          padding: "4px 10px",
+                          borderRadius: "9999px",
+                          border: "1px solid #dbeafe",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span>총 {uniqueWastes.length}종</span>
+                        <span style={{ color: "#93c5fd" }}>•</span>
+                        <span>{totalCount}개</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {uniqueWastes.length === 0 ? (
+                    <p
+                      style={{
+                        color: "#9ca3af",
+                        fontSize: "0.9rem",
+                        textAlign: "center",
+                        padding: "10px 0",
+                      }}
+                    >
+                      탐지된 폐기물이 없습니다.
+                    </p>
+                  ) : (
+                    <div
+                      className="detection-tags"
+                      style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
+                    >
+                      {uniqueWastes.map(({ name, count }, index) => (
+                        <span
+                          key={`${name}-${index}`}
+                          className="tag"
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#f3f4f6",
+                            borderRadius: "20px",
+                            fontSize: "0.9rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span>{name}</span>
+                          <span
+                            style={{
+                              backgroundColor: "#e5e7eb",
+                              color: "#374151",
+                              fontSize: "0.75rem",
+                              fontWeight: "bold",
+                              padding: "2px 6px",
+                              borderRadius: "10px",
+                            }}
+                          >
+                            {count}개
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </article>
       </div>
