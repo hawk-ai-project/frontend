@@ -25,19 +25,6 @@ const COLORS = [
   "#ec4899",
 ];
 
-// YYYY.MM.DD 또는 YYYY-MM-DD 스트링에 N일을 더해주는 헬퍼 함수
-const addDays = (dateStr, days = 1) => {
-  if (!dateStr) return "";
-  const cleanDateStr = dateStr.replace(/\./g, "-");
-  const date = new Date(cleanDateStr);
-  date.setDate(date.getDate() + days);
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}.${month}.${day}`;
-};
-
 export default function AnalyticsCharts({
   trends = [],
   distribution = [],
@@ -75,7 +62,7 @@ export default function AnalyticsCharts({
   );
 
   // 1. 막대그래프(날짜) 클릭 이벤트
-  // 선택한 당일을 startDate로, 미만(<) 검색 백엔드에 맞추어 endDate는 당일 + 1일 설정
+  // 선택한 당일을 startDate와 endDate에 동일한 날짜로 설정
   const handleBarClick = (data) => {
     if (!data || !data.date) return;
 
@@ -102,21 +89,19 @@ export default function AnalyticsCharts({
     }
 
     // 선택한 당일 포맷 (YYYY.MM.DD)
-    const startDateFormatted = `${targetYear}.${formattedMMDD.replace("-", ".")}`;
-    // 백엔드 미만(<) 조건 처리용: 선택일 + 1일
-    const endDateFormatted = addDays(startDateFormatted, 1);
+    const selectedDateFormatted = `${targetYear}.${formattedMMDD.replace("-", ".")}`;
 
     const params = new URLSearchParams();
-    params.set("startDate", startDateFormatted);
-    params.set("endDate", endDateFormatted);
+    // startDate와 endDate를 동일한 날짜로 세팅
+    params.set("startDate", selectedDateFormatted);
+    params.set("endDate", selectedDateFormatted);
     params.set("hasWaste", "true");
     if (query.locationId) params.set("locationId", query.locationId);
 
     router.push(`/histories?${params.toString()}`);
   };
 
-  // 2. 도넛그래프(폐기물 항목) 클릭 이벤트
-  // 헤더에서 설정된 전체 기간(startDate, endDate)을 원본 그대로 넘김
+  // 2. 도넛그래프(폐기물 항목) 클릭 이벤트 - 기존 유지
   const handlePieClick = (entry) => {
     if (!entry || !entry.name) return;
 

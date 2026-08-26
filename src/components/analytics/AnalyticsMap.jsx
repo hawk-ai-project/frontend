@@ -3,144 +3,128 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
+export default function AnalyticsMap({ items = [], query = {} }) {
   const router = useRouter();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const clustererRef = useRef(null);
   const markersRef = useRef([]);
 
-  // ★ 차트의 trends 데이터를 YYYY.MM.DD 및 건수 목록으로 변환
-  const chartDateList = trends
-    .map((t) => {
-      if (!t.date || !t.date.includes("/")) return null;
-      const [monthStr, dayStr] = t.date.split("/");
-      const formattedMMDD = `${monthStr.padStart(2, "0")}-${dayStr.padStart(2, "0")}`;
+  // 1. 내역 페이지 이동 글로벌 함수
+  useEffect(() => {
+    window.__navigateToHistory = (dateStr, regionId, regionName) => {
+      const params = new URLSearchParams();
 
-      const startYear = query.startDate
-        ? parseInt(query.startDate.split("-")[0], 10)
-        : new Date().getFullYear();
-      const endYear = query.endDate
-        ? parseInt(query.endDate.split("-")[0], 10)
-        : startYear;
-
-      let targetYear = startYear;
-      for (let year = startYear; year <= endYear; year++) {
-        const candidateDate = `${year}-${formattedMMDD}`;
-        const isAfterStart =
-          !query.startDate || candidateDate >= query.startDate;
-        const isBeforeEnd = !query.endDate || candidateDate <= query.endDate;
-
-        if (isAfterStart && isBeforeEnd) {
-          targetYear = year;
-          break;
-        }
+      if (dateStr && dateStr !== "-") {
+        const cleanDate = String(dateStr).replace(/-/g, ".");
+        params.set("startDate", cleanDate);
+        params.set("endDate", cleanDate);
       }
 
-      return {
-        formattedDate: `${targetYear}.${formattedMMDD.replace("-", ".")}`,
-        count: Number(t.count ?? 1),
-      };
-    })
-    .filter(Boolean);
+      params.set("hasWaste", "true");
 
-  const validItems = items.filter((item) => {
-    const hasValidGps =
-      (item.latitude || item.lat) &&
-      (item.longitude || item.lng) &&
-      Number(item.latitude || item.lat) !== 0;
+      if (
+        regionId !== undefined &&
+        regionId !== null &&
+        regionId !== "" &&
+        regionId !== "0" &&
+        regionId !== "undefined"
+      ) {
+        params.set("locationId", String(regionId));
+      }
 
-    const wasteCount = Number(
-      item.waste_count ?? item.detection_count ?? item.count ?? 0,
-    );
+      if (regionName && regionName !== "-" && regionName !== "undefined") {
+        params.set("location", String(regionName));
+      }
 
-    return hasValidGps && wasteCount > 0;
-  });
+      const targetUrl = `/histories?${params.toString()}`;
+      router.push(targetUrl);
+      router.refresh();
+    };
 
-  // 동일 좌표(위도, 경도) 데이터를 그룹화하면서 날짜별 항목 분할
+    return () => {
+      delete window.__navigateToHistory;
+    };
+  }, [router]);
+
+  // 날짜 포맷팅 (YYYY.MM.DD)
+  const formatItemDate = (rawDate) => {
+    if (!rawDate) return "-";
+    const strMatch = String(rawDate).match(/(\d{4})[-./](\d{2})[-./](\d{2})/);
+    if (strMatch) return `${strMatch[1]}.${strMatch[2]}.${strMatch[3]}`;
+
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime()))
+      return String(rawDate).split("T")[0].replace(/-/g, ".");
+
+    const kstDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    const yyyy = kstDate.getUTCFullYear();
+    const mm = String(kstDate.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(kstDate.getUTCDate()).padStart(2, "0");
+    return `${yyyy}.${mm}.${dd}`;
+  };
+
+  // 2. 유효 좌표 데이터 필터링 및 동일 좌표 그룹화
+  const validItems = items.filter(
+    (item) =>
+      item && item.latitude && item.longitude && Number(item.latitude) !== 0,
+  );
+
   const groupedItems = validItems.reduce((acc, item) => {
-    const lat = Number(item.latitude || item.lat).toFixed(6);
-    const lng = Number(item.longitude || item.lng).toFixed(6);
+    const lat = Number(item.latitude).toFixed(6);
+    const lng = Number(item.longitude).toFixed(6);
     const key = `${lat}_${lng}`;
+
+    // DB 필드명 전면 대응 (detection_count가 없을 경우 count 등 체크)
+    const rawVal =
+      item.detection_count ?? item.detectionCount ?? item.count ?? 0;
+    const itemDetections = Number(rawVal) || 0;
+    const itemInspections = Number(item.count) || 1;
+    const formattedDate = formatItemDate(item.date);
+
+    const rId = item.region_id ?? item.regionId ?? item.id ?? 0;
+    const rName = item.region ?? item.region_name ?? item.regionName ?? "-";
 
     if (!acc[key]) {
       acc[key] = {
+        regionId: rId,
+        regionName: rName,
         lat: Number(lat),
         lng: Number(lng),
         name: item.name || item.address || "점검 위치",
-        address: item.address || item.region_name || "-",
-        totalCount: 0,
-        list: [],
+        address: item.address || "-",
+        totalDetections: 0,
+        totalInspections: 0,
+        dateGroups: {},
       };
     }
 
-    const totalCountVal = Number(
-      item.count ?? item.waste_count ?? item.detection_count ?? 1,
-    );
-    acc[key].totalCount += totalCountVal;
+    acc[key].totalDetections += itemDetections;
+    acc[key].totalInspections += itemInspections;
 
-    // ★ trends 데이터가 존재할 경우 일자별로 리스트 생성
-    if (chartDateList.length > 0) {
-      chartDateList.forEach((t) => {
-        acc[key].list.push({
-          ...item,
-          countVal: t.count,
-          assignedDate: t.formattedDate,
-        });
-      });
-    } else {
-      acc[key].list.push({
-        ...item,
-        countVal: totalCountVal,
-        assignedDate: query.startDate
-          ? query.startDate.replace(/-/g, ".")
-          : "-",
-      });
+    if (!acc[key].dateGroups[formattedDate]) {
+      acc[key].dateGroups[formattedDate] = {
+        date: formattedDate,
+        detectionCount: 0,
+        inspectionCount: 0,
+        regionId: rId,
+        regionName: rName,
+      };
     }
+    acc[key].dateGroups[formattedDate].detectionCount += itemDetections;
+    acc[key].dateGroups[formattedDate].inspectionCount += itemInspections;
 
     return acc;
   }, {});
 
   const groupedList = Object.values(groupedItems);
 
-  const [userLocation, setUserLocation] = useState(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  useEffect(() => {
-    if (validItems.length === 0 && typeof window !== "undefined") {
-      const savedLocation = localStorage.getItem("lastInspectionLocation");
-      if (savedLocation) {
-        try {
-          const parsed = JSON.parse(savedLocation);
-          if (parsed.lat && parsed.lng) {
-            setUserLocation({ lat: parsed.lat, lng: parsed.lng });
-            return;
-          }
-        } catch (e) {
-          console.warn("저장된 위치 파싱 실패:", e);
-        }
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) =>
-            setUserLocation({
-              lat: pos.coords.latitude,
-              lng: pos.coords.longitude,
-            }),
-          (err) => console.warn("현재 위치 로드 실패:", err),
-          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
-        );
-      }
-    }
-  }, [validItems.length]);
-
+  // 3. Google Maps 스크립트 로드
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.error("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.");
-      return;
-    }
+    if (!apiKey) return;
 
     const loadClustererScript = () => {
       if (window.markerClusterer) {
@@ -169,22 +153,20 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
       script.defer = true;
       script.onload = () => loadClustererScript();
       document.head.appendChild(script);
-    } else {
-      const script = document.getElementById(scriptId);
-      script.addEventListener("load", () => loadClustererScript());
     }
   }, []);
 
+  // 4. 지도 렌더링
   useEffect(() => {
     if (!isMapLoaded || !mapRef.current || !window.google) return;
 
-    const defaultLat = groupedList[0]?.lat || userLocation?.lat || 37.5665;
-    const defaultLng = groupedList[0]?.lng || userLocation?.lng || 126.978;
+    const defaultLat = groupedList[0]?.lat || 37.5665;
+    const defaultLng = groupedList[0]?.lng || 126.978;
 
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         center: { lat: Number(defaultLat), lng: Number(defaultLng) },
-        zoom: 12,
+        zoom: 11,
       });
     }
 
@@ -200,67 +182,86 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
       const bounds = new window.google.maps.LatLngBounds();
       const infoWindow = new window.google.maps.InfoWindow();
 
-      map.addListener("click", () => {
-        infoWindow.close();
-      });
+      map.addListener("click", () => infoWindow.close());
 
       groupedList.forEach((group) => {
         const position = { lat: group.lat, lng: group.lng };
 
+        // 보라색 아이콘 고정 (#4f46e5)
         const customSvgIcon = {
           path: window.google.maps.SymbolPath.CIRCLE,
           fillColor: "#4f46e5",
           fillOpacity: 0.9,
           strokeColor: "#ffffff",
           strokeWeight: 2,
-          scale: 20,
+          scale: 18,
         };
 
         const marker = new window.google.maps.Marker({
           position,
-          title: `${group.name} (${group.totalCount}건)`,
+          title: `${group.name} (탐지: ${group.totalDetections}건)`,
           icon: customSvgIcon,
           label: {
-            text: String(group.totalCount),
+            text: String(group.totalDetections),
             color: "#ffffff",
-            fontSize: "13px",
+            fontSize: "12px",
             fontWeight: "bold",
           },
         });
 
+        marker.customDetectionCount = Number(group.totalDetections) || 0;
+
         marker.addListener("click", () => {
-          // ★ 폐기물 종류 항목은 제거하고 날짜와 건수/조회 버튼만 깔끔하게 노출
-          const listHtml = group.list
-            .map((item, idx) => {
-              const formattedDate = item.assignedDate;
+          const dateGroupList = Object.values(group.dateGroups);
+
+          const listHtml = dateGroupList
+            .map((dateGroup) => {
+              const formattedDate = dateGroup.date;
+              const dCount = Number(dateGroup.detectionCount) || 0;
+              // 1건 이상일 때만 이동 허용
+              const hasDetections = dCount >= 1;
+
+              const targetRegionId = dateGroup.regionId || group.regionId || 0;
+              const targetRegionName =
+                dateGroup.regionName || group.regionName || "-";
+
+              const onClickAttr = hasDetections
+                ? `onclick="window.__navigateToHistory('${formattedDate}', '${targetRegionId}', '${targetRegionName}')"`
+                : "";
 
               return `
                 <div 
                   class="waste-item-card"
-                  data-index="${idx}"
+                  ${onClickAttr}
                   style="
-                    padding: 10px 12px;
-                    margin-bottom: 8px;
-                    background-color: #f8fafc;
+                    padding: 8px 10px;
+                    margin-bottom: 6px;
+                    background-color: ${hasDetections ? "#f8fafc" : "#f1f5f9"};
                     border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    cursor: pointer;
+                    border-radius: 6px;
+                    cursor: ${hasDetections ? "pointer" : "not-allowed"};
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    transition: all 0.2s ease;
+                    opacity: ${hasDetections ? "1" : "0.7"};
                   "
-                  onmouseover="this.style.backgroundColor='#eff6ff'; this.style.borderColor='#93c5fd';"
-                  onmouseout="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#e2e8f0';"
                 >
                   <span style="font-size: 13px; font-weight: 700; color: #334155;">
                     ${formattedDate}
                   </span>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 11px; font-weight: 700; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">
-                      ${item.countVal}건
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 11px; font-weight: 700; color: ${
+                      hasDetections ? "#2563eb" : "#64748b"
+                    }; background: ${
+                      hasDetections ? "#dbeafe" : "#e2e8f0"
+                    }; padding: 2px 6px; border-radius: 4px;">
+                      ${dCount}건
                     </span>
-                    <span style="font-size: 12px; color: #3b82f6; font-weight: 600;">조회 →</span>
+                    ${
+                      hasDetections
+                        ? `<span style="font-size: 12px; color: #3b82f6; font-weight: 600;">조회 →</span>`
+                        : `<span style="font-size: 12px; color: #94a3b8;">(탐지 없음)</span>`
+                    }
                   </div>
                 </div>
               `;
@@ -268,20 +269,26 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
             .join("");
 
           const contentString = `
-            <div style="padding: 6px 2px; color: #0f172a; width: 260px; max-height: 320px; display: flex; flex-direction: column;">
-              <div style="margin-bottom: 10px;">
-                <h4 style="margin: 0 0 2px 0; font-size: 15px; font-weight: 700; color: #1e293b;">
-                  ${group.name}
-                </h4>
-                <div style="font-size: 12px; color: #64748b;">
+            <div style="padding: 4px; color: #0f172a; width: 250px; max-height: 300px; display: flex; flex-direction: column;">
+              <div style="margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                  <span style="font-size: 11px; font-weight: 700; background-color: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px;">
+                    ${group.regionName || "-"}
+                  </span>
+                  <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${group.name}
+                  </h4>
+                </div>
+                <div style="font-size: 11px; color: #64748b;">
                   주소: ${group.address}
                 </div>
-                <div style="margin-top: 4px; font-size: 13px; font-weight: 700; color: #2563eb;">
-                  총 탐지 건수: ${group.totalCount}건
+                <div style="margin-top: 4px; font-size: 12px; font-weight: 700; color: ${
+                  group.totalDetections > 0 ? "#2563eb" : "#64748b"
+                };">
+                  총 탐지 수: ${group.totalDetections}건
                 </div>
               </div>
-
-              <div style="overflow-y: auto; max-height: 220px; padding-right: 4px;">
+              <div style="overflow-y: auto; max-height: 200px;">
                 ${listHtml}
               </div>
             </div>
@@ -289,43 +296,6 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
 
           infoWindow.setContent(contentString);
           infoWindow.open(map, marker);
-
-          window.google.maps.event.addListenerOnce(
-            infoWindow,
-            "domready",
-            () => {
-              const cardElements =
-                document.querySelectorAll(".waste-item-card");
-              cardElements.forEach((card) => {
-                card.addEventListener("click", () => {
-                  const idx = Number(card.getAttribute("data-index"));
-                  const targetItem = group.list[idx];
-                  if (!targetItem) return;
-
-                  const params = new URLSearchParams();
-
-                  const formattedDate = targetItem.assignedDate;
-                  if (formattedDate && formattedDate !== "-") {
-                    params.set("date", formattedDate);
-                  }
-
-                  const selectedLocationId =
-                    query.locationId ||
-                    query.location_id ||
-                    targetItem.regionId ||
-                    targetItem.region_id;
-
-                  if (selectedLocationId) {
-                    params.set("locationId", selectedLocationId);
-                  }
-
-                  params.set("hasWaste", "true");
-
-                  router.push(`/histories?${params.toString()}`);
-                });
-              });
-            },
-          );
         });
 
         markersRef.current.push(marker);
@@ -333,9 +303,38 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
       });
 
       if (window.markerClusterer) {
+        const renderer = {
+          render: ({ count, position, markers }) => {
+            const clusterTotalDetections = markers.reduce(
+              (sum, m) => sum + (Number(m.customDetectionCount) || 0),
+              0,
+            );
+
+            return new window.google.maps.Marker({
+              position,
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                fillColor: "#4338ca",
+                fillOpacity: 0.95,
+                strokeColor: "#ffffff",
+                strokeWeight: 3,
+                scale: 22,
+              },
+              label: {
+                text: String(clusterTotalDetections),
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "bold",
+              },
+              title: `클러스터 총 탐지 건수: ${clusterTotalDetections}건`,
+            });
+          },
+        };
+
         clustererRef.current = new window.markerClusterer.MarkerClusterer({
           map,
           markers: markersRef.current,
+          renderer,
         });
       }
 
@@ -346,13 +345,10 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
           lat: Number(groupedList[0].lat),
           lng: Number(groupedList[0].lng),
         });
-        map.setZoom(14);
+        map.setZoom(13);
       }
-    } else {
-      map.setCenter({ lat: Number(defaultLat), lng: Number(defaultLng) });
-      map.setZoom(12);
     }
-  }, [isMapLoaded, groupedList, userLocation, router, query]);
+  }, [isMapLoaded, groupedList]);
 
   return (
     <div className="card card-pad" style={{ marginBottom: "24px" }}>
@@ -375,7 +371,7 @@ export default function AnalyticsMap({ items = [], trends = [], query = {} }) {
             </>
           ) : (
             <span style={{ color: "#6366f1", fontWeight: "600" }}>
-              조회 데이터 없음 (기준 위치)
+              조회 데이터 없음
             </span>
           )}
         </span>
