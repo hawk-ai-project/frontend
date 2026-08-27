@@ -542,11 +542,17 @@ main {
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--content-card-radius);
-  background: rgba(255, 255, 255, .96);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--shadow-sm);
 }
-.analytics-summary-card { position: relative; overflow: hidden; }
-.analytics-filter-card { width: 100%; box-sizing: border-box; }
+.analytics-summary-card {
+  position: relative;
+  overflow: hidden;
+}
+.analytics-filter-card {
+  width: 100%;
+  box-sizing: border-box;
+}
 .analytics-page-wrapper .analytics-summary-card,
 .analytics-page-wrapper .analytics-filter-card,
 .analytics-page-wrapper .card {
@@ -4637,7 +4643,8 @@ textarea:focus {
 .inspection-grid > * {
   min-width: 0;
   max-width: 100%;
-}.inspection-location-field {
+}
+.inspection-location-field {
   display: grid;
   gap: 8px;
   color: #25324a;
@@ -4654,8 +4661,14 @@ textarea:focus {
   }
 }
 @media (max-width: 600px) {
-  .inspection-grid { gap: 16px; }
-  .inspection-grid .card-pad { width: 100%; min-width: 0; padding: 16px; }
+  .inspection-grid {
+    gap: 16px;
+  }
+  .inspection-grid .card-pad {
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+  }
 }
 
 /* ==========================================================================
@@ -4885,5 +4898,111 @@ textarea:focus {
   font-weight: 600;
 }
 
-.badge.analyzing { background: #eef3ff; color: #3d64b1; }
-.badge.failed { background: #fff0f0; color: #b33a3a; }
+.badge.analyzing {
+  background: #eef3ff;
+  color: #3d64b1;
+}
+.badge.failed {
+  background: #fff0f0;
+  color: #b33a3a;
+}
+
+/* 점검 요약 기본 그리드 (데스크톱: 3열 구조) */
+.compact-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 20px;
+  align-items: stretch;
+}
+
+/* 데스크톱 기준 배치 */
+.meta-status {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+}
+.meta-inspector {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+}
+.meta-location {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+}
+.meta-date {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+}
+.meta-coords {
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+}
+.meta-map-btn {
+  grid-column: 2 / 3;
+  grid-row: 3 / 4;
+}
+.meta-detection {
+  grid-column: 3 / 4;
+  grid-row: 1 / 4;
+}
+
+/* 📱 모바일 화면 (768px 이하): 가로 한 줄에 1개씩 순서대로 배치 */
+@media (max-width: 768px) {
+  .compact-meta-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* 모바일에서는 그리드 행/열 위치 초기화 (위에서부터 한 줄씩 자연스럽게 떨어짐) */
+  .meta-status,
+  .meta-inspector,
+  .meta-location,
+  .meta-date,
+  .meta-coords,
+  .meta-map-btn,
+  .meta-detection {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100%;
+  }
+
+  /* 모바일에서 위치확인 버튼 좌측 정렬 및 마진 조정 */
+  .meta-map-btn-wrapper {
+    justify-content: flex-start !important;
+    margin-top: 4px;
+  }
+}
+
+/* 기본 (데스크톱): 가로 1줄 유지 */
+.coord-text {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.coord-divider {
+  display: inline;
+  margin: 0 4px;
+}
+
+/* 📱 모바일 화면 (768px 이하): 세로 2줄로 분할 */
+@media (max-width: 768px) {
+  .coord-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  /* 모바일에서는 가운데 구분자 '|' 숨기기 */
+  .coord-divider {
+    display: none;
+  }
+}
+
+/* 📱 모바일 화면 (768px 이하)에서만 라벨 글씨 숨기기 */
+@media (max-width: 768px) {
+  .status-label-text {
+    display: none;
+  }
+}

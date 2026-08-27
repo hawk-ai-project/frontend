@@ -25,11 +25,15 @@ const formatCoordinates = (coords) => {
     return "좌표 미등록";
   }
 
-  if (coords.includes("위도")) return coords;
-
   const matches = coords.match(/[-+]?[0-9]*\.?[0-9]+/g);
   if (matches && matches.length >= 2) {
-    return `위도 : ${matches[0]} | 경도 : ${matches[1]}`;
+    return (
+      <span className="coord-text">
+        <span>위도 : {matches[0]}</span>
+        <span className="coord-divider"> | </span>
+        <span>경도 : {matches[1]}</span>
+      </span>
+    );
   }
 
   return coords;
@@ -441,7 +445,8 @@ export default function HistoryDetailClient({
         <div>
           <div className="eyebrow">Inspection Detail</div>
           <h1>
-            점검 상세 <span>#{history.id}</span>
+            점검 상세 <br />
+            <span>#{history.id}</span>
           </h1>
           <p>점검 결과를 확인하고 후속 조치와 처리 상태를 관리하세요.</p>
         </div>
@@ -450,7 +455,7 @@ export default function HistoryDetailClient({
             목록
           </Link>
           <label>
-            처리 상태
+            <span className="status-label-text">처리 상태</span>
             <select
               value={status}
               onChange={(event) => {
@@ -508,18 +513,9 @@ export default function HistoryDetailClient({
         {/* 점검 요약 */}
         <article className="card compact-summary-card">
           <h2>점검 요약</h2>
-          <div
-            className="compact-meta-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              gridTemplateRows: "repeat(3, auto)",
-              gap: "12px 20px",
-              alignItems: "stretch",
-            }}
-          >
-            {/* ── 1행 (좌측 1열 / 중간 2열) ── */}
-            <div style={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
+          <div className="compact-meta-grid">
+            {/* 1. 처리 상태 (모바일 1줄) */}
+            <div className="meta-status">
               <Meta
                 label="처리 상태"
                 value={
@@ -529,34 +525,41 @@ export default function HistoryDetailClient({
                 }
               />
             </div>
-            <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2" }}>
+
+            {/* 2. 점검자 (모바일 2줄) */}
+            <div className="meta-inspector">
               <Meta label="점검자" value={detail.inspector} />
             </div>
 
-            {/* ── 2행 (좌측 1열 / 중간 2열) ── */}
-            <div style={{ gridColumn: "1 / 2", gridRow: "2 / 3" }}>
+            {/* 3. 점검 장소 (모바일 3줄) */}
+            <div className="meta-location">
               <Meta label="점검 장소" value={detail.fullLocation} />
             </div>
-            <div style={{ gridColumn: "2 / 3", gridRow: "2 / 3" }}>
+
+            {/* 4. 점검 일시 (모바일 4줄) */}
+            <div className="meta-date">
               <Meta
                 label="점검 일시"
                 value={formatDateTime(history.inspectedAt)}
               />
             </div>
 
-            {/* ── 3행 (좌측 1열 / 중간 2열) ── */}
-            <div style={{ gridColumn: "1 / 2", gridRow: "3 / 4" }}>
+            {/* 5. GPS 좌표 (모바일 5줄) */}
+            <div className="meta-coords">
               <Meta
                 label="GPS 좌표"
                 value={formatCoordinates(detail.coordinates)}
               />
             </div>
-            <div style={{ gridColumn: "2 / 3", gridRow: "3 / 4" }}>
+
+            {/* 6. 현장 위치 지도 버튼 (모바일 6줄) */}
+            <div className="meta-map-btn">
               <Meta
                 label="현장 위치"
                 value={
                   parsedCoords ? (
                     <div
+                      className="meta-map-btn-wrapper"
                       style={{
                         display: "flex",
                         justifyContent: "flex-end",
@@ -632,11 +635,10 @@ export default function HistoryDetailClient({
               />
             </div>
 
-            {/* ── 우측 3열 (탐지 결과: 2열 반반 10개 노출 + 더보기) ── */}
+            {/* 7. 탐지 결과 (모바일 마지막 줄) */}
             <div
+              className="meta-detection"
               style={{
-                gridColumn: "3 / 4",
-                gridRow: "1 / 4",
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
@@ -672,7 +674,7 @@ export default function HistoryDetailClient({
                 )}
               </div>
 
-              {/* 하단 50:50 2열 세로 정렬 영역 (각 열 5개씩 총 10개) */}
+              {/* 하단 태그 알약 리스트 */}
               <div
                 style={{
                   marginTop: "8px",
@@ -695,12 +697,12 @@ export default function HistoryDetailClient({
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr", // 👈 좌우 50% : 50% 분할
+                      gridTemplateColumns: "1fr 1fr",
                       gap: "0 10px",
                       width: "100%",
                     }}
                   >
-                    {/* ── 좌측 1열 (최대 5개) ── */}
+                    {/* 좌측 열 */}
                     <div
                       style={{
                         display: "flex",
@@ -755,7 +757,7 @@ export default function HistoryDetailClient({
                       ))}
                     </div>
 
-                    {/* ── 우측 2열 (최대 4개 + 더보기 버튼) ── */}
+                    {/* 우측 열 */}
                     <div
                       style={{
                         display: "flex",
@@ -809,7 +811,7 @@ export default function HistoryDetailClient({
                         </div>
                       ))}
 
-                      {/* 11개 이상일 때 우측 5번째(전체 10번째) 자리에 나타나는 더보기 버튼 */}
+                      {/* 더보기 버튼 */}
                       {isOverflow && (
                         <button
                           type="button"
@@ -851,7 +853,7 @@ export default function HistoryDetailClient({
             </div>
           </div>
 
-          {/* 지도 보기를 눌렀을 때 펼쳐지는 지도 뷰어 */}
+          {/* 지도 모달/뷰어 */}
           {showMap && parsedCoords && (
             <div
               style={{
