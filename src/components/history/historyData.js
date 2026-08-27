@@ -50,15 +50,22 @@ export const INSPECTION_STATUS_LABELS = {
   FAILED: "분석 실패",
 };
 
-export const STATUS_OPTIONS = ["점검 대기", "진행 대기", "진행", "완료", "AI 분석 중", "분석 실패"];
+export const STATUS_OPTIONS = [
+  "점검 대기",
+  "진행 대기",
+  "진행",
+  "완료",
+  "AI 분석 중",
+  "분석 실패",
+];
 
 export function statusClass(status) {
   const classMap = {
     "AI 분석 중": "analyzing",
     "점검 대기": "draft",
-    "진행 대기": "pending",
-    진행: "progress",
-    완료: "done",
+    "진행 대기": "review_required",
+    진행: "action_required",
+    완료: "resolved",
     "분석 실패": "failed",
   };
   return classMap[status] || "pending";

@@ -1866,26 +1866,49 @@ textarea:focus {
   font-size: 12px;
   font-weight: 750;
 }
-/* 분석 대기 */
+
+/* 1. 점검 대기 (기존) */
 .badge.draft {
-  background-color: #fef9c3;
-  color: #854d0e;
+  background-color: #fff9c4;
+  color: #795548;
 }
-/* 진행 대기 */
+
+/* 2. AI 분석 중 (파란색 계열) */
+.badge.analyzing {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+/* 3. 진행 대기 (주황색 계열) */
+.badge.review_required {
+  background-color: #ffe0b2;
+  color: #e65100;
+}
+
+/* 4. 진행 (초록색 계열) */
+.badge.action_required {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* 5. 완료 (회색 또는 연보라 계열) */
+.badge.resolved {
+  background-color: #f3e5f5;
+  color: #6a1b9a;
+}
+
+/* 6. 분석 실패 (빨간색 계열) */
+.badge.failed {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+/* 7. 기타 (기본 fallback) */
 .badge.pending {
-  background: #fde8ec;
-  color: #c0445b;
+  background-color: #f5f5f5;
+  color: #616161;
 }
-/* 진행 */
-.badge.progress {
-  background: #edf2ff;
-  color: #3f5ea7;
-}
-/* 완료 */
-.badge.done {
-  background: #e8f7f1;
-  color: #21825f;
-}
+
 .board-filter {
   display: grid;
   grid-template-columns: 180px 1fr auto;
