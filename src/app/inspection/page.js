@@ -27,10 +27,21 @@ export default function InspectionPage() {
 
   const loadRecommendation = async (id = inspectionId) => {
     if (!id) return;
-    setRecommendationLoading(true); setRecommendationError("");
-    try { setRecommendation(await modelRecommendationService.recommendInspection(id)); }
-    catch (error) { setRecommendationError(error.response?.status===400?"선정 후보 모델이 없습니다. 관리자 AI 관리에서 비교할 모델을 후보로 등록해 주세요.":getApiErrorMessage(error,"AI 모델 추천을 불러오지 못했습니다.")); }
-    finally { setRecommendationLoading(false); }
+    setRecommendationLoading(true);
+    setRecommendationError("");
+    try {
+      setRecommendation(
+        await modelRecommendationService.recommendInspection(id),
+      );
+    } catch (error) {
+      setRecommendationError(
+        error.response?.status === 400
+          ? "선정 후보 모델이 없습니다. 관리자 AI 관리에서 비교할 모델을 후보로 등록해 주세요."
+          : getApiErrorMessage(error, "AI 모델 추천을 불러오지 못했습니다."),
+      );
+    } finally {
+      setRecommendationLoading(false);
+    }
   };
 
   const handleInspectionCreated = (id) => {
@@ -75,7 +86,19 @@ export default function InspectionPage() {
           onInspectionCreated={handleInspectionCreated}
         />
       </div>
-      <ModelRecommendationCard recommendation={recommendation} loading={recommendationLoading} error={recommendationError} title="이 점검에 적합한 AI 모델" description="현재 이미지와 탐지 특성에 적합한 후보를 안내합니다." unavailable={!inspectionId?"점검을 저장하거나 AI 분석을 완료하면 후보 모델 추천을 확인할 수 있습니다.":""} onRefresh={inspectionId?()=>void loadRecommendation():undefined}/>
+      <ModelRecommendationCard
+        recommendation={recommendation}
+        loading={recommendationLoading}
+        error={recommendationError}
+        title="이 점검에 적합한 AI 모델"
+        description="현재 이미지와 탐지 특성에 적합한 후보를 안내합니다."
+        unavailable={
+          !inspectionId
+            ? "점검을 저장하거나 AI 분석을 완료하면 후보 모델 추천을 확인할 수 있습니다."
+            : ""
+        }
+        onRefresh={inspectionId ? () => void loadRecommendation() : undefined}
+      />
     </div>
   );
 }

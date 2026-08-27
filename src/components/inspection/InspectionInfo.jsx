@@ -245,17 +245,16 @@ export default function InspectionInfo({
       );
 
       console.log("백엔드 저장 완벽하게 성공!", response.data);
-      alert(onInspectionCreated ? "현장 점검이 등록되었습니다. AI 모델 추천을 확인해 주세요." : "현장 점검이 등록되었습니다! 점검이력 페이지로 이동합니다.");
+      // 점검 등록 완료 알림창
+      alert("현장 점검이 등록되었습니다! 점검 상세 페이지로 이동합니다.");
 
-      // 지금 만든 점검번호 꺼내기
-      const newInspectionId = response.data.inspectionId;
+      // 생성된 점검 ID 확인
+      const newInspectionId = response.data.inspectionId || response.data.id;
 
-      // 해당 점검번호 상페 페이지로 이동
+      // onInspectionCreated 분기를 무시하고 무조건 해당 점검 상세 페이지로 바로 이동
       if (newInspectionId) {
-        if (onInspectionCreated) onInspectionCreated(newInspectionId);
-        else router.push(`/histories/${newInspectionId}`);
+        router.push(`/histories/${newInspectionId}`);
       } else {
-        // 혹시 번호가 없을경우 전체 목록으로 이동
         router.push("/histories");
       }
     } catch (error) {

@@ -98,7 +98,9 @@ export default function HistoryDetailClient({
 
   const fetchProofImage = async () => {
     const targetId = inspectionId || history.id;
-    if (!targetId) return;
+
+    // detail에 증빙사진 정보가 아예 없으면 요청 자체를 보내지 않음
+    if (!targetId || !detail?.afterImageUrl) return;
 
     try {
       const blob = await historyService.getHistoryImage(
@@ -110,7 +112,7 @@ export default function HistoryDetailClient({
         setAfterImage(objectUrl);
       }
     } catch (e) {
-      // 이미지 미등록 상태 시 무시
+      // 이미지 미등록 상태 시 무시(404)
     }
   };
 
