@@ -20,6 +20,21 @@ const roleLabel = {
   INSPECTOR: "현장 점검자",
 };
 
+const formatCoordinates = (coords) => {
+  if (!coords || coords === "좌표 미등록" || coords.includes("없음")) {
+    return "좌표 미등록";
+  }
+
+  if (coords.includes("위도")) return coords;
+
+  const matches = coords.match(/[-+]?[0-9]*\.?[0-9]+/g);
+  if (matches && matches.length >= 2) {
+    return `위도 : ${matches[0]} | 경도 : ${matches[1]}`;
+  }
+
+  return coords;
+};
+
 export default function HistoryDetailClient({
   history,
   detail,
@@ -69,12 +84,11 @@ export default function HistoryDetailClient({
   const [assignmentError, setAssignmentError] = useState("");
 
   const [showMap, setShowMap] = useState(false);
+  const [detectionModalOpen, setDetectionModalOpen] = useState(false); // 👈 팝업 State
 
-  // '위도 : 37.xxx, 경도 : 127.xxx' 형태나 '37.xxx, 127.xxx' 형태에서 순수 숫자 좌표만 추출
   const rawCoords = detail.coordinates || "";
   const parsedCoords = (() => {
     if (!rawCoords || rawCoords === "좌표 미등록") return null;
-    // 숫자, 마이너스, 점, 쉼표를 기준으로 위도/경도 매칭
     const matches = rawCoords.match(/[-+]?[0-9]*\.?[0-9]+/g);
     if (matches && matches.length >= 2) {
       return `${matches[0]},${matches[1]}`;
@@ -82,7 +96,6 @@ export default function HistoryDetailClient({
     return rawCoords.trim();
   })();
 
-  // 등록된 수거 완료 증빙사진(COLLECTION_PROOF) 불러오기
   const fetchProofImage = async () => {
     const targetId = inspectionId || history.id;
     if (!targetId) return;
@@ -105,7 +118,6 @@ export default function HistoryDetailClient({
     fetchProofImage();
   }, [inspectionId, history.id]);
 
-  // 로컬 환경 새로고침 대응 (blob: URL은 제외하고 복원)
   useEffect(() => {
     try {
       const savedData = localStorage.getItem(localKey);
@@ -113,7 +125,6 @@ export default function HistoryDetailClient({
         const parsed = JSON.parse(savedData);
         if (parsed.assigneeName) setAssigneeName(parsed.assigneeName);
         if (parsed.status) setStatus(parsed.status);
-        // 만료된 blob: URL이 아닌 실제 이미지 URL만 복원
         if (
           parsed.afterImage &&
           !parsed.afterImage.startsWith("blob:") &&
@@ -127,14 +138,12 @@ export default function HistoryDetailClient({
     }
   }, [localKey]);
 
-  // 로컬 상태 저장 헬퍼 (blob: URL 저장 방지)
   const saveLocalState = (patch) => {
     try {
       const savedData = localStorage.getItem(localKey);
       const current = savedData ? JSON.parse(savedData) : {};
       const updated = { ...current, ...patch };
 
-      // 임시 blob 주소는 localStorage에 저장하지 않음
       if (updated.afterImage && updated.afterImage.startsWith("blob:")) {
         delete updated.afterImage;
       }
@@ -151,11 +160,8 @@ export default function HistoryDetailClient({
     detail.annotatedImageUrl === source ||
     (source && detail.annotatedImageUrl.includes(source));
   const analyzedSource = isSameImage ? null : detail.annotatedImageUrl;
-  // const currentStep =
-  //   status === "완료" ? "완료" : status === "진행" ? "진행" : "대기";
   const isProgressOrDone = status === "진행" || status === "완료";
 
-  // 수거 작업 완료 처리 클릭 핸들러
   const handleCompleteWork = async () => {
     if (status === "대기") {
       alert(
@@ -209,7 +215,6 @@ export default function HistoryDetailClient({
     }
   };
 
-  // 수거 완료 증빙사진 저장 핸들러
   const handleSaveAfterPhoto = async () => {
     if (!afterFile) {
       alert("새로 첨부된 수거 완료 증빙사진 파일이 없습니다.");
@@ -235,7 +240,6 @@ export default function HistoryDetailClient({
     }
   };
 
-  // 수동 분석 실행 핸들러
   const handleRunAnalysis = async () => {
     const targetId = inspectionId || history.id;
     if (!targetId) {
@@ -247,7 +251,6 @@ export default function HistoryDetailClient({
     try {
       await historyService.analyzeImage(targetId);
       alert("분석이 성공적으로 생성되었습니다.");
-      // 현재 화면은 최초 로드 시 만든 Blob URL을 유지하므로, 새 분석 이미지를 다시 조회한다.
       window.location.reload();
     } catch (error) {
       alert(
@@ -258,7 +261,6 @@ export default function HistoryDetailClient({
     }
   };
 
-  // 점검 의견 저장 핸들러
   const handleSaveNotes = async () => {
     const targetId = inspectionId || history.id;
     if (!targetId) {
@@ -337,6 +339,100 @@ export default function HistoryDetailClient({
     }
   };
 
+  // 1. Detections 원본 데이터 파싱 및 고유 폐기물 집계
+  const rawDetections = Array.isArray(detail?.detections)
+    ? detail.detections
+    : Array.isArray(history?.detections)
+      ? history.detections
+      : [];
+
+  const parsedFromDetections = rawDetections
+    .map((item) => {
+      if (!item) return null;
+      if (Array.isArray(item)) {
+        const name = item[0] ? String(item[0]) : null;
+        const count = Number(item[1]) || 1;
+        return name ? { name, count } : null;
+      }
+      if (typeof item === "object") {
+        const name =
+          item.className ||
+          item.class_name ||
+          item.name_ko ||
+          item.name ||
+          item.waste_type_name ||
+          item.label;
+        const count = Number(item.count) || 1;
+        return name ? { name: String(name), count } : null;
+      }
+      return { name: String(item), count: 1 };
+    })
+    .filter(Boolean);
+
+  const wasteMap = new Map();
+  if (parsedFromDetections.length > 0) {
+    parsedFromDetections.forEach(({ name, count }) => {
+      if (name) {
+        wasteMap.set(name, (wasteMap.get(name) || 0) + count);
+      }
+    });
+  } else {
+    const rawSummary = detail?.wasteSummary || history?.waste || "";
+    if (rawSummary && rawSummary !== "탐지 결과 없음") {
+      rawSummary.split(",").forEach((s) => {
+        const trimmed = s.trim();
+        const match = trimmed.match(/^(.*?)\s*(\d+)개$/);
+        if (match) {
+          const name = match[1].trim();
+          const count = Number(match[2]) || 1;
+          wasteMap.set(name, (wasteMap.get(name) || 0) + count);
+        } else if (trimmed) {
+          wasteMap.set(trimmed, (wasteMap.get(trimmed) || 0) + 1);
+        }
+      });
+    }
+  }
+
+  const uniqueWastes = Array.from(wasteMap.entries()).map(([name, count]) => ({
+    name,
+    count,
+  }));
+
+  // [테스트용 임시 코드]
+  // const uniqueWastes = [
+  //   { name: "중국산 플라스틱 부표", count: 4 },
+  //   { name: "미국산 플라스틱 부표", count: 8 },
+  //   { name: "플라스틱", count: 3 },
+  //   { name: "캔류", count: 5 },
+  //   { name: "폐목재", count: 2 },
+  //   { name: "유리병", count: 6 },
+  //   { name: "일본산 플라스틱 부표", count: 1 },
+  //   { name: "종이박스", count: 7 },
+  //   { name: "가전제품", count: 2 },
+  //   { name: "고철류", count: 4 },
+  //   { name: "의류", count: 3 },
+  //   { name: "폐매트리스", count: 1 },
+  //   { name: "폐가구", count: 2 },
+  //   { name: "도자기류", count: 5 },
+  //   { name: "형광등", count: 8 },
+  //   { name: "폐건전지", count: 12 },
+  //   { name: "폐비닐포대", count: 4 },
+  //   { name: "한국산 플라스틱 부표", count: 3 },
+  //   { name: "고무류", count: 2 },
+  //   { name: "기타폐기물", count: 9 },
+  // ];
+  const totalCount = uniqueWastes.reduce((sum, item) => sum + item.count, 0);
+
+  // 최대 10개 노출 (초과 시 9개 노출 + 10번째에 더보기 버튼)
+  const MAX_DISPLAY = 10;
+  const isOverflow = uniqueWastes.length > MAX_DISPLAY;
+  const displayList = isOverflow ? uniqueWastes.slice(0, 9) : uniqueWastes;
+  const hiddenCount = uniqueWastes.length - 19;
+
+  // 정확히 반반(왼쪽 6개, 오른쪽 5~6개)으로 분할
+  const leftColumnWastes = displayList.slice(0, 5);
+  const rightColumnWastes = displayList.slice(5, 9);
+
   return (
     <div className="page-shell history-detail-page compact-detail-page">
       <div className="detail-header">
@@ -410,89 +506,349 @@ export default function HistoryDetailClient({
         {/* 점검 요약 */}
         <article className="card compact-summary-card">
           <h2>점검 요약</h2>
-          <div className="compact-meta-grid">
-            <Meta
-              label="처리 상태"
-              value={
-                <span className={`badge ${statusClass(status)}`}>{status}</span>
-              }
-            />
-            <Meta
-              label="점검 일시"
-              value={formatDateTime(history.inspectedAt)}
-            />
-            <Meta label="점검 장소" value={detail.fullLocation} />
-            <Meta label="점검자" value={detail.inspector} />
-            <Meta
-              label="GPS 좌표"
-              value={detail.coordinates || "좌표 미등록"}
-            />
-            <Meta
-              label="현장 위치"
-              value={
-                parsedCoords ? (
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${showMap ? "btn-primary" : "btn-soft"}`}
-                    onClick={() => setShowMap((prev) => !prev)}
-                    style={{
-                      marginTop: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "5px 12px",
-                      fontSize: "0.82rem",
-                      fontWeight: 600,
-                      borderRadius: "6px",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    <span>{showMap ? "지도 닫기" : "위치 확인"}</span>
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+          <div
+            className="compact-meta-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gridTemplateRows: "repeat(3, auto)",
+              gap: "12px 20px",
+              alignItems: "stretch",
+            }}
+          >
+            {/* ── 1행 (좌측 1열 / 중간 2열) ── */}
+            <div style={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
+              <Meta
+                label="처리 상태"
+                value={
+                  <span className={`badge ${statusClass(status)}`}>
+                    {status}
+                  </span>
+                }
+              />
+            </div>
+            <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2" }}>
+              <Meta label="점검자" value={detail.inspector} />
+            </div>
+
+            {/* ── 2행 (좌측 1열 / 중간 2열) ── */}
+            <div style={{ gridColumn: "1 / 2", gridRow: "2 / 3" }}>
+              <Meta label="점검 장소" value={detail.fullLocation} />
+            </div>
+            <div style={{ gridColumn: "2 / 3", gridRow: "2 / 3" }}>
+              <Meta
+                label="점검 일시"
+                value={formatDateTime(history.inspectedAt)}
+              />
+            </div>
+
+            {/* ── 3행 (좌측 1열 / 중간 2열) ── */}
+            <div style={{ gridColumn: "1 / 2", gridRow: "3 / 4" }}>
+              <Meta
+                label="GPS 좌표"
+                value={formatCoordinates(detail.coordinates)}
+              />
+            </div>
+            <div style={{ gridColumn: "2 / 3", gridRow: "3 / 4" }}>
+              <Meta
+                label="현장 위치"
+                value={
+                  parsedCoords ? (
+                    <div
                       style={{
-                        transform: showMap ? "rotate(180deg)" : "rotate(0deg)",
-                        transition: "transform 0.2s ease",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        width: "100%",
                       }}
                     >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowMap((prev) => !prev)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          padding: "4px 8px",
+                          fontSize: "0.82rem",
+                          fontWeight: 600,
+                          color: showMap ? "#2563eb" : "#4b5563",
+                          background: "transparent",
+                          border: "1px solid",
+                          borderColor: showMap ? "#bfdbfe" : "#e5e7eb",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span>{showMap ? "지도 닫기" : "위치 확인"}</span>
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transform: showMap
+                              ? "rotate(180deg)"
+                              : "rotate(0deg)",
+                            transition: "transform 0.2s ease",
+                          }}
+                        >
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        marginTop: "4px",
+                        color: "#9ca3af",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      좌표 없음
+                    </span>
+                  )
+                }
+              />
+            </div>
+
+            {/* ── 우측 3열 (탐지 결과: 2열 반반 10개 노출 + 더보기) ── */}
+            <div
+              style={{
+                gridColumn: "3 / 4",
+                gridRow: "1 / 4",
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+              }}
+            >
+              {/* 상단 라벨 & 총계 뱃지 */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  minHeight: "1.2rem",
+                }}
+              >
+                <small>탐지 결과</small>
+                {uniqueWastes.length > 0 && (
                   <span
                     style={{
-                      display: "inline-block",
-                      marginTop: "4px",
-                      color: "#9ca3af",
-                      fontSize: "0.85rem",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      color: "#2563eb",
+                      backgroundColor: "#eff6ff",
+                      padding: "2px 8px",
+                      borderRadius: "9999px",
+                      border: "1px solid #dbeafe",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      lineHeight: 1.2,
                     }}
                   >
-                    좌표 없음
+                    총 {totalCount}개 ({uniqueWastes.length}종)
                   </span>
-                )
-              }
-            />
+                )}
+              </div>
+
+              {/* 하단 50:50 2열 세로 정렬 영역 (각 열 5개씩 총 10개) */}
+              <div
+                style={{
+                  marginTop: "8px",
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {uniqueWastes.length === 0 ? (
+                  <span
+                    style={{
+                      color: "#9ca3af",
+                      fontSize: "0.88rem",
+                      marginTop: "4px",
+                    }}
+                  >
+                    탐지 결과 없음
+                  </span>
+                ) : (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr", // 👈 좌우 50% : 50% 분할
+                      gap: "0 10px",
+                      width: "100%",
+                    }}
+                  >
+                    {/* ── 좌측 1열 (최대 5개) ── */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      {leftColumnWastes.map(({ name, count }, index) => (
+                        <div
+                          key={`left-${name}-${index}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "3px 10px 3px 8px",
+                            backgroundColor: "#ffffff",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "9999px",
+                            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.85rem",
+                              fontWeight: 800,
+                              color: "#3b82f6",
+                            }}
+                          >
+                            #
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.84rem",
+                              fontWeight: 600,
+                              color: "#1e293b",
+                            }}
+                          >
+                            {name}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.8rem",
+                              fontWeight: 700,
+                              color: "#64748b",
+                              marginLeft: "2px",
+                            }}
+                          >
+                            {count}개
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ── 우측 2열 (최대 4개 + 더보기 버튼) ── */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      {rightColumnWastes.map(({ name, count }, index) => (
+                        <div
+                          key={`right-${name}-${index}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "3px 10px 3px 8px",
+                            backgroundColor: "#ffffff",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "9999px",
+                            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.85rem",
+                              fontWeight: 800,
+                              color: "#3b82f6",
+                            }}
+                          >
+                            #
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.84rem",
+                              fontWeight: 600,
+                              color: "#1e293b",
+                            }}
+                          >
+                            {name}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.8rem",
+                              fontWeight: 700,
+                              color: "#64748b",
+                              marginLeft: "2px",
+                            }}
+                          >
+                            {count}개
+                          </span>
+                        </div>
+                      ))}
+
+                      {/* 11개 이상일 때 우측 5번째(전체 10번째) 자리에 나타나는 더보기 버튼 */}
+                      {isOverflow && (
+                        <button
+                          type="button"
+                          onClick={() => setDetectionModalOpen(true)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "3px",
+                            padding: "3px 10px",
+                            fontSize: "0.8rem",
+                            fontWeight: 700,
+                            color: "#2563eb",
+                            backgroundColor: "#eff6ff",
+                            border: "1px dashed #bfdbfe",
+                            borderRadius: "9999px",
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span>+{hiddenCount}개 더보기</span>
+                          <svg
+                            width="11"
+                            height="11"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+
           {/* 지도 보기를 눌렀을 때 펼쳐지는 지도 뷰어 */}
           {showMap && parsedCoords && (
             <div
@@ -518,167 +874,6 @@ export default function HistoryDetailClient({
             </div>
           )}
         </article>
-
-        {/* 탐지 결과 */}
-        <article className="card compact-summary-card">
-          <div className="detail-card-title">
-            {(() => {
-              // 1. detections 원본 데이터 파싱
-              const rawDetections = Array.isArray(detail?.detections)
-                ? detail.detections
-                : Array.isArray(history?.detections)
-                  ? history.detections
-                  : [];
-
-              const parsedFromDetections = rawDetections
-                .map((item) => {
-                  if (!item) return null;
-                  if (Array.isArray(item)) {
-                    const name = item[0] ? String(item[0]) : null;
-                    const count = Number(item[1]) || 1;
-                    return name ? { name, count } : null;
-                  }
-                  if (typeof item === "object") {
-                    const name =
-                      item.className ||
-                      item.class_name ||
-                      item.name_ko ||
-                      item.name ||
-                      item.waste_type_name ||
-                      item.label;
-                    const count = Number(item.count) || 1;
-                    return name ? { name: String(name), count } : null;
-                  }
-                  return { name: String(item), count: 1 };
-                })
-                .filter(Boolean);
-
-              // 2. 같은 이름의 폐기물 수량을 누적 합산 (+)
-              const wasteMap = new Map();
-
-              if (parsedFromDetections.length > 0) {
-                // detections 배열이 존재하면 각각의 수량을 누적 덧셈
-                parsedFromDetections.forEach(({ name, count }) => {
-                  if (name) {
-                    wasteMap.set(name, (wasteMap.get(name) || 0) + count);
-                  }
-                });
-              } else {
-                // detections 배열이 없을 경우에만 wasteSummary 문자열 파싱
-                const rawSummary = detail?.wasteSummary || history?.waste || "";
-                if (rawSummary && rawSummary !== "탐지 결과 없음") {
-                  rawSummary.split(",").forEach((s) => {
-                    const trimmed = s.trim();
-                    const match = trimmed.match(/^(.*?)\s*(\d+)개$/);
-                    if (match) {
-                      const name = match[1].trim();
-                      const count = Number(match[2]) || 1;
-                      wasteMap.set(name, (wasteMap.get(name) || 0) + count);
-                    } else if (trimmed) {
-                      wasteMap.set(trimmed, (wasteMap.get(trimmed) || 0) + 1);
-                    }
-                  });
-                }
-              }
-
-              const uniqueWastes = Array.from(wasteMap.entries()).map(
-                ([name, count]) => ({
-                  name,
-                  count,
-                }),
-              );
-
-              // 전체 수량 합계
-              const totalCount = uniqueWastes.reduce(
-                (sum, item) => sum + item.count,
-                0,
-              );
-
-              return (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "14px",
-                    }}
-                  >
-                    <h2>탐지 결과</h2>
-                    {uniqueWastes.length > 0 && (
-                      <span
-                        style={{
-                          fontSize: "0.8rem",
-                          fontWeight: 600,
-                          color: "#2563eb",
-                          backgroundColor: "#eff6ff",
-                          padding: "4px 10px",
-                          borderRadius: "9999px",
-                          border: "1px solid #dbeafe",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <span>총 {uniqueWastes.length}종</span>
-                        <span style={{ color: "#93c5fd" }}>•</span>
-                        <span>{totalCount}개</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {uniqueWastes.length === 0 ? (
-                    <p
-                      style={{
-                        color: "#9ca3af",
-                        fontSize: "0.9rem",
-                        textAlign: "center",
-                        padding: "10px 0",
-                      }}
-                    >
-                      탐지된 폐기물이 없습니다.
-                    </p>
-                  ) : (
-                    <div
-                      className="detection-tags"
-                      style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
-                    >
-                      {uniqueWastes.map(({ name, count }, index) => (
-                        <span
-                          key={`${name}-${index}`}
-                          className="tag"
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#f3f4f6",
-                            borderRadius: "20px",
-                            fontSize: "0.9rem",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
-                          <span>{name}</span>
-                          <span
-                            style={{
-                              backgroundColor: "#e5e7eb",
-                              color: "#374151",
-                              fontSize: "0.75rem",
-                              fontWeight: "bold",
-                              padding: "2px 6px",
-                              borderRadius: "10px",
-                            }}
-                          >
-                            {count}개
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        </article>
       </div>
 
       {/* 수거 완료 증빙 사진 */}
@@ -701,7 +896,6 @@ export default function HistoryDetailClient({
                 src={afterImage}
                 alt="수거 완료 증빙 사진"
                 onError={() => {
-                  // 만료되거나 파손된 이미지 주소일 경우 자동 복구
                   setAfterImage(null);
                 }}
               />
@@ -778,6 +972,115 @@ export default function HistoryDetailClient({
         </div>
       </article>
 
+      {/* ── 탐지 결과 전체보기 팝업 모달 ── */}
+      {detectionModalOpen && (
+        <div
+          className="assignment-modal"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setDetectionModalOpen(false)}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxWidth: "480px", width: "90%" }}
+          >
+            <div className="assignment-modal-header">
+              <div>
+                <h2>탐지 결과 전체 목록</h2>
+                <p>
+                  총 <strong>{uniqueWastes.length}</strong>종 ·{" "}
+                  <strong>{totalCount}</strong>개의 폐기물이 탐지되었습니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="닫기"
+                onClick={() => setDetectionModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+                maxHeight: "320px",
+                overflowY: "auto",
+                padding: "16px",
+                backgroundColor: "#f8fafc",
+                borderRadius: "8px",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              {uniqueWastes.map(({ name, count }, index) => (
+                <div
+                  key={`modal-${name}-${index}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "9999px",
+                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.9rem",
+                      fontWeight: 800,
+                      color: "#3b82f6",
+                    }}
+                  >
+                    #
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.88rem",
+                      fontWeight: 600,
+                      color: "#1e293b",
+                    }}
+                  >
+                    {name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      color: "#2563eb",
+                      backgroundColor: "#eff6ff",
+                      padding: "2px 7px",
+                      borderRadius: "6px",
+                      border: "1px solid #dbeafe",
+                      marginLeft: "2px",
+                    }}
+                  >
+                    {count}개
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div
+              className="assignment-modal-actions"
+              style={{ marginTop: "16px" }}
+            >
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => setDetectionModalOpen(false)}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 담당자 지정 모달 */}
       {assignmentOpen && (
         <div
           className="assignment-modal"
@@ -876,7 +1179,6 @@ export default function HistoryDetailClient({
   );
 }
 
-// 원본 / 분석 이미지 높이 및 비율 완전 통일 컴포넌트
 function DetailImage({
   title,
   actionButton,
@@ -912,7 +1214,7 @@ function DetailImage({
           style={{
             position: "relative",
             width: "100%",
-            height: "220px", // 분석 이미지 없음 박스와 높이 동일 맞춤
+            height: "220px",
             borderRadius: "12px",
             overflow: "hidden",
             backgroundColor: "#f8fafc",
@@ -924,8 +1226,7 @@ function DetailImage({
             fill
             unoptimized
             sizes="(max-width: 720px) 100vw, 50vw"
-            style={{ objectFit: "contain" }} // 이미지가 잘리지 않게 영역 내 맞춤
-            onError={() => setHasError(true)}
+            style={{ objectFit: "contain" }}
           />
           <div>
             <button type="button" onClick={() => onZoom(src)}>
