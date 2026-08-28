@@ -1,5 +1,6 @@
 export const projectLinks = [
   { label: "HAWK-AI 발표자료", href: "/project/presentation" },
+  { label: "모바일 현장점검 앱 시연", href: "/project/mobile-inspection" },
   { label: "GitHub Organization", href: "https://github.com/hawk-ai-project" },
   {
     label: "Notion Workspace",
