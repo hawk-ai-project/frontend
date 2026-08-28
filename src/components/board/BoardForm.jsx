@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   summary: "",
   content: "",
   tags: [],
+  inspectionId: null,
 };
 const EMPTY_AI_INPUT = {
   location: "",
@@ -50,6 +51,12 @@ function formatInspectionDate(value) {
 }
 
 function createInspectionHistoryDraft(history) {
+  const rawDate =
+    history?.inspectedAt || history?.capturedAt || history?.createdAt;
+  const dateObj = rawDate ? new Date(rawDate) : new Date();
+
+  const validDate = isNaN(dateObj.getTime()) ? new Date() : dateObj;
+
   const inspectedAt = new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "2-digit",
@@ -57,13 +64,17 @@ function createInspectionHistoryDraft(history) {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(history.inspectedAt));
-  const summary = `${history.waste} ${history.detectedCount}개가 탐지되었습니다.`;
+  }).format(validDate);
+
+  const wasteName = history?.waste || "폐기물";
+  const count = history?.detectedCount ?? history?.count ?? 0;
+  const summary = `${wasteName} ${count}개가 탐지되었습니다.`;
+
   return {
-    title: `${history.location} 현장 점검 결과`,
+    title: `${history?.location || "현장"} 점검 결과`,
     summary,
-    content: `## 점검 개요\n\n- 점검번호: ${history.id}\n- 점검 일시: ${inspectedAt}\n- 점검 장소: ${history.location}\n\n## 탐지 결과\n\n- ${summary}\n\n## 후속 조치\n\n탐지 결과를 확인한 후 현장 상황에 맞는 수거 및 후속 조치를 진행해 주세요.`,
-    tags: ["현장점검", history.waste],
+    content: `## 점검 개요\n\n- 점검번호: ${history?.id || "-"}\n- 점검 일시: ${inspectedAt}\n- 점검 장소: ${history?.location || "-"}\n\n## 탐지 결과\n\n- ${summary}\n\n## 후속 조치\n\n탐지 결과를 확인한 후 현장 상황에 맞는 수거 및 후속 조치를 진행해 주세요.`,
+    tags: ["현장점검", wasteName].filter(Boolean),
   };
 }
 
@@ -125,16 +136,22 @@ export default function BoardForm({ boardId }) {
       .detail(boardId)
       .then((post) => {
         if (cancelled) return;
+        const targetInspectionId =
+          post.inspectionId || post.inspection_id || null;
         const loaded = {
           categoryId: post.categoryId,
           title: post.title,
           summary: post.summary || "",
           content: post.content,
           tags: post.tags || [],
+          inspectionId: targetInspectionId,
         };
         const cleanLoaded = sanitizeBoardDraft(loaded);
         setForm(cleanLoaded);
         setOriginalForm(cleanLoaded);
+        if (targetInspectionId) {
+          setHistoryImportId(String(targetInspectionId));
+        }
       })
       .catch((error) => {
         if (!cancelled)
@@ -148,7 +165,6 @@ export default function BoardForm({ boardId }) {
     };
   }, [boardId, isEdit]);
 
-  // 페이지 진입 시 점검 이력을 자동으로 불러오는 useEffect 추가
   useEffect(() => {
     if (
       !authLoading &&
@@ -163,20 +179,25 @@ export default function BoardForm({ boardId }) {
   useEffect(() => {
     if (isEdit) return;
     const inspectionId = searchParams.get("inspectionId");
+    if (!inspectionId) return;
+
     const history = inspectionHistories?.find(
-      (item) => String(item.id) === inspectionId,
+      (item) => String(item.id) === String(inspectionId),
     );
-    if (!history) return;
-    const timer = window.setTimeout(() => {
-      setHistoryImportId(history.id);
-      setForm((current) =>
-        current.title || current.content
-          ? current
-          : { ...EMPTY_FORM, ...createInspectionHistoryDraft(history) },
-      );
+
+    // 이력이 아직 로드되지 않았더라도 inspectionId는 상태에 먼저 바인딩
+    setHistoryImportId(String(inspectionId));
+    setForm((current) => ({
+      ...current,
+      inspectionId: Number(inspectionId) || inspectionId,
+      ...(history && !current.title && !current.content
+        ? createInspectionHistoryDraft(history)
+        : {}),
+    }));
+
+    if (history) {
       setNotice(`${history.id} 점검 이력 데이터를 불러왔습니다.`);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    }
   }, [isEdit, searchParams, inspectionHistories]);
 
   useEffect(() => {
@@ -222,13 +243,31 @@ export default function BoardForm({ boardId }) {
 
   const importInspectionHistory = (inspectionId) => {
     setHistoryImportId(inspectionId);
+    if (!inspectionId) {
+      setForm((prev) => ({ ...prev, inspectionId: null }));
+      return;
+    }
+
+    const parsedId = Number(inspectionId) || inspectionId;
     const history = inspectionHistories?.find(
       (item) => String(item.id) === String(inspectionId),
     );
-    if (!history) return;
-    setForm({ ...EMPTY_FORM, ...createInspectionHistoryDraft(history) });
+
+    if (history) {
+      const draft = createInspectionHistoryDraft(history);
+      setForm((prev) => ({
+        ...prev,
+        ...draft,
+        inspectionId: parsedId,
+      }));
+      setNotice(`${history.id} 점검 이력 데이터를 게시글에 적용했습니다.`);
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        inspectionId: parsedId,
+      }));
+    }
     setErrors({});
-    setNotice(`${history.id} 점검 이력 데이터를 게시글에 적용했습니다.`);
   };
 
   const addTag = () => {
@@ -265,12 +304,23 @@ export default function BoardForm({ boardId }) {
     try {
       setSubmitting(true);
       setNotice("");
+
+      const targetInspectionId = form.inspectionId
+        ? Number(form.inspectionId)
+        : null;
+
+      // 백엔드 요청 DTO (camelCase / snake_case 및 숫자 변환 보장)
+      const payload = {
+        ...safeForm,
+        summary: safeForm.summary || null,
+        inspectionId: targetInspectionId,
+        inspection_id: targetInspectionId,
+      };
+
       const saved = isEdit
-        ? await boardService.update(boardId, safeForm)
-        : await boardService.create({
-            ...safeForm,
-            summary: safeForm.summary || null,
-          });
+        ? await boardService.update(boardId, payload)
+        : await boardService.create(payload);
+
       if (!isEdit) localStorage.removeItem(DRAFT_KEY);
       router.push(`/boards/${saved.id}`);
       router.refresh();
@@ -440,7 +490,7 @@ export default function BoardForm({ boardId }) {
               >
                 <option value="">점검 이력을 선택하세요</option>
                 {inspectionHistories?.map((history) => (
-                  <option value={history.id} key={history.id}>
+                  <option value={String(history.id)} key={history.id}>
                     {history.id} · {history.location}
                   </option>
                 ))}
