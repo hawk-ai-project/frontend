@@ -41,7 +41,7 @@ export default function ProjectPresentationPage() {
       </header>
 
       <PresentationViewer
-        src={presentationBase + ".pdf#view=FitH&toolbar=1&navpanes=0"}
+        source={presentationBase + ".pptx"}
         title="HAWK-AI 발표자료"
       />
     </main>
