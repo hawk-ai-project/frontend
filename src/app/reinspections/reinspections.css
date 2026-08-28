@@ -209,8 +209,6 @@
 .reinspection-canvas {
   position: relative;
   width: 100%;
-  max-height: calc(100vh - 230px);
-  aspect-ratio: 16/10;
   background: #0d1420 center/contain no-repeat;
   touch-action: none;
   user-select: none;

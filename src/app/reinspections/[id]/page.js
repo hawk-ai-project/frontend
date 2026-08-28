@@ -65,6 +65,7 @@ export default function ReinspectionLabelEditor() {
   const [detail, setDetail] = useState(null);
   const [classes, setClasses] = useState([]);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageAspectRatio, setImageAspectRatio] = useState(16 / 10);
   const [boxes, setBoxes] = useState([]);
   const [selected, setSelected] = useState(null);
   const [mode, setMode] = useState("select");
@@ -92,8 +93,11 @@ export default function ReinspectionLabelEditor() {
         requestError.response?.status === 404
           ? "정기 AI 추천이 아직 생성되지 않았습니다. 잠시 후 다시 확인해 주세요."
           : requestError.response?.status === 400
-          ? "선정 후보 모델이 없습니다. 관리자 AI 관리에서 비교할 모델을 후보로 등록해 주세요."
-          : getApiErrorMessage(requestError, "AI 모델 추천을 불러오지 못했습니다."),
+            ? "선정 후보 모델이 없습니다. 관리자 AI 관리에서 비교할 모델을 후보로 등록해 주세요."
+            : getApiErrorMessage(
+                requestError,
+                "AI 모델 추천을 불러오지 못했습니다.",
+              ),
       );
     } finally {
       setRecommendationLoading(false);
@@ -117,10 +121,23 @@ export default function ReinspectionLabelEditor() {
         : [];
       setClasses(classList);
       setModels(catalog.models || []);
-      setSelectedModelId((current) => current || catalog.selectedModelId || item.modelExternalId || "");
+      setSelectedModelId(
+        (current) =>
+          current || catalog.selectedModelId || item.modelExternalId || "",
+      );
 
       setBoxes(parseDetectionsToBoxes(item.detections));
-      setImageUrl(URL.createObjectURL(blob));
+      const nextImageUrl = URL.createObjectURL(blob);
+      const sourceImage = new window.Image();
+      sourceImage.onload = () => {
+        if (sourceImage.naturalWidth && sourceImage.naturalHeight) {
+          setImageAspectRatio(
+            sourceImage.naturalWidth / sourceImage.naturalHeight,
+          );
+        }
+      };
+      sourceImage.src = nextImageUrl;
+      setImageUrl(nextImageUrl);
     } catch (e) {
       setError(getApiErrorMessage(e, "라벨링 데이터를 불러오지 못했습니다."));
     }
@@ -279,7 +296,9 @@ export default function ReinspectionLabelEditor() {
       await load();
       await loadRecommendation();
     } catch (e) {
-      setError(getApiErrorMessage(e, "선택한 모델로 다시 탐지하지 못했습니다."));
+      setError(
+        getApiErrorMessage(e, "선택한 모델로 다시 탐지하지 못했습니다."),
+      );
     } finally {
       setDetecting(false);
     }
@@ -423,9 +442,14 @@ export default function ReinspectionLabelEditor() {
           <div
             ref={canvasRef}
             className={`reinspection-canvas mode-${mode}`}
-            style={
-              imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined
-            }
+            style={{
+              ...(imageUrl
+                ? { backgroundImage: 'url("' + imageUrl + '")' }
+                : {}),
+              aspectRatio: imageAspectRatio,
+              width:
+                "min(100%, calc((100vh - 230px) * " + imageAspectRatio + "))",
+            }}
             onPointerDown={down}
             onPointerMove={move}
             onPointerUp={up}
