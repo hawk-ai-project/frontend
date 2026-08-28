@@ -12,7 +12,6 @@ function toHistory(inspection) {
     ? inspection.detections
     : [];
   const statusMap = {
-    ANALYZING: "AI 분석 중",
     DRAFT: "점검 대기",
     REVIEW_REQUIRED: "진행 대기",
     ACTION_REQUIRED: "진행",

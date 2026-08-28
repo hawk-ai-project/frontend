@@ -42,7 +42,6 @@
 // ];
 
 export const INSPECTION_STATUS_LABELS = {
-  ANALYZING: "AI 분석 중",
   DRAFT: "점검 대기",
   REVIEW_REQUIRED: "진행 대기",
   ACTION_REQUIRED: "진행",
@@ -55,13 +54,11 @@ export const STATUS_OPTIONS = [
   "진행 대기",
   "진행",
   "완료",
-  "AI 분석 중",
   "분석 실패",
 ];
 
 export function statusClass(status) {
   const classMap = {
-    "AI 분석 중": "analyzing",
     "점검 대기": "draft",
     "진행 대기": "review_required",
     진행: "action_required",

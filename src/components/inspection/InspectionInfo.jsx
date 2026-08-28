@@ -253,9 +253,9 @@ export default function InspectionInfo({
 
       // onInspectionCreated 분기를 무시하고 무조건 해당 점검 상세 페이지로 바로 이동
       if (newInspectionId) {
-        router.push(`/histories/${newInspectionId}`);
+        router.push(`/reinspections/${newInspectionId}`);
       } else {
-        router.push("/histories");
+        router.push("/reinspections");
       }
     } catch (error) {
       console.error("에러 발생:", error);

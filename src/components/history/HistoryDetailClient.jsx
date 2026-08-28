@@ -39,27 +39,36 @@ const formatCoordinates = (coords) => {
   return coords;
 };
 
+// 백엔드 Enum <-> 프론트엔드 한글 매핑
+const statusTranslateMap = {
+  ANALYZING: "AI 분석 중",
+  DRAFT: "점검 대기",
+  REVIEW_REQUIRED: "진행 대기",
+  ACTION_REQUIRED: "진행",
+  RESOLVED: "완료",
+  FAILED: "분석 실패",
+};
+
+const reverseStatusMap = {
+  "AI 분석 중": "ANALYZING",
+  "점검 대기": "DRAFT",
+  "진행 대기": "REVIEW_REQUIRED",
+  진행: "ACTION_REQUIRED",
+  완료: "RESOLVED",
+  "분석 실패": "FAILED",
+};
+
 export default function HistoryDetailClient({
   history,
   detail,
   inspectionId = null,
 }) {
-  const localKey = `inspection_local_${history.id}`;
-
-  const statusTranslateMap = {
-    ANALYZING: "AI 분석 중",
-    DRAFT: "점검 대기",
-    REVIEW_REQUIRED: "진행 대기",
-    ACTION_REQUIRED: "진행",
-    RESOLVED: "완료",
-    FAILED: "분석 실패",
-  };
-
+  // DB에서 받아온 데이터로만 초기 상태 설정
   const [status, setStatus] = useState(
     statusTranslateMap[history.status] || history.status,
   );
 
-  const [opinion, setOpinion] = useState(detail.opinion);
+  const [opinion, setOpinion] = useState(detail.opinion || "");
   const [saved, setSaved] = useState(true);
   const [savingNotes, setSavingNotes] = useState(false);
   const [hasExistingOpinion, setHasExistingOpinion] = useState(
@@ -88,7 +97,7 @@ export default function HistoryDetailClient({
   const [assignmentError, setAssignmentError] = useState("");
 
   const [showMap, setShowMap] = useState(false);
-  const [detectionModalOpen, setDetectionModalOpen] = useState(false); // 👈 팝업 State
+  const [detectionModalOpen, setDetectionModalOpen] = useState(false);
 
   const rawCoords = detail.coordinates || "";
   const parsedCoords = (() => {
@@ -102,9 +111,7 @@ export default function HistoryDetailClient({
 
   const fetchProofImage = async () => {
     const targetId = inspectionId || history.id;
-
-    // detail에 증빙사진 정보가 아예 없으면 요청 자체를 보내지 않음
-    if (!targetId || !detail?.afterImageUrl) return;
+    if (!targetId) return;
 
     try {
       const blob = await historyService.getHistoryImage(
@@ -116,7 +123,7 @@ export default function HistoryDetailClient({
         setAfterImage(objectUrl);
       }
     } catch (e) {
-      // 이미지 미등록 상태 시 무시(404)
+      // 이미지 미등록 상태 시 무시
     }
   };
 
@@ -125,40 +132,17 @@ export default function HistoryDetailClient({
   }, [inspectionId, history.id]);
 
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(localKey);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        if (parsed.assigneeName) setAssigneeName(parsed.assigneeName);
-        if (parsed.status) setStatus(parsed.status);
-        if (
-          parsed.afterImage &&
-          !parsed.afterImage.startsWith("blob:") &&
-          !afterImage
-        ) {
-          setAfterImage(parsed.afterImage);
-        }
-      }
-    } catch (e) {
-      console.error("로컬 상태 불러오기 실패:", e);
+    if (history?.status) {
+      setStatus(statusTranslateMap[history.status] || history.status);
     }
-  }, [localKey]);
-
-  const saveLocalState = (patch) => {
-    try {
-      const savedData = localStorage.getItem(localKey);
-      const current = savedData ? JSON.parse(savedData) : {};
-      const updated = { ...current, ...patch };
-
-      if (updated.afterImage && updated.afterImage.startsWith("blob:")) {
-        delete updated.afterImage;
-      }
-
-      localStorage.setItem(localKey, JSON.stringify(updated));
-    } catch (e) {
-      console.error("로컬 상태 저장 실패:", e);
+    if (detail?.assigneeName) {
+      setAssigneeName(detail.assigneeName);
     }
-  };
+    if (detail?.opinion !== undefined) {
+      setOpinion(detail.opinion || "");
+      setHasExistingOpinion(Boolean(detail.opinion && detail.opinion.trim()));
+    }
+  }, [history, detail]);
 
   const source = detail.originalImageUrl;
   const isSameImage =
@@ -169,46 +153,62 @@ export default function HistoryDetailClient({
   const isProgressOrDone = status === "진행" || status === "완료";
 
   const handleCompleteWork = async () => {
-    if (status === "대기") {
-      alert(
-        "상태가 대기상태입니다. 담당자를 지정하여 진행 상태를 변경해 주세요.",
-      );
-      return;
-    }
-
+    // 점검 상태 검사
     if (status !== "진행") {
-      alert("이미 수거 작업이 완료된 점검 건입니다.");
+      if (status === "완료") {
+        alert("이미 수거 작업이 완료된 점검 건입니다.");
+      } else {
+        alert(
+          "현재 점검 진행 상태가 아닙니다.\n담당자를 지정하여 [진행] 상태로 변경한 후 완료 처리를 진행해 주세요.",
+        );
+      }
       return;
     }
 
-    if (!opinion || !opinion.trim()) {
+    const hasOpinion = Boolean(opinion && opinion.trim());
+    const hasPhoto = Boolean(afterFile || afterImage);
+
+    // 의견과 사진 둘 다 없는 경우
+    if (!hasOpinion && !hasPhoto) {
+      alert(
+        "점검 의견 및 후속 조치 내용과 수거 완료 증빙 사진을 모두 등록해 주세요.",
+      );
+      opinionRef.current?.focus();
+      return;
+    }
+
+    // 점검 의견 내용 검사
+    if (!hasOpinion) {
       alert("점검 의견 및 후속 조치 내용을 입력해 주세요.");
       opinionRef.current?.focus();
       return;
     }
 
-    if (!afterFile && !afterImage) {
-      alert("수거 완료 증빙사진을 등록해 주세요.");
+    // 점검 의견 저장 여부 검사
+    if (!saved) {
+      alert(
+        "점검 의견 및 후속 조치에 저장되지 않은 수정 내용이 있습니다.\n점검 의견 영역의 [저장] 버튼을 먼저 눌러주세요.",
+      );
+      opinionRef.current?.focus();
       return;
     }
 
+    // 수거 완료 증빙 사진 검사
+    if (!hasPhoto) {
+      alert("수거 완료 증빙 사진을 등록해 주세요.");
+      return;
+    }
+
+    // 모든 검증 통과 시 완료 처리 실행
     setCompletingWork(true);
     try {
       const targetId = inspectionId || history.id;
       if (targetId) {
-        try {
-          await historyService.completeHistory(targetId, afterFile);
-        } catch (apiError) {
-          console.warn(
-            "서버 API 연결 실패, 클라이언트 상태만 완료 전환합니다:",
-            apiError,
-          );
-        }
+        await historyService.completeHistory(targetId, afterFile);
       }
 
       setStatus("완료");
-      saveLocalState({ status: "완료" });
-      alert("수거 작업이 완료되었습니다.");
+      alert("수거 작업이 성공적으로 완료 처리되었습니다.");
     } catch (error) {
       alert(
         getApiErrorMessage(
@@ -221,7 +221,32 @@ export default function HistoryDetailClient({
     }
   };
 
+  // 처리 상태 드롭다운 변경
+  const handleStatusSelectChange = async (nextKoreanStatus) => {
+    const targetId = inspectionId || history.id;
+    const prevStatus = status;
+
+    setStatus(nextKoreanStatus);
+
+    if (targetId) {
+      try {
+        const backendStatus =
+          reverseStatusMap[nextKoreanStatus] || nextKoreanStatus;
+        await historyService.updateStatus(targetId, backendStatus);
+      } catch (error) {
+        console.error("DB 상태 변경 실패:", error);
+        alert(getApiErrorMessage(error, "상태 저장에 실패했습니다."));
+        setStatus(prevStatus); // 실패 시 이전 상태로 복구
+      }
+    }
+  };
+
   const handleSaveAfterPhoto = async () => {
+    if (status !== "진행") {
+      alert("[진행] 상태일 때만 증빙 사진을 저장할 수 있습니다.");
+      return;
+    }
+
     if (!afterFile) {
       alert("새로 첨부된 수거 완료 증빙사진 파일이 없습니다.");
       return;
@@ -268,6 +293,11 @@ export default function HistoryDetailClient({
   };
 
   const handleSaveNotes = async () => {
+    if (status !== "진행") {
+      alert("[진행] 상태일 때만 점검 의견을 저장할 수 있습니다.");
+      return;
+    }
+
     const targetId = inspectionId || history.id;
     if (!targetId) {
       setSaved(true);
@@ -333,7 +363,6 @@ export default function HistoryDetailClient({
       const targetName = result.assignee.name;
       setAssigneeName(targetName);
       setStatus("진행");
-      saveLocalState({ assigneeName: targetName, status: "진행" });
       setAssignmentOpen(false);
       alert(`${targetName} 님이 담당자로 지정되었습니다. (상태: 진행)`);
     } catch (error) {
@@ -345,7 +374,7 @@ export default function HistoryDetailClient({
     }
   };
 
-  // 1. Detections 원본 데이터 파싱 및 고유 폐기물 집계
+  // 폐기물 집계
   const rawDetections = Array.isArray(detail?.detections)
     ? detail.detections
     : Array.isArray(history?.detections)
@@ -404,38 +433,13 @@ export default function HistoryDetailClient({
     count,
   }));
 
-  // [테스트용 임시 코드]
-  // const uniqueWastes = [
-  //   { name: "중국산 플라스틱 부표", count: 4 },
-  //   { name: "미국산 플라스틱 부표", count: 8 },
-  //   { name: "플라스틱", count: 3 },
-  //   { name: "캔류", count: 5 },
-  //   { name: "폐목재", count: 2 },
-  //   { name: "유리병", count: 6 },
-  //   { name: "일본산 플라스틱 부표", count: 1 },
-  //   { name: "종이박스", count: 7 },
-  //   { name: "가전제품", count: 2 },
-  //   { name: "고철류", count: 4 },
-  //   { name: "의류", count: 3 },
-  //   { name: "폐매트리스", count: 1 },
-  //   { name: "폐가구", count: 2 },
-  //   { name: "도자기류", count: 5 },
-  //   { name: "형광등", count: 8 },
-  //   { name: "폐건전지", count: 12 },
-  //   { name: "폐비닐포대", count: 4 },
-  //   { name: "한국산 플라스틱 부표", count: 3 },
-  //   { name: "고무류", count: 2 },
-  //   { name: "기타폐기물", count: 9 },
-  // ];
   const totalCount = uniqueWastes.reduce((sum, item) => sum + item.count, 0);
 
-  // 최대 10개 노출 (초과 시 9개 노출 + 10번째에 더보기 버튼)
   const MAX_DISPLAY = 10;
   const isOverflow = uniqueWastes.length > MAX_DISPLAY;
   const displayList = isOverflow ? uniqueWastes.slice(0, 9) : uniqueWastes;
-  const hiddenCount = uniqueWastes.length - 19;
+  const hiddenCount = uniqueWastes.length - 9;
 
-  // 정확히 반반(왼쪽 6개, 오른쪽 5~6개)으로 분할
   const leftColumnWastes = displayList.slice(0, 5);
   const rightColumnWastes = displayList.slice(5, 9);
 
@@ -454,21 +458,20 @@ export default function HistoryDetailClient({
           <Link className="btn btn-primary" href="/histories">
             목록
           </Link>
-          <label>
-            <span className="status-label-text">처리 상태</span>
-            <select
+          {/* <label>
+            <span className="status-label-text">처리 상태</span> */}
+          {/* 드롭다운 변경 시 DB 즉시 반영 */}
+          {/* <select
               value={status}
-              onChange={(event) => {
-                const nextStatus = event.target.value;
-                setStatus(nextStatus);
-                saveLocalState({ status: nextStatus });
-              }}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option}>{option}</option>
+              onChange={(event) => handleStatusSelectChange(event.target.value)}
+            > */}
+          {/* {STATUS_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
-          </label>
+          </label> */}
           <button
             className="btn btn-primary"
             type="button"
@@ -514,7 +517,6 @@ export default function HistoryDetailClient({
         <article className="card compact-summary-card">
           <h2>점검 요약</h2>
           <div className="compact-meta-grid">
-            {/* 1. 처리 상태 (모바일 1줄) */}
             <div className="meta-status">
               <Meta
                 label="처리 상태"
@@ -526,17 +528,14 @@ export default function HistoryDetailClient({
               />
             </div>
 
-            {/* 2. 점검자 (모바일 2줄) */}
             <div className="meta-inspector">
               <Meta label="점검자" value={detail.inspector} />
             </div>
 
-            {/* 3. 점검 장소 (모바일 3줄) */}
             <div className="meta-location">
               <Meta label="점검 장소" value={detail.fullLocation} />
             </div>
 
-            {/* 4. 점검 일시 (모바일 4줄) */}
             <div className="meta-date">
               <Meta
                 label="점검 일시"
@@ -544,7 +543,6 @@ export default function HistoryDetailClient({
               />
             </div>
 
-            {/* 5. GPS 좌표 (모바일 5줄) */}
             <div className="meta-coords">
               <Meta
                 label="GPS 좌표"
@@ -552,7 +550,6 @@ export default function HistoryDetailClient({
               />
             </div>
 
-            {/* 6. 현장 위치 지도 버튼 (모바일 6줄) */}
             <div className="meta-map-btn">
               <Meta
                 label="현장 위치"
@@ -635,7 +632,6 @@ export default function HistoryDetailClient({
               />
             </div>
 
-            {/* 7. 탐지 결과 (모바일 마지막 줄) */}
             <div
               className="meta-detection"
               style={{
@@ -644,7 +640,6 @@ export default function HistoryDetailClient({
                 height: "100%",
               }}
             >
-              {/* 상단 라벨 & 총계 뱃지 */}
               <div
                 style={{
                   display: "flex",
@@ -674,7 +669,6 @@ export default function HistoryDetailClient({
                 )}
               </div>
 
-              {/* 하단 태그 알약 리스트 */}
               <div
                 style={{
                   marginTop: "8px",
@@ -702,7 +696,6 @@ export default function HistoryDetailClient({
                       width: "100%",
                     }}
                   >
-                    {/* 좌측 열 */}
                     <div
                       style={{
                         display: "flex",
@@ -757,7 +750,6 @@ export default function HistoryDetailClient({
                       ))}
                     </div>
 
-                    {/* 우측 열 */}
                     <div
                       style={{
                         display: "flex",
@@ -811,7 +803,6 @@ export default function HistoryDetailClient({
                         </div>
                       ))}
 
-                      {/* 더보기 버튼 */}
                       {isOverflow && (
                         <button
                           type="button"
@@ -853,7 +844,6 @@ export default function HistoryDetailClient({
             </div>
           </div>
 
-          {/* 지도 모달/뷰어 */}
           {showMap && parsedCoords && (
             <div
               style={{
@@ -888,7 +878,7 @@ export default function HistoryDetailClient({
             <button
               className="btn btn-primary"
               type="button"
-              disabled={savingPhoto || !afterFile}
+              disabled={savingPhoto || !afterFile || status !== "진행"}
               onClick={handleSaveAfterPhoto}
             >
               {savingPhoto ? "저장 중..." : "저장"}
@@ -931,7 +921,7 @@ export default function HistoryDetailClient({
             <button
               className="btn btn-primary"
               type="button"
-              disabled={savingNotes}
+              disabled={savingNotes || status !== "진행"}
               onClick={handleSaveNotes}
             >
               {savingNotes ? "저장 중..." : "저장"}
@@ -957,6 +947,7 @@ export default function HistoryDetailClient({
           <button
             className="btn btn-soft"
             type="button"
+            disabled={status == "점검 대기"}
             onClick={openAssignment}
           >
             담당자 지정
@@ -976,7 +967,7 @@ export default function HistoryDetailClient({
         </div>
       </article>
 
-      {/* ── 탐지 결과 전체보기 팝업 모달 ── */}
+      {/* 탐지 결과 전체보기 팝업 모달 */}
       {detectionModalOpen && (
         <div
           className="assignment-modal"

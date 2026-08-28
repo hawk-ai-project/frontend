@@ -66,14 +66,21 @@ export const historyService = {
       .patch(`/inspection/histories/${id}/notes`, { notes })
       .then(({ data }) => data),
 
+  // 상태 업데이트
+  updateStatus: (id, status) =>
+    apiClient
+      .patch(`/inspection/histories/${id}/status`, { status })
+      .then(({ data }) => data),
+
   /**
    * 수거 완료 증빙사진 업로드
    */
   uploadProofImage: (id, file) => {
     const formData = new FormData();
-    if (file) formData.append("file", file);
+    formData.append("file", file);
+
     return apiClient
-      .post(`/inspection/histories/${id}/proof-image`, formData, {
+      .post(`/inspection/histories/${id}/proof`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then(({ data }) => data);
@@ -84,7 +91,9 @@ export const historyService = {
    */
   completeHistory: (id, file) => {
     const formData = new FormData();
-    if (file) formData.append("afterImage", file);
+    if (file) {
+      formData.append("afterImage", file);
+    }
     return apiClient
       .patch(`/inspection/histories/${id}/complete`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
