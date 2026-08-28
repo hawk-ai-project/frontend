@@ -1,5 +1,6 @@
 import Link from "next/link";
 import styles from "./presentation.module.css";
+import PresentationViewer from "./PresentationViewer";
 
 const presentationBase = "/documents/hawk-ai-presentation-20260827";
 
@@ -39,16 +40,10 @@ export default function ProjectPresentationPage() {
         </div>
       </header>
 
-      <section className={styles.viewer} aria-label="HAWK-AI 발표자료 뷰어">
-        <iframe
-          src={presentationBase + ".pdf#view=FitH&toolbar=1&navpanes=0"}
-          title="HAWK-AI 발표자료"
-        />
-        <noscript>
-          발표자료를 보려면 JavaScript를 활성화하거나 PDF 파일을 내려받아
-          주세요.
-        </noscript>
-      </section>
+      <PresentationViewer
+        src={presentationBase + ".pdf#view=FitH&toolbar=1&navpanes=0"}
+        title="HAWK-AI 발표자료"
+      />
     </main>
   );
 }
