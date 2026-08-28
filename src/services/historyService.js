@@ -25,7 +25,7 @@ export const historyService = {
   getHistoryImage: (id, kind = "ANNOTATED") =>
     apiClient
       .get(`/inspection/histories/${id}/image`, {
-        params: { kind },
+        params: { kind, _: Date.now() },
         responseType: "blob",
       })
       .then(({ data }) => data),
