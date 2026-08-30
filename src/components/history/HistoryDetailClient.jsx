@@ -41,7 +41,7 @@ const formatCoordinates = (coords) => {
 
 // 백엔드 Enum <-> 프론트엔드 한글 매핑
 const statusTranslateMap = {
-  ANALYZING: "AI 분석 중",
+  // ANALYZING: "AI 분석 중",
   DRAFT: "점검 대기",
   REVIEW_REQUIRED: "진행 대기",
   ACTION_REQUIRED: "진행",
@@ -50,7 +50,7 @@ const statusTranslateMap = {
 };
 
 const reverseStatusMap = {
-  "AI 분석 중": "ANALYZING",
+  // "AI 분석 중": "ANALYZING",
   "점검 대기": "DRAFT",
   "진행 대기": "REVIEW_REQUIRED",
   진행: "ACTION_REQUIRED",
@@ -242,13 +242,29 @@ export default function HistoryDetailClient({
   };
 
   const handleSaveAfterPhoto = async () => {
+    // 진행 상태가 아닐 때 상세 alert 안내
     if (status !== "진행") {
-      alert("[진행] 상태일 때만 증빙 사진을 저장할 수 있습니다.");
+      if (status === "완료") {
+        alert(
+          "이미 수거 작업이 완료된 점검 건의 증빙 사진은 수정할 수 없습니다.",
+        );
+      } else {
+        alert(
+          `현재 [${status}] 상태입니다.\n담당자를 지정하여 [진행] 상태로 변경한 후 증빙 사진을 저장해 주세요.`,
+        );
+      }
       return;
     }
 
+    // 새로 첨부된 사진 파일이 없는 경우
     if (!afterFile) {
-      alert("새로 첨부된 수거 완료 증빙사진 파일이 없습니다.");
+      if (afterImage) {
+        alert(
+          "이미 증빙 사진이 등록되어 있습니다.\n사진을 변경하려면 새 사진을 다시 첨부한 후 [저장] 버튼을 눌러주세요.",
+        );
+      } else {
+        alert("수거 완료 증빙 사진 파일을 먼저 첨부해 주세요.");
+      }
       return;
     }
 
@@ -294,7 +310,28 @@ export default function HistoryDetailClient({
 
   const handleSaveNotes = async () => {
     if (status !== "진행") {
-      alert("[진행] 상태일 때만 점검 의견을 저장할 수 있습니다.");
+      if (status === "완료") {
+        alert(
+          "이미 수거 작업이 완료된 점검 건의 점검 의견은 수정할 수 없습니다.",
+        );
+      } else {
+        alert(
+          `현재 [${status}] 상태입니다.\n담당자를 지정하여 [진행] 상태로 변경한 후 점검 의견을 저장해 주세요.`,
+        );
+      }
+      return;
+    }
+
+    // 내용이 비어있는 경우
+    if (!opinion || !opinion.trim()) {
+      alert("점검 의견 및 후속 조치 내용을 입력해 주세요.");
+      opinionRef.current?.focus();
+      return;
+    }
+
+    // 수정된 내용이 없는 경우
+    if (saved) {
+      alert("수정된 내용이 없습니다.");
       return;
     }
 
@@ -322,6 +359,12 @@ export default function HistoryDetailClient({
   };
 
   const openAssignment = async () => {
+    if (status === "점검 대기") {
+      alert(
+        "현재 [점검 대기] 상태입니다.\n검수 완료를 먼저 진행한 후 담당자를 지정해 주세요.",
+      );
+      return;
+    }
     const targetId = inspectionId || history.id;
     setAssignmentError(
       targetId ? "" : "서버에 저장된 점검에서만 담당자를 지정할 수 있습니다.",
@@ -878,7 +921,7 @@ export default function HistoryDetailClient({
             <button
               className="btn btn-primary"
               type="button"
-              disabled={savingPhoto || !afterFile || status !== "진행"}
+              disabled={savingPhoto}
               onClick={handleSaveAfterPhoto}
             >
               {savingPhoto ? "저장 중..." : "저장"}
@@ -921,7 +964,7 @@ export default function HistoryDetailClient({
             <button
               className="btn btn-primary"
               type="button"
-              disabled={savingNotes || status !== "진행"}
+              disabled={savingNotes}
               onClick={handleSaveNotes}
             >
               {savingNotes ? "저장 중..." : "저장"}
@@ -947,7 +990,7 @@ export default function HistoryDetailClient({
           <button
             className="btn btn-soft"
             type="button"
-            disabled={status == "점검 대기"}
+            // disabled={status == "점검 대기"}
             onClick={openAssignment}
           >
             담당자 지정
