@@ -1,0 +1,187 @@
+.page {
+  padding-top: 34px;
+  padding-bottom: 54px;
+}
+
+.header {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.header span {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.header h1 {
+  margin: 8px 0 6px;
+  color: var(--text);
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.header p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.viewerShell {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #11151b;
+  box-shadow: 0 16px 40px rgba(37, 52, 78, 0.14);
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
+
+.renderTarget {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.renderTarget > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.viewerState {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #11151b;
+  color: #dce4f1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.presentationControls {
+  position: absolute;
+  z-index: 5;
+  right: 18px;
+  bottom: 14px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: 0.2s ease;
+}
+
+.stage:hover .presentationControls,
+.stage:focus-within .presentationControls,
+.stage:fullscreen .presentationControls {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.presentationControls button,
+.presentationControls span {
+  min-height: 36px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  background: rgba(10, 14, 20, 0.82);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  backdrop-filter: blur(10px);
+}
+
+.presentationControls button {
+  cursor: pointer;
+}
+
+.presentationControls button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: auto;
+}
+
+.viewerHelp {
+  min-height: 44px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #aeb8c8;
+  font-size: 10px;
+}
+
+.fullscreenError {
+  margin: 0;
+  padding: 9px 16px;
+  background: #fff1e8;
+  color: #9b472f;
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .viewerShell {
+    border-radius: 12px;
+  }
+
+  .presentationControls {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    opacity: 1;
+    transform: none;
+  }
+
+  .presentationControls button,
+  .presentationControls span {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 9px;
+  }
+
+  .viewerHelp {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
