@@ -3,8 +3,8 @@
 "use client";
 
 import axios from "axios";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 
 export default function InspectionInfo({
   formData,
@@ -13,51 +13,27 @@ export default function InspectionInfo({
   submitting,
   setSubmitting,
   setSubmitError,
-  onInspectionCreated,
 }) {
   const router = useRouter();
-  // 폐기물 목록
-  const [wasteTypes, setWasteTypes] = useState([]);
-  // 수동 탐지 데이터 관리
-  const [manualDetections, setManualDetections] = useState([
-    { waste_type_id: "", count: 1 },
-  ]);
 
-  // 컴포넌트 마운트 시 백엔드에서 폐기물 종류 목록 불러오기
-  useEffect(() => {
-    const fetchWasteTypes = async () => {
-      try {
-        const token = localStorage.getItem("hawk_ai_access_token");
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/waste_types`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        setWasteTypes(response.data);
-      } catch (error) {
-        console.error("폐기물 목록을 불러오는데 실패했습니다.", error);
-      }
-    };
-    fetchWasteTypes();
-  }, []);
+  // 지도 관련 상태 및 Ref
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState(null); // { lat: number, lng: number }
 
+  // 로그인 정보로 점검자 이름 자동 추가
   useEffect(() => {
     const fetchMyName = async () => {
       try {
         const token = localStorage.getItem("hawk_ai_access_token");
-
-        if (!token) {
-          console.log("토큰이 없습니다. 로그인이 필요합니다.");
-          return;
-        }
+        if (!token) return;
 
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           },
         );
         setFormData((prev) => ({
@@ -71,102 +47,156 @@ export default function InspectionInfo({
     fetchMyName();
   }, [setFormData]);
 
-  // 점검장소 자동추가
+  // Leaflet CSS/JS 동적 로드 (Next.js SSR 안전 처리)
   useEffect(() => {
-    const fetchAddressFromCoords = async () => {
-      let convertedAddress = formData.address || "";
+    if (typeof window !== "undefined") {
+      if (!document.getElementById("leaflet-css")) {
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
 
-      // 좌표가 존재하고, 아직 주소가 없으며, 에러 메시지가 아닐 때만 실행
-      if (
-        formData.coordinates &&
-        !formData.coordinates.includes("없음") &&
-        !convertedAddress
-      ) {
-        // 변환하는 동안
+      if (!window.L) {
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.onload = () => setIsMapReady(true);
+        document.body.appendChild(script);
+      } else {
+        setIsMapReady(true);
+      }
+    }
+  }, []);
+
+  // 좌표(lat, lng)를 주소로 변환하는 공통 역지오코딩 함수
+  const updateAddressFromCoords = async (lat, lng) => {
+    try {
+      const geoResponse = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&accept-language=ko`,
+        { headers: { "User-Agent": "Hawk-Inspection-App" } },
+      );
+
+      // "도", "시", "구", "동" 조합
+      const addr = geoResponse.data?.address;
+      if (addr) {
+        // 도 / 특별시 / 광역시 (예: 경기도, 서울특별시 등)
+        const province = addr.province || addr.state || "";
+        // 시
+        const city = addr.city || addr.town || "";
+        // 구
+        const borough =
+          addr.city_district ||
+          addr.borough ||
+          addr.district ||
+          addr.county ||
+          "";
+        // 동
+        const dong =
+          addr.suburb ||
+          addr.quarter ||
+          addr.neighbourhood ||
+          addr.village ||
+          "";
+        // 주소 조합 (예: 경기도 수원시 팔달구 화서동)
+        const convertedAddress = `${province} ${city} ${borough} ${dong}`
+          .trim()
+          .replace(/\s+/g, " ");
+        console.log("주소 변환 성공 (도/시/구/동):", convertedAddress);
+
+        // 완성된 convertedAddress를 화면과 데이터에 즉시 꽂아주기
         setFormData((prev) => ({
           ...prev,
-          location: prev.location ? prev.location : "위치 정보 변환 중...",
+          // 비어있을 때만 자동 주소를 넣고, 수기로 적은 게 있으면 유지
+          location: convertedAddress || prev.location,
+          // address(DB 저장용)
+          address: convertedAddress,
+          coordinates: `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`,
         }));
+      }
+    } catch (error) {
+      console.warn("좌표를 주소로 변환하는데 실패했습니다.", error);
+    }
+  };
 
-        try {
-          // 1. 글자가 섞여 있어도 숫자만 2개 뽑기 (위도, 경도)
-          const numbers = formData.coordinates.match(/-?\d+(\.\d+)?/g);
+  // formData.coordinates 변경 시 좌표 파싱 및 currentCoords 갱신
+  useEffect(() => {
+    if (formData.coordinates && !formData.coordinates.includes("없음")) {
+      const numbers = formData.coordinates.match(/-?\d+(\.\d+)?/g);
+      if (numbers && numbers.length >= 2) {
+        const lat = parseFloat(numbers[0]);
+        const lng = parseFloat(numbers[1]);
+        setCurrentCoords({ lat, lng });
 
-          // 위도, 경도 들어왔는지 확인
-          if (numbers && numbers.length >= 2) {
-            const lat = numbers[0]; // 위도
-            const lng = numbers[1]; // 경도
-
-            // 2. zoom=16 옵션으로 '동(마을)' 수준까지 검색
-            const geoResponse = await axios.get(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&accept-language=ko`,
-              {
-                headers: { "User-Agent": "Hawk-Inspection-App" },
-              },
-            );
-
-            // 3. "도", "시", "구", "동" 조합
-            const addr = geoResponse.data?.address;
-            if (addr) {
-              // 도 / 특별시 / 광역시 (예: 경기도, 서울특별시 등)
-              const province = addr.province || addr.state || "";
-              // 시
-              const city = addr.city || addr.town || "";
-              // 구
-              const borough =
-                addr.city_district ||
-                addr.borough ||
-                addr.district ||
-                addr.county ||
-                "";
-              // 동
-              const dong =
-                addr.suburb ||
-                addr.quarter ||
-                addr.neighbourhood ||
-                addr.village ||
-                "";
-
-              // 주소 조합 (예: 수원시 팔달구 화서동)
-              convertedAddress = `${province} ${city} ${borough} ${dong}`
-                .trim()
-                .replace(/\s+/g, " ");
-              console.log("주소 변환 성공 (도/시/구/동):", convertedAddress);
-
-              // 완성된 convertedAddress를 화면과 데이터에 즉시 꽂아주기
-              setFormData((prev) => {
-                const isLocationEmpty =
-                  !prev.location || prev.location === "위치 정보 변환 중...";
-                return {
-                  ...prev,
-                  // 비어있을 때만 자동 주소를 넣고, 수기로 적은 게 있으면 유지
-                  location: isLocationEmpty ? convertedAddress : prev.location,
-                  // address(DB 저장용)
-                  address: convertedAddress,
-                };
-              });
-            }
-          } else {
-            console.warn(
-              "좌표에서 숫자를 찾을 수 없습니다:",
-              formData.coordinates,
-            );
-            // 실패 시 다시 빈칸으로 돌려놓기
-            setFormData((prev) => ({ ...prev, location: "" }));
-          }
-        } catch (geoError) {
-          console.warn(
-            "좌표를 주소로 변환하는데 실패했습니다.",
-            geoError.message,
-          );
-          // 실패 시 다시 빈칸으로 돌려놓기
-          setFormData((prev) => ({ ...prev, location: "" }));
+        // 주소가 비어있을 때만 최초 자동 변환
+        if (!formData.address) {
+          updateAddressFromCoords(lat, lng);
         }
       }
-    };
-
-    fetchAddressFromCoords();
+    }
   }, [formData.coordinates]);
+
+  // Leaflet 인터랙티브 지도 초기화 및 마커 드래그/클릭 바인딩
+  useEffect(() => {
+    if (
+      !isMapReady ||
+      !mapContainerRef.current ||
+      !currentCoords ||
+      !window.L
+    ) {
+      return;
+    }
+
+    const { lat, lng } = currentCoords;
+    const L = window.L;
+
+    // 마커 기본 아이콘 깨짐 방지 설정
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl:
+        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+      shadowUrl:
+        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    });
+
+    // 지도 인스턴스가 없으면 생성
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current).setView([lat, lng], 16);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(map);
+
+      // 드래그 가능한 마커 생성
+      const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker
+        .bindPopup("마커를 드래그하거나 지도를 클릭하여 위치를 조정하세요.")
+        .openPopup();
+
+      // 마커 드래그 종료 시 좌표 및 주소 갱신
+      marker.on("dragend", (e) => {
+        const position = e.target.getLatLng();
+        updateAddressFromCoords(position.lat, position.lng);
+      });
+
+      // 지도 빈 곳 클릭 시 마커 이동 및 좌표/주소 갱신
+      map.on("click", (e) => {
+        const { lat: clickLat, lng: clickLng } = e.latlng;
+        marker.setLatLng([clickLat, clickLng]);
+        updateAddressFromCoords(clickLat, clickLng);
+      });
+
+      mapInstanceRef.current = map;
+      markerRef.current = marker;
+    } else {
+      // 이미 지도가 존재하면 중심점과 마커 위치만 동기화
+      mapInstanceRef.current.setView([lat, lng]);
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      }
+    }
+  }, [isMapReady, currentCoords]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -176,51 +206,49 @@ export default function InspectionInfo({
     }));
   };
 
-  //  수동 탐지 리스트 핸들러 함수
-  const handleDetectionChange = (index, field, value) => {
-    const newDetections = [...manualDetections];
-    newDetections[index][field] = value;
-    setManualDetections(newDetections);
-  };
+  // //  수동 탐지 리스트 핸들러 함수
+  // const handleDetectionChange = (index, field, value) => {
+  //   const newDetections = [...manualDetections];
+  //   newDetections[index][field] = value;
+  //   setManualDetections(newDetections);
+  // };
 
-  // 줄 추가 함수
-  const addDetection = () => {
-    setManualDetections([...manualDetections, { waste_type_id: "", count: 1 }]);
-  };
+  // // 줄 추가 함수
+  // const addDetection = () => {
+  //   setManualDetections([...manualDetections, { waste_type_id: "", count: 1 }]);
+  // };
 
-  // 줄 삭제 함수
-  const removeDetection = (index) => {
-    const newDetections = manualDetections.filter((_, i) => i !== index);
-    setManualDetections(newDetections);
-  };
+  // // 줄 삭제 함수
+  // const removeDetection = (index) => {
+  //   const newDetections = manualDetections.filter((_, i) => i !== index);
+  //   setManualDetections(newDetections);
+  // };
 
-  // 백엔드로 전달하는 함수
+  // 백엔드로 점검 데이터 제출
   const submitInspection = async () => {
+    // 장소명 앞뒤의 불필요한 공백 제거
     const location = formData.location?.trim();
 
+    // 유효성 검증: 사진 첨부 여부, 장소 입력 여부 확인
     if (!previewImage) {
       alert("캡쳐버튼을 누르거나 사진을 첨부해주세요.");
       return setSubmitError("사진을 촬영하거나 첨부해주세요.");
     }
+    // 장소명이 없을 경우 전송 차단
     if (!location) return setSubmitError("점검 장소를 입력해주세요.");
 
+    // 통신 준비 및 로딩 상태 활성화
     setSubmitting(true);
+
+    // 이전에 발생한 에러메시지 초기화
     setSubmitError("");
 
     try {
+      // 로그인 시 저장한 JWT 인증 토큰 가져오기
       const token = localStorage.getItem("hawk_ai_access_token");
-
       console.log("백엔드로 사진과 데이터 전송 시작!");
 
-      let convertedAddress = formData.address || "";
-
-      // 빈 값을 걸러내고, 숫자형으로 변환하여 백엔드가 원하는 포맷으로 맞춤
-      const validDetections = manualDetections
-        .filter((d) => d.waste_type_id !== "")
-        .map((d) => ({
-          waste_type_id: Number(d.waste_type_id),
-          count: Number(d.count),
-        }));
+      const convertedAddress = formData.address || "";
 
       // 백엔드의 /save API로 전달할 내용
       const finalPayload = {
@@ -232,7 +260,7 @@ export default function InspectionInfo({
         status: "DRAFT",
         image: previewImage,
         ai_detections: [],
-        detections: validDetections, // 수동 입력 데이터 추가
+        detections: [],
       };
 
       // 백엔드로 보내기
@@ -251,17 +279,21 @@ export default function InspectionInfo({
       // 생성된 점검 ID 확인
       const newInspectionId = response.data.inspectionId || response.data.id;
 
-      // onInspectionCreated 분기를 무시하고 무조건 해당 점검 상세 페이지로 바로 이동
+      // 등록 완료 시 해당 점검 상세 페이지로 바로 이동
       if (newInspectionId) {
         router.push(`/reinspections/${newInspectionId}`);
       } else {
         router.push("/reinspections");
       }
+
+      // try에서 에러 발생 시
     } catch (error) {
       console.error("에러 발생:", error);
       setSubmitError(
         error.response?.data?.detail || "점검 저장에 실패했습니다.",
       );
+
+      // 전송 성공/실패여부와 상관 없이 실행하려 버튼의 로딩 상태 해제
     } finally {
       setSubmitting(false);
     }
@@ -272,26 +304,13 @@ export default function InspectionInfo({
       <h3 className="section-title">점검 정보</h3>
 
       <div className="form-stack">
-        <label htmlFor="location">
-          점검 장소
-          <input
-            type="text"
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            className="input"
-            placeholder="도시명과 장소를 입력하세요"
-          />
-        </label>
-
         <label htmlFor="inspector">
           점검자
           <input
             type="text"
             id="inspector"
             name="inspector"
-            value={formData.inspector}
+            value={formData.inspector || ""}
             readOnly
             className="input"
             style={{
@@ -302,6 +321,56 @@ export default function InspectionInfo({
             placeholder="로그인 후 이용해주세요"
           />
         </label>
+
+        <label htmlFor="location">
+          점검 장소
+          <input
+            type="text"
+            id="location"
+            name="location"
+            value={formData.location || ""}
+            onChange={handleChange}
+            className="input"
+            placeholder="도시명과 장소를 입력하세요"
+          />
+        </label>
+
+        {/* 인터랙티브 위치 미세 조정 지도 영역 */}
+        {currentCoords && (
+          <div style={{ marginTop: "12px", marginBottom: "8px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "6px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  color: "#374151",
+                }}
+              >
+                위치 세부 조정
+              </span>
+              <span style={{ fontSize: "0.78rem", color: "#6b7280" }}>
+                {formData.coordinates}
+              </span>
+            </div>
+            <div
+              ref={mapContainerRef}
+              style={{
+                height: "220px",
+                width: "100%",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                zIndex: 0,
+              }}
+            />
+          </div>
+        )}
 
         {/* 수동 폐기물 입력 UI 영역 */}
         {/* <div style={{ marginTop: "10px", marginBottom: "10px" }}>
@@ -377,7 +446,7 @@ export default function InspectionInfo({
           <textarea
             id="memo"
             name="memo"
-            value={formData.memo}
+            value={formData.memo || ""}
             onChange={handleChange}
             className="input"
             style={{ minHeight: "50px" }}
