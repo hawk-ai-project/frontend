@@ -5006,3 +5006,15 @@ textarea:focus {
     display: none;
   }
 }
+
+/* 가로 스크롤은 작동하되 스크롤바 막대만 숨김 */
+.scroll-hide {
+  overflow-x: auto;
+  white-space: nowrap;
+  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scroll-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}

@@ -285,9 +285,23 @@ export default function HistoryList({
                       </Link>
                     </td>
                     <td>{formatDateTime(item.inspectedAt)}</td>
-                    <td>{item.location}</td>
+                    <td>
+                      <div
+                        className="scroll-hide"
+                        style={{ maxWidth: "250px" }}
+                      >
+                        {item.location}
+                      </div>
+                    </td>
                     <td>{item.detectedCount ?? 0}개</td>
-                    <td>{item.waste || "탐지 결과 없음"}</td>
+                    <td>
+                      <div
+                        className="scroll-hide"
+                        style={{ maxWidth: "250px" }}
+                      >
+                        {item.waste || "탐지 결과 없음"}
+                      </div>
+                    </td>
                     <td>
                       <span className={`badge ${statusClass(displayStatus)}`}>
                         {displayStatus}
