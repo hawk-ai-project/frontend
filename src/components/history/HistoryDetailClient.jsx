@@ -1,3 +1,5 @@
+// 점검 상세 컴포넌트 (history/HistoryDetailClient.jsx)
+
 "use client";
 
 import Image from "next/image";

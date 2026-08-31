@@ -23,6 +23,15 @@ export default function InspectionInfo({
   const [isMapReady, setIsMapReady] = useState(false);
   const [currentCoords, setCurrentCoords] = useState(null); // { lat: number, lng: number }
 
+  // 지오코딩 무한 루프 방지용 플래그
+  const isUpdatingFromMap = useRef(false);
+
+  // 실제 기기 GPS 위치 보관용 (최초 1회 저장)
+  const initialGpsCoordsRef = useRef(null);
+
+  // 실제 GPS 위치를 표시할 원 마커
+  const gpsMarkerRef = useRef(null);
+
   // 로그인 정보로 점검자 이름 자동 추가
   useEffect(() => {
     const fetchMyName = async () => {
@@ -73,7 +82,7 @@ export default function InspectionInfo({
   const updateAddressFromCoords = async (lat, lng) => {
     try {
       const geoResponse = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&accept-language=ko`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ko`,
         { headers: { "User-Agent": "Hawk-Inspection-App" } },
       );
 
@@ -98,11 +107,55 @@ export default function InspectionInfo({
           addr.neighbourhood ||
           addr.village ||
           "";
+
+        // 도로명 / 길
+        const road =
+          addr.road || addr.street || addr.footway || addr.path || "";
+
+        // 건물 번호 / 지번
+        const houseNumber = addr.house_number || addr.housenumber || "";
+
+        // 건물명 / 주요 시설명
+        const building =
+          addr.building ||
+          addr.residential || // 아파트 단지, 주거단지명
+          addr.commercial || // 상가 건물
+          addr.shop || // 매장/가게명
+          addr.amenity || // 관공서, 학교, 은행 등 편의시설
+          addr.office || // 사무실, 기업 빌딩
+          addr.leisure || // 체육/여가 시설
+          addr.tourism || // 호텔, 관광지
+          addr.retail || // 마트, 쇼핑몰
+          addr.place || // 특정 지명/장소명
+          "";
+
+        // 도로명 주소와 지번 주소 중 존재하는 상세 정보 조합
+        const detailStreet = [road, houseNumber, building]
+          .filter(Boolean)
+          .join(" ");
+
         // 주소 조합 (예: 경기도 수원시 팔달구 화서동)
-        const convertedAddress = `${province} ${city} ${borough} ${dong}`
-          .trim()
-          .replace(/\s+/g, " ");
+        let convertedAddress =
+          `${province} ${city} ${borough} ${dong} ${detailStreet}`
+            .trim()
+            .replace(/\s+/g, " ");
         console.log("주소 변환 성공 (도/시/구/동):", convertedAddress);
+
+        // 만약 OpenStreetMap에 도로명이 등록되지 않은 골목길인 경우, 기본 전체 이름(display_name) 활용
+        if (!road && !houseNumber && geoResponse.data?.display_name) {
+          // "대한민국", "우편번호" 등 불필요한 단어만 정리해서 사용
+          convertedAddress = geoResponse.data.display_name
+            .replace(/, 대한민국/g, "")
+            .replace(/\b\d{5}\b/g, "")
+            .split(",")
+            .map((part) => part.trim())
+            .reverse()
+            .join(" ")
+            .trim()
+            .replace(/\s+/g, " ");
+        }
+
+        console.log("상세 주소 변환 성공:", convertedAddress);
 
         // 완성된 convertedAddress를 화면과 데이터에 즉시 꽂아주기
         setFormData((prev) => ({
@@ -119,22 +172,129 @@ export default function InspectionInfo({
     }
   };
 
-  // formData.coordinates 변경 시 좌표 파싱 및 currentCoords 갱신
-  useEffect(() => {
-    if (formData.coordinates && !formData.coordinates.includes("없음")) {
-      const numbers = formData.coordinates.match(/-?\d+(\.\d+)?/g);
-      if (numbers && numbers.length >= 2) {
-        const lat = parseFloat(numbers[0]);
-        const lng = parseFloat(numbers[1]);
-        setCurrentCoords({ lat, lng });
+  // 주소 문자열 -> 좌표(lat, lng) 변환 (정방향 지오코딩: 텍스트 입력 시 실행)
+  const searchCoordsFromAddress = async (keyword) => {
+    if (!keyword || keyword.trim().length < 2) return;
 
-        // 주소가 비어있을 때만 최초 자동 변환
-        if (!formData.address) {
-          updateAddressFromCoords(lat, lng);
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          keyword.trim(),
+        )}&countrycodes=kr&limit=1`,
+        { headers: { "User-Agent": "Hawk-Inspection-App" } },
+      );
+
+      if (response.data && response.data.length > 0) {
+        const item = response.data[0];
+        const newLat = parseFloat(item.lat);
+        const newLng = parseFloat(item.lon);
+
+        setCurrentCoords({ lat: newLat, lng: newLng });
+
+        setFormData((prev) => ({
+          ...prev,
+          coordinates: `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`,
+          address: item.display_name || prev.location,
+        }));
+
+        // 지도 뷰포트 및 마커 즉시 이동
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.setView([newLat, newLng], 16);
+        }
+        if (markerRef.current) {
+          markerRef.current.setLatLng([newLat, newLng]);
         }
       }
+    } catch (error) {
+      console.warn("주소 검색을 통한 좌표 변환 실패:", error);
     }
-  }, [formData.coordinates]);
+  };
+
+  // 사용자가 '점검 장소'를 직접 타이핑할 때 디바운스(0.6초) 검색
+  useEffect(() => {
+    // 지도에서 역지오코딩으로 채워진 주소라면 검색을 스킵
+    if (isUpdatingFromMap.current) {
+      isUpdatingFromMap.current = false;
+      return;
+    }
+
+    if (!formData.location || formData.location.trim().length < 2) return;
+
+    const timer = setTimeout(() => {
+      searchCoordsFromAddress(formData.location);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [formData.location]);
+
+  // 페이지 진입 즉시 브라우저 GPS로 현재 위치 자동 감지
+  useEffect(() => {
+    // 이미 좌표가 설정되어 있지 않은 경우에만 브라우저 Geolocation 실행
+    if (!formData.coordinates && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          // 최초 실제 GPS 위치 저장
+          initialGpsCoordsRef.current = { lat, lng };
+
+          setCurrentCoords({ lat, lng });
+          updateAddressFromCoords(lat, lng);
+        },
+        (error) => {
+          console.warn(
+            "브라우저 위치 정보를 가져올 수 없습니다:",
+            error.message,
+          );
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+      );
+    }
+  }, []);
+
+  // formData.coordinates 변경 시 좌표 파싱 및 currentCoords 갱신
+  // useEffect(() => {
+  //   if (formData.coordinates && !formData.coordinates.includes("없음")) {
+  //     const numbers = formData.coordinates.match(/-?\d+(\.\d+)?/g);
+  //     if (numbers && numbers.length >= 2) {
+  //       const lat = parseFloat(numbers[0]);
+  //       const lng = parseFloat(numbers[1]);
+  //       setCurrentCoords({ lat, lng });
+
+  //       // 주소가 비어있을 때만 최초 자동 변환
+  //       if (!formData.address) {
+  //         updateAddressFromCoords(lat, lng);
+  //       }
+  //     }
+  //   }
+  // }, [formData.coordinates]);
+
+  // 두 좌표 간 직선 거리(미터 단위) 계산 및 오차 경고 함수
+  const checkLocationDistance = (selectedLat, selectedLng) => {
+    if (!initialGpsCoordsRef.current || !window.L) return;
+
+    const { lat: gpsLat, lng: gpsLng } = initialGpsCoordsRef.current;
+
+    // Leaflet 내장 거리 계산 메서드 (단위: 미터)
+    const gpsLatLng = window.L.latLng(gpsLat, gpsLng);
+    const selectedLatLng = window.L.latLng(selectedLat, selectedLng);
+    const distanceInMeters = Math.round(gpsLatLng.distanceTo(selectedLatLng));
+
+    // 실제 GPS 위치와 찍은 위치가 100m 이상 차이 날 경우 경고
+    const THRESHOLD_METERS = 100;
+
+    if (distanceInMeters > THRESHOLD_METERS) {
+      const distanceDisplay =
+        distanceInMeters >= 1000
+          ? `${(distanceInMeters / 1000).toFixed(1)}km`
+          : `${distanceInMeters}m`;
+
+      alert(
+        `현재 실제 위치와 약 ${distanceDisplay} 떨어진 곳을 지정하셨습니다.\n선택하신 위치가 맞는지 확인해 주세요.`,
+      );
+    }
+  };
 
   // Leaflet 인터랙티브 지도 초기화 및 마커 드래그/클릭 바인딩
   useEffect(() => {
@@ -168,23 +328,41 @@ export default function InspectionInfo({
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
+      // [내 실제 GPS 위치] 파란색 반투명 원형 마커 생성
+      const gpsCoords = initialGpsCoordsRef.current || { lat, lng };
+      const gpsCircle = L.circleMarker([gpsCoords.lat, gpsCoords.lng], {
+        radius: 8,
+        fillColor: "#3b82f6",
+        color: "#ffffff",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9,
+      }).addTo(map);
+
+      gpsCircle.bindPopup("현재 위치");
+      gpsMarkerRef.current = gpsCircle;
+
       // 드래그 가능한 마커 생성
       const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-      marker
-        .bindPopup("마커를 드래그하거나 지도를 클릭하여 위치를 조정하세요.")
-        .openPopup();
+      // marker
+      //   .bindPopup("마커를 드래그하거나 지도를 클릭하여 위치를 조정하세요.")
+      //   .openPopup();
 
       // 마커 드래그 종료 시 좌표 및 주소 갱신
       marker.on("dragend", (e) => {
         const position = e.target.getLatLng();
+        setCurrentCoords({ lat: position.lat, lng: position.lng });
         updateAddressFromCoords(position.lat, position.lng);
+        checkLocationDistance(position.lat, position.lng);
       });
 
       // 지도 빈 곳 클릭 시 마커 이동 및 좌표/주소 갱신
       map.on("click", (e) => {
         const { lat: clickLat, lng: clickLng } = e.latlng;
         marker.setLatLng([clickLat, clickLng]);
+        setCurrentCoords({ lat: clickLat, lng: clickLng });
         updateAddressFromCoords(clickLat, clickLng);
+        checkLocationDistance(clickLat, clickLng);
       });
 
       mapInstanceRef.current = map;

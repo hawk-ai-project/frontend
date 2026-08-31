@@ -1,3 +1,5 @@
+// 데이터 처리 컴포넌트 (history/LiveInspectionHistoryDetail.jsx)
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +9,7 @@ import HistoryDetailClient from "./HistoryDetailClient";
 import { STATUS_OPTIONS } from "./historyData";
 import CommonLoading from "@/components/common/CommonLoading";
 
+// 데이터 포맷 변환 함수
 function toHistory(inspection) {
   const detections = Array.isArray(inspection.detections)
     ? inspection.detections
@@ -48,6 +51,7 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
 
     setLoading(true);
 
+    // 비동기 데이터 패칭 및 이미지 병렬 다운로드
     historyService
       .getHistoryById(inspectionId)
       .then(async (found) => {
@@ -89,12 +93,14 @@ export default function LiveInspectionHistoryDetail({ inspectionId }) {
         if (!cancelled) setLoading(false);
       });
 
+    // 메모리 누수 방지 클린업 함수
     return () => {
       cancelled = true;
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [inspectionId]);
 
+  // 로딩, 에러 분기 렌더링
   if (loading)
     return <CommonLoading message="점검 이력과 이미지를 불러오는 중..." />;
   if (error) return <p className="board-state board-state-error">{error}</p>;
