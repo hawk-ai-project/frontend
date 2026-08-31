@@ -6,6 +6,7 @@ export const projectLinks = [
     label: "Notion Workspace",
     href: "https://app.notion.com/p/Hawk-AI-3b2909860b1180e487edcf14adc35c5b",
   },
+  { label: "Technology Stack", href: "/project/tech-skill" },
 ];
 
 export const teamMembers = [
