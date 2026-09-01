@@ -321,42 +321,79 @@ export default function HistoryList({
         </table>
       </div>
 
-      <nav className="number-pagination" aria-label="점검 이력 페이지">
-        <button
-          className="pagination-arrow"
-          type="button"
-          aria-label="이전 페이지"
-          title="이전 페이지"
-          disabled={page === 1}
-          onClick={() => setPage((v) => v - 1)}
+      {/* 하단 푸터: 페이지네이션(정중앙) + 삭제/건수 액션(우측 끝 고정) */}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: "18px",
+          minHeight: "36px",
+          width: "100%",
+        }}
+      >
+        {/* 페이지네이션 */}
+        <nav
+          className="number-pagination"
+          aria-label="점검 이력 페이지"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto",
+            gap: "4px",
+          }}
         >
-          <span aria-hidden="true">‹</span>
-        </button>
-        {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-          (number) => (
-            <button
-              type="button"
-              key={number}
-              aria-label={`${number}페이지`}
-              aria-current={page === number ? "page" : undefined}
-              className={page === number ? "active" : ""}
-              onClick={() => setPage(number)}
-            >
-              {number}
-            </button>
-          ),
-        )}
-        <button
-          className="pagination-arrow"
-          type="button"
-          aria-label="다음 페이지"
-          title="다음 페이지"
-          disabled={page === pageCount}
-          onClick={() => setPage((v) => v + 1)}
+          <button
+            className="pagination-arrow"
+            type="button"
+            aria-label="이전 페이지"
+            title="이전 페이지"
+            disabled={page === 1}
+            onClick={() => setPage((v) => v - 1)}
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+          {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+            (number) => (
+              <button
+                type="button"
+                key={number}
+                aria-label={`${number}페이지`}
+                aria-current={page === number ? "page" : undefined}
+                className={page === number ? "active" : ""}
+                onClick={() => setPage(number)}
+              >
+                {number}
+              </button>
+            ),
+          )}
+          <button
+            className="pagination-arrow"
+            type="button"
+            aria-label="다음 페이지"
+            title="다음 페이지"
+            disabled={page === pageCount}
+            onClick={() => setPage((v) => v + 1)}
+          >
+            <span aria-hidden="true">›</span>
+          </button>
+        </nav>
+
+        {/* 우측 삭제 버튼 및 전체 건수 */}
+        <div
+          className="history-list-actions"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
         >
-          <span aria-hidden="true">›</span>
-        </button>
-        <span className="history-list-actions">
           <button
             className="history-delete-button"
             type="button"
@@ -368,8 +405,8 @@ export default function HistoryList({
           <span className="history-total-count">
             전체 {filteredItems.length}건
           </span>
-        </span>
-      </nav>
+        </div>
+      </div>
     </article>
   );
 }
