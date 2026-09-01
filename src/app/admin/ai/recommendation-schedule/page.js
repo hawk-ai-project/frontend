@@ -65,7 +65,10 @@ export default function RecommendationSchedulePage() {
 
   return (
     <div className="admin-page recommendation-schedule-page">
-      <header className="admin-page-head"><div><span className="admin-kicker">AI AUTOMATION</span><h1>AI 추천 스케줄러</h1><p>후보 모델 비교와 AI 추천 결과 갱신 시점을 설정합니다.</p></div></header>
+      <header className="admin-page-head">
+        <div><span className="admin-kicker">AI AUTOMATION</span><h1>AI 추천 스케줄러</h1><p>후보 모델 비교와 AI 추천 결과 갱신 시점을 설정합니다.</p></div>
+        {schedule && <button type="button" className="admin-primary-btn" disabled={saving} onClick={save}>{saving ? "저장 중..." : "스케줄 저장"}</button>}
+      </header>
       <ErrorMessage message={error} />
       {success && <p className="admin-success-message" role="status">{success}</p>}
       {loading && <div className="admin-data-loading"><span className="admin-spinner" />스케줄을 불러오고 있습니다.</div>}
@@ -82,7 +85,7 @@ export default function RecommendationSchedulePage() {
             <label className={schedule.mode === "INTERVAL" ? "active" : ""}><input type="radio" name="mode" checked={schedule.mode === "INTERVAL"} onChange={() => setSchedule((value) => ({ ...value, mode: "INTERVAL" }))} /><span><strong>반복 간격</strong><small>선택한 분 또는 시간 간격으로 반복합니다.</small></span></label>
           </div>
           {schedule.mode === "DAILY" ? <label className="recommendation-form-field"><span>매일 실행 시각</span><input type="time" value={schedule.dailyTime} onChange={(event) => setSchedule((value) => ({ ...value, dailyTime: event.target.value }))} /><small>한국 표준시(KST)를 기준으로 실행됩니다.</small></label> : <div className="recommendation-interval-fields"><label className="recommendation-form-field"><span>반복 간격</span><select value={intervalChoice} onChange={(event) => { const choice = event.target.value; setIntervalChoice(choice); if (choice !== "custom") setSchedule((value) => ({ ...value, intervalMinutes: Number(choice) })); }}><option value="15">15분</option><option value="30">30분</option><option value="60">1시간</option><option value="180">3시간</option><option value="360">6시간</option><option value="720">12시간</option><option value="1440">24시간</option><option value="custom">사용자 지정(분)</option></select></label>{intervalChoice === "custom" && <label className="recommendation-form-field"><span>사용자 지정 분</span><input type="number" min="1" max="10080" step="1" value={schedule.intervalMinutes} onChange={(event) => setSchedule((value) => ({ ...value, intervalMinutes: Number(event.target.value) }))} /><small>1분~10,080분(7일) 사이로 입력하세요.</small></label>}</div>}
-          <div className="admin-settings-actions"><button type="button" className="admin-primary-btn" disabled={saving} onClick={save}>{saving ? "저장 중..." : "스케줄 저장"}</button></div>
+
         </section>
       </>}
     </div>
