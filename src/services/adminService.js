@@ -60,7 +60,10 @@ export const adminService = {
     apiClient.patch(`/admin/ai/detections/${id}`, payload).then(({ data }) => data),
   getAiStatistics: () =>
     apiClient.get("/admin/ai/statistics").then(({ data }) => data),
+
   getAiModels: () => apiClient.get("/admin/ai/models").then(({ data }) => data),
+  getAiRecommendationSchedule: () => apiClient.get("/admin/ai/recommendation-schedule").then(({ data }) => data),
+  updateAiRecommendationSchedule: (payload) => apiClient.put("/admin/ai/recommendation-schedule", payload).then(({ data }) => data),
   selectAiModel: (modelId) => apiClient.post(`/admin/ai/models/${modelId}/select`).then(({ data }) => data),
   setAiModelCandidate: (modelId, candidate) => apiClient.patch(`/admin/ai/models/${modelId}/candidate`, { candidate }).then(({ data }) => data),
   setAiModelCandidates: (modelIds, candidate) => apiClient.patch("/admin/ai/models/candidates", { modelIds, candidate }).then(({ data }) => data),
