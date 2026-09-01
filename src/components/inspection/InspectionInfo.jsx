@@ -86,123 +86,32 @@ export default function InspectionInfo({
     }
   }, []);
 
-  // 구글 Geocoder 응답에서 모든 주소 컴포넌트 타입을 수집하여 한국식 전체 주소로 조립
-  const extractDetailedGoogleAddress = (results) => {
+  // 구글 Geocoder 응답에서 순수 표준 도로명/지번 주소만 추출 (상호명/괄호/국가명/우편번호 제외)
+  const extractCleanStandardAddress = (results) => {
     if (!results || results.length === 0) return "";
 
-    // 1. 가장 상세한 레벨의 결과(건물번호/건물/시설명/POI)를 우선 탐색, 없으면 0번 채택
-    const targetItem =
+    // 순수 도로명/지번 주소 타입(street_address, premise, route)을 최우선으로 선택
+    const standardItem =
       results.find((item) => item.types.includes("street_address")) ||
       results.find((item) => item.types.includes("premise")) ||
-      results.find((item) => item.types.includes("subpremise")) ||
-      results.find((item) => item.types.includes("point_of_interest")) ||
-      results.find((item) => item.types.includes("establishment")) ||
+      results.find((item) => item.types.includes("route")) ||
       results[0];
 
-    const components = targetItem.address_components || [];
+    // 구글 공식 완성형 주소 (예: "대한민국 경기도 수원시 장안구 수성로 175" 또는 "대한민국 경기도 수원시 장안구 정자동 111")
+    let cleanAddress = standardItem.formatted_address || "";
 
-    // 한국 주소 체계별 변수 매핑
-    let province = ""; // 도 / 특별시 / 광역시
-    let city = ""; // 시 / 군
-    let borough = ""; // 일반구 / 자치구
-    let dong = ""; // 읍 / 면 / 동
-    let village = ""; // 리 / 통 / 반
-    let road = ""; // 도로명 / 길
-    let houseNumber = ""; // 건물 번호 / 번지수
-    let building = ""; // 아파트단지명 / 빌딩명 / 건물명
-    let poiName = ""; // 특정 시설 / 랜드마크 / 기관명
-
-    components.forEach((c) => {
-      const t = c.types;
-
-      // 1. 광역자치단체 (도, 서울특별시, 광역시, 특별자치시/도)
-      if (t.includes("administrative_area_level_1")) {
-        province = c.long_name;
-      }
-      // 2. 기초자치단체 (시, 군)
-      else if (
-        t.includes("administrative_area_level_2") ||
-        t.includes("locality")
-      ) {
-        city = c.long_name;
-      }
-      // 3. 구 (일반구, 자치구)
-      else if (
-        t.includes("sublocality_level_1") ||
-        t.includes("administrative_area_level_3")
-      ) {
-        borough = c.long_name;
-      }
-      // 4. 동 / 읍 / 면
-      else if (
-        t.includes("sublocality_level_2") ||
-        t.includes("sublocality_level_3") ||
-        t.includes("neighborhood") ||
-        t.includes("sublocality")
-      ) {
-        dong = c.long_name;
-      }
-      // 5. 리 / 통 / 반
-      else if (t.includes("sublocality_level_4")) {
-        village = c.long_name;
-      }
-      // 6. 도로명 (길, 로, 대로)
-      else if (t.includes("route")) {
-        road = c.long_name;
-      }
-      // 7. 건물번호 / 지번 / 번지
-      else if (t.includes("street_number")) {
-        houseNumber = c.long_name;
-      }
-      // 8. 건물명 (아파트, 빌딩 등)
-      else if (t.includes("premise") || t.includes("subpremise")) {
-        building = c.long_name;
-      }
-      // 9. 주요 시설 / 랜드마크 / 관공서 / 상호명
-      else if (t.includes("point_of_interest") || t.includes("establishment")) {
-        poiName = c.long_name;
-      }
-    });
-
-    // 도로명 + 건물번호 (예: "효원로 123" 또는 "화서동 45-6")
-    const detailStreet = [road, houseNumber].filter(Boolean).join(" ");
-
-    // 건물/시설명 조합 (도로명과 중복되지 않을 때만 괄호로 표기)
-    const landmark = building || poiName;
-    const landmarkDisplay =
-      landmark && landmark !== detailStreet && !detailStreet.includes(landmark)
-        ? `(${landmark})`
-        : "";
-
-    // 10. 한국식 표준 주소 순서로 최종 조립
-    const structuredAddress = [
-      province,
-      city,
-      borough,
-      dong,
-      village,
-      detailStreet,
-      landmarkDisplay,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    // 조립된 주소가 충분히 상세하면 반환
-    if (structuredAddress.length > 5) {
-      return structuredAddress;
-    }
-
-    // 예외 시 구글의 formatted_address에서 대한민국 및 우편번호만 깔끔히 정제하여 반환
-    return (targetItem.formatted_address || "")
-      .replace(/^대한민국\s*/, "")
-      .replace(/\b\d{5}\b/g, "")
+    // '대한민국', 5자리 우편번호, 괄호 내용(상호명 등) 제거
+    cleanAddress = cleanAddress
+      .replace(/^대한민국\s*/, "") // 국가명 제거
+      .replace(/\b\d{5}\b/g, "") // 5자리 우편번호 제거
+      .replace(/\s*\([^)]*\)/g, "") // 괄호 및 괄호 안 내용 (예: (정자동), (스타필드) 등) 제거
       .trim()
-      .replace(/\s+/g, " ");
+      .replace(/\s+/g, " "); // 다중 공백 정리
+
+    return cleanAddress;
   };
 
-  // 좌표(lat, lng)를 주소로 변환하는 공통 역지오코딩 함수
+  // 역지오코딩 (좌표 -> 표준 도로명 주소 변환)
   const updateAddressFromCoords = (lat, lng) => {
     if (!window.google?.maps) return;
 
@@ -216,16 +125,16 @@ export default function InspectionInfo({
       { location: latlng, language: "ko" },
       (results, status) => {
         if (status === "OK" && results && results.length > 0) {
-          // 모든 타입을 포괄하여 주소 조합
-          const convertedAddress = extractDetailedGoogleAddress(results);
+          const standardAddress = extractCleanStandardAddress(results);
 
-          console.log("구글 상세 주소 변환 결과:", convertedAddress);
+          console.log("표준 주소 변환 성공:", standardAddress);
 
           isUpdatingFromMap.current = true;
           setFormData((prev) => ({
             ...prev,
-            location: convertedAddress || prev.location,
-            address: convertedAddress,
+            // location과 address 모두 '경기도 수원시 장안구 수성로 175' 형태로 저장
+            location: standardAddress || prev.location,
+            address: standardAddress,
             coordinates: `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`,
           }));
         } else {
@@ -235,7 +144,7 @@ export default function InspectionInfo({
     );
   };
 
-  // 주소 문자열 -> 좌표(lat, lng) 변환 (정방향 지오코딩)
+  // 정방향 지오코딩 ('스타필드 수원' 등 검색 시 좌표 및 표준 주소 매핑)
   const searchCoordsFromAddress = (keyword) => {
     if (!keyword || keyword.trim().length < 2 || !window.google?.maps) return;
 
@@ -251,14 +160,16 @@ export default function InspectionInfo({
           const newLat = location.lat();
           const newLng = location.lng();
 
-          const convertedAddress = extractDetailedGoogleAddress(results);
+          // 장소명을 검색해도 실제 등록되는 주소는 '경기도 수원시 장안구 수성로 175'로 변환
+          const standardAddress = extractCleanStandardAddress(results);
 
           setCurrentCoords({ lat: newLat, lng: newLng });
 
           setFormData((prev) => ({
             ...prev,
             coordinates: `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`,
-            address: convertedAddress || prev.location,
+            location: standardAddress || prev.location,
+            address: standardAddress,
           }));
 
           if (mapInstanceRef.current) {
