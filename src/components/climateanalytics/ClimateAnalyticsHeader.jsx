@@ -46,7 +46,7 @@ export default function ClimateAnalyticsHeader({
 
   return (
     <div style={{ width: "100%", marginBottom: "24px" }}>
-      {/* 1. 상단 타이틀 영역 */}
+      {/* 상단 타이틀 영역 */}
       <div className="page-head" style={{ marginBottom: "8px" }}>
         <div>
           <div className="eyebrow">CLIMATE & SEASONAL ANALYTICS</div>
@@ -54,7 +54,7 @@ export default function ClimateAnalyticsHeader({
         </div>
       </div>
 
-      {/* 2. 서브타이틀 & 엑셀 내보내기 버튼 */}
+      {/* 서브타이틀 & 엑셀 내보내기 버튼 */}
       <div
         style={{
           display: "flex",
@@ -69,32 +69,9 @@ export default function ClimateAnalyticsHeader({
           태풍, 장마, 폭염, 한파 등 기상 조건 및 계절별 폐기물 유입 패턴을
           분석합니다.
         </p>
-
-        {/* {onExport && (
-          <button
-            type="button"
-            onClick={onExport}
-            style={{
-              color: "#1e293b",
-              backgroundColor: "#ffffff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "var(--analytics-control-radius, 8px)",
-              padding: "10px 20px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-              whiteSpace: "nowrap",
-              width: isMobile ? "100%" : "auto",
-              flexShrink: 0,
-            }}
-          >
-            엑셀 다운로드
-          </button>
-        )} */}
       </div>
 
-      {/* 3. 하단 필터 검색 카드 영역 */}
+      {/* 하단 필터 검색 카드 영역 */}
       <form
         className="content-card analytics-filter-card"
         onSubmit={onSearch}
@@ -154,7 +131,7 @@ export default function ClimateAnalyticsHeader({
           </select>
         </div>
 
-        {/* 권역 선택 */}
+        {/* 지역 선택 */}
         <div
           style={{
             flex: isMobile ? "none" : "1",
@@ -167,7 +144,7 @@ export default function ClimateAnalyticsHeader({
             onChange={(e) => setLocationId(e.target.value)}
             style={inputStyle}
           >
-            <option value="">전체 권역</option>
+            <option value="">전체 지역</option>
             {regions.map((region) => (
               <option key={region.id} value={region.id}>
                 {region.name}
@@ -175,75 +152,6 @@ export default function ClimateAnalyticsHeader({
             ))}
           </select>
         </div>
-
-        {/* 시작일 */}
-        <div
-          style={{
-            flex: isMobile ? "none" : "1",
-            minWidth: isMobile ? "100%" : "140px",
-            width: "100%",
-          }}
-        >
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-
-        {/* 종료일 */}
-        <div
-          style={{
-            flex: isMobile ? "none" : "1",
-            minWidth: isMobile ? "100%" : "140px",
-            width: "100%",
-          }}
-        >
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-
-        {/* 전년 동기 비교 체크박스 (필요 시 주석 해제하여 활성화 가능) */}
-        {/* {setComparePrevYear && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "0 4px",
-              whiteSpace: "nowrap",
-              width: isMobile ? "100%" : "auto",
-            }}
-          >
-            <input
-              type="checkbox"
-              id="comparePrevYearCheck"
-              checked={comparePrevYear}
-              onChange={(e) => setComparePrevYear(e.target.checked)}
-              style={{
-                accentColor: "var(--primary-dark, #2563eb)",
-                cursor: "pointer",
-              }}
-            />
-            <label
-              htmlFor="comparePrevYearCheck"
-              style={{
-                fontSize: "13px",
-                color: "#64748b",
-                fontWeight: "600",
-                cursor: "pointer",
-                userSelect: "none",
-              }}
-            >
-              전년 동기 대비
-            </label>
-          </div>
-        )} */}
 
         {/* 조회 버튼 */}
         <button

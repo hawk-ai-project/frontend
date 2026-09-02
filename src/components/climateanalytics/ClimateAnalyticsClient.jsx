@@ -111,6 +111,17 @@ export default function ClimateAnalyticsClient() {
 
         if (cancelled) return;
 
+        // 탐지 건수(detectionCount)가 실제로 1건 이상 존재하는 장소만 후보로 선정
+        const validLocations = (res.locations || [])
+          .filter((loc) => Number(loc.detectionCount || 0) > 0)
+          .sort((a, b) => (b.detectionCount || 0) - (a.detectionCount || 0));
+
+        // 유효한 탐지 내역이 있는 1위 장소만 카드에 전달, 없으면 '-'
+        const topRiskArea =
+          validLocations.length > 0
+            ? validLocations[0].name || validLocations[0].address
+            : "-";
+
         // 백엔드 응답 데이터를 하위 UI 컴포넌트 규격에 매핑
         const mappedData = {
           summary: {
@@ -118,7 +129,7 @@ export default function ClimateAnalyticsClient() {
             increaseRate: res.summary?.resolutionRate || 0,
             primaryWasteType: res.summary?.topDetectedItem?.name || "-",
             primaryWasteRate: res.summary?.topDetectedItem?.ratio || 0,
-            highestRiskArea: res.locations?.[0]?.name || "-",
+            highestRiskArea: topRiskArea,
             prevYearComparisonRate: 0,
           },
           trends: (res.trends || []).map((t) => ({
