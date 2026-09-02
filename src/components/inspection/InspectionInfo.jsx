@@ -227,23 +227,6 @@ export default function InspectionInfo({
     }
   }, []);
 
-  // formData.coordinates 변경 시 좌표 파싱 및 currentCoords 갱신
-  // useEffect(() => {
-  //   if (formData.coordinates && !formData.coordinates.includes("없음")) {
-  //     const numbers = formData.coordinates.match(/-?\d+(\.\d+)?/g);
-  //     if (numbers && numbers.length >= 2) {
-  //       const lat = parseFloat(numbers[0]);
-  //       const lng = parseFloat(numbers[1]);
-  //       setCurrentCoords({ lat, lng });
-
-  //       // 주소가 비어있을 때만 최초 자동 변환
-  //       if (!formData.address) {
-  //         updateAddressFromCoords(lat, lng);
-  //       }
-  //     }
-  //   }
-  // }, [formData.coordinates]);
-
   // 두 좌표 간 직선 거리(미터) 계산 및 100m 오차 경고 함수
   const checkLocationDistance = (selectedLat, selectedLng) => {
     if (!initialGpsCoordsRef.current || !window.google?.maps?.geometry) return;
@@ -364,24 +347,6 @@ export default function InspectionInfo({
       [name]: value,
     }));
   };
-
-  // //  수동 탐지 리스트 핸들러 함수
-  // const handleDetectionChange = (index, field, value) => {
-  //   const newDetections = [...manualDetections];
-  //   newDetections[index][field] = value;
-  //   setManualDetections(newDetections);
-  // };
-
-  // // 줄 추가 함수
-  // const addDetection = () => {
-  //   setManualDetections([...manualDetections, { waste_type_id: "", count: 1 }]);
-  // };
-
-  // // 줄 삭제 함수
-  // const removeDetection = (index) => {
-  //   const newDetections = manualDetections.filter((_, i) => i !== index);
-  //   setManualDetections(newDetections);
-  // };
 
   // 백엔드로 점검 데이터 제출
   const submitInspection = async () => {
@@ -530,75 +495,6 @@ export default function InspectionInfo({
             />
           </div>
         )}
-
-        {/* 수동 폐기물 입력 UI 영역 */}
-        {/* <div style={{ marginTop: "10px", marginBottom: "10px" }}>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            수동 탐지 결과 (선택)
-          </label>
-          {manualDetections.map((item, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginBottom: "10px",
-                alignItems: "center",
-              }}
-            > */}
-        {/* 폐기물 종류 선택 드롭다운 */}
-        {/* <select
-                value={item.waste_type_id}
-                onChange={(e) =>
-                  handleDetectionChange(index, "waste_type_id", e.target.value)
-                }
-                className="input"
-                style={{ flex: 5 }}
-              >
-                <option value="">폐기물 종류</option>
-                {wasteTypes.map((wt) => (
-                  <option key={wt.id} value={wt.id}> */}
-        {/* 한글 이름으로 출력 */}
-        {/* {wt.name_ko}
-                  </option>
-                ))}
-              </select> */}
-
-        {/* 수량 입력 */}
-        {/* <input
-                type="number"
-                min="1"
-                value={item.count}
-                onChange={(e) =>
-                  handleDetectionChange(index, "count", e.target.value)
-                }
-                className="input"
-                style={{ flex: 1 }}
-                placeholder="수량"
-              /> */}
-
-        {/* 삭제 버튼 (2개 이상일때부터 등장) */}
-        {/* {manualDetections.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeDetection(index)}
-                  className="btn btn-secondary"
-                  style={{ padding: "0 6px" }}
-                >
-                  삭제
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addDetection}
-            className="btn btn-soft"
-            style={{ width: "100%", fontSize: "0.9rem" }}
-          >
-            + 폐기물 추가하기
-          </button>
-        </div> */}
 
         <label htmlFor="memo">
           점검 메모

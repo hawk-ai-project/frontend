@@ -26,7 +26,9 @@ export default function CameraPreview({ onCapture }) {
           (device) => device.kind === "videoinput",
         );
         setDevices(videoDevices);
-        const rearCamera = videoDevices.find((device) => /back|rear|environment|후면/i.test(device.label));
+        const rearCamera = videoDevices.find((device) =>
+          /back|rear|environment|후면/i.test(device.label),
+        );
         if (rearCamera) setSelectedDeviceId(rearCamera.deviceId);
       } catch (err) {
         console.error("카메라 장치를 가져오는 데 실패했습니다.", err);
@@ -64,9 +66,13 @@ export default function CameraPreview({ onCapture }) {
       setStream(newStream);
       streamRef.current = newStream;
       if (videoRef.current) videoRef.current.srcObject = newStream;
-      const refreshedDevices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === "videoinput");
+      const refreshedDevices = (
+        await navigator.mediaDevices.enumerateDevices()
+      ).filter((device) => device.kind === "videoinput");
       setDevices(refreshedDevices);
-      const activeDeviceId = newStream.getVideoTracks()[0]?.getSettings().deviceId;
+      const activeDeviceId = newStream
+        .getVideoTracks()[0]
+        ?.getSettings().deviceId;
       if (activeDeviceId) setSelectedDeviceId(activeDeviceId);
       return true;
     } catch (err) {
@@ -134,7 +140,9 @@ export default function CameraPreview({ onCapture }) {
       const context = canvas.getContext("2d");
       const sourceWidth = video.videoWidth;
       const sourceHeight = video.videoHeight;
-      const landscapeScreen = window.matchMedia("(orientation: landscape)").matches;
+      const landscapeScreen = window.matchMedia(
+        "(orientation: landscape)",
+      ).matches;
       const rotateToLandscape = landscapeScreen && sourceHeight > sourceWidth;
 
       if (rotateToLandscape) {
@@ -143,13 +151,24 @@ export default function CameraPreview({ onCapture }) {
         const orientationAngle = window.screen.orientation?.angle ?? 90;
         const activeTrack = stream.getVideoTracks()[0];
         const facingMode = activeTrack?.getSettings().facingMode;
-        const selectedDevice = devices.find((device) => device.deviceId === selectedDeviceId);
-        const isFrontCamera = facingMode === "user" || /front|user|전면/i.test(selectedDevice?.label || "");
-        const rearRotation = orientationAngle === 270 ? Math.PI / 2 : -Math.PI / 2;
+        const selectedDevice = devices.find(
+          (device) => device.deviceId === selectedDeviceId,
+        );
+        const isFrontCamera =
+          facingMode === "user" ||
+          /front|user|전면/i.test(selectedDevice?.label || "");
+        const rearRotation =
+          orientationAngle === 270 ? Math.PI / 2 : -Math.PI / 2;
         const rotation = isFrontCamera ? -rearRotation : rearRotation;
         context.translate(canvas.width / 2, canvas.height / 2);
         context.rotate(rotation);
-        context.drawImage(video, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
+        context.drawImage(
+          video,
+          -sourceWidth / 2,
+          -sourceHeight / 2,
+          sourceWidth,
+          sourceHeight,
+        );
       } else {
         canvas.width = sourceWidth;
         canvas.height = sourceHeight;
@@ -227,35 +246,68 @@ export default function CameraPreview({ onCapture }) {
 
   const switchCamera = () => {
     if (devices.length < 2) return;
-    const currentIndex = devices.findIndex((device) => device.deviceId === selectedDeviceId);
-    setSelectedDeviceId(devices[(currentIndex + 1 + devices.length) % devices.length].deviceId);
+    const currentIndex = devices.findIndex(
+      (device) => device.deviceId === selectedDeviceId,
+    );
+    setSelectedDeviceId(
+      devices[(currentIndex + 1 + devices.length) % devices.length].deviceId,
+    );
   };
 
   useEffect(() => {
     if (!mobileCameraOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
   }, [mobileCameraOpen]);
 
   return (
     <div className={`card card-pad ${styles.container}`}>
       {/* 카메라 미리보기 영역 (비디오 래퍼) */}
-      <div className={`${styles.videoWrapper} ${mobileCameraOpen ? styles.mobileCameraOpen : ""}`}>
-        {mobileCameraOpen && <>
-          <div className={styles.mobileCameraTopbar}>
-            <button type="button" onClick={stopCamera} aria-label="카메라 닫기">×</button>
-            <span>현장 사진 촬영</span>
-            <span aria-hidden="true" />
-          </div>
-          <div className={styles.mobileCameraBottomBar}>
-            <span className={styles.mobileCameraControlSpacer} />
-            <button type="button" className={styles.mobileShutter} onClick={captureImage} aria-label="사진 촬영"><span /></button>
-            <button type="button" className={styles.mobileSwitchCamera} onClick={switchCamera} disabled={devices.length < 2} aria-label="전·후면 카메라 전환" title="카메라 전환">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h2l1.2-2h3.6L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z"/><path d="M9 13a3 3 0 0 0 5.2 2M15 12a3 3 0 0 0-5.2-2M9 10H7v-2M15 15h2v2"/></svg>
-            </button>
-          </div>
-        </>}
+      <div
+        className={`${styles.videoWrapper} ${mobileCameraOpen ? styles.mobileCameraOpen : ""}`}
+      >
+        {mobileCameraOpen && (
+          <>
+            <div className={styles.mobileCameraTopbar}>
+              <button
+                type="button"
+                onClick={stopCamera}
+                aria-label="카메라 닫기"
+              >
+                ×
+              </button>
+              <span>현장 사진 촬영</span>
+              <span aria-hidden="true" />
+            </div>
+            <div className={styles.mobileCameraBottomBar}>
+              <span className={styles.mobileCameraControlSpacer} />
+              <button
+                type="button"
+                className={styles.mobileShutter}
+                onClick={captureImage}
+                aria-label="사진 촬영"
+              >
+                <span />
+              </button>
+              <button
+                type="button"
+                className={styles.mobileSwitchCamera}
+                onClick={switchCamera}
+                disabled={devices.length < 2}
+                aria-label="전·후면 카메라 전환"
+                title="카메라 전환"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 7h2l1.2-2h3.6L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z" />
+                  <path d="M9 13a3 3 0 0 0 5.2 2M15 12a3 3 0 0 0-5.2-2M9 10H7v-2M15 15h2v2" />
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
 
         {/* 상태 표시 */}
         <div className={styles.statusWrapper}>
@@ -300,7 +352,10 @@ export default function CameraPreview({ onCapture }) {
         {!stream && !previewImage && (
           <div className={styles.cameraEmptyState}>
             <span className={styles.cameraEmptyIcon} aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M4 7.5h3.2L8.8 5h6.4l1.6 2.5H20a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13.5" r="4"/></svg>
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7.5h3.2L8.8 5h6.4l1.6 2.5H20a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z" />
+                <circle cx="12" cy="13.5" r="4" />
+              </svg>
             </span>
             <strong>촬영할 이미지를 준비해 주세요</strong>
             <p>카메라를 실행하거나 저장된 사진을 선택할 수 있습니다.</p>
@@ -313,18 +368,18 @@ export default function CameraPreview({ onCapture }) {
         <div className={styles.selectGroup}>
           {/* 카메라 선택 */}
           {devices.length > 1 && (
-          <select
-            className={`input ${styles.selectInput}`}
-            value={selectedDeviceId}
-            onChange={(e) => setSelectedDeviceId(e.target.value)}
-          >
-            {devices.length === 0 && <option value="">카메라 없음</option>}
-            {devices.map((device, idx) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label || `Camera ${idx + 1}`}
-              </option>
-            ))}
-          </select>
+            <select
+              className={`input ${styles.selectInput}`}
+              value={selectedDeviceId}
+              onChange={(e) => setSelectedDeviceId(e.target.value)}
+            >
+              {devices.length === 0 && <option value="">카메라 없음</option>}
+              {devices.map((device, idx) => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label || `Camera ${idx + 1}`}
+                </option>
+              ))}
+            </select>
           )}
 
           {/* 카메라 ON/OFF 버튼 */}
