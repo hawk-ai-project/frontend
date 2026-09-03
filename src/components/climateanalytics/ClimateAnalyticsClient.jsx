@@ -11,7 +11,7 @@ import ClimateAnalyticsHeader from "./ClimateAnalyticsHeader";
 import ClimateSummaryCards from "./ClimateSummaryCards";
 import ClimateCharts from "./ClimateCharts";
 import ClimateRiskMap from "./ClimateRiskMap";
-import ClimateAIInsights from "./ClimateAIInsights";
+// import ClimateAIInsights from "./ClimateAIInsights";
 
 // 날짜 포맷 유틸
 const formatDate = (date) => {
@@ -243,11 +243,11 @@ export default function ClimateAnalyticsClient() {
             trends={data.trends || []}
             query={query}
           />
-          <ClimateAIInsights
+          {/* <ClimateAIInsights
             key={`${query.season}-${query.weatherEvent}-${query.locationId || "all"}`}
             analytics={data}
             query={query}
-          />
+          /> */}
         </>
       )}
     </div>
