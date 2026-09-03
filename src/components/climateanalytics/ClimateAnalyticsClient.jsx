@@ -133,9 +133,10 @@ export default function ClimateAnalyticsClient() {
             prevYearComparisonRate: 0,
           },
           trends: (res.trends || []).map((t) => ({
+            rawDate: t.rawDate || t.raw_date || t.date,
             date: t.date,
-            detections: t.count,
-            rainfall: t.rainfall || 0,
+            detections: t.count ?? t.detections ?? 0,
+            rainfall: t.rainfall ?? t.precipitation ?? 0,
             windSpeed: t.windSpeed || 0,
           })),
           distribution: (res.distribution || []).map((d) => ({
@@ -144,11 +145,14 @@ export default function ClimateAnalyticsClient() {
             ratio: d.percentage,
           })),
           locations: (res.locations || []).map((loc) => ({
-            id: loc.id,
-            name: loc.name,
-            lat: loc.latitude,
-            lng: loc.longitude,
-            count: loc.detectionCount || loc.count || 0,
+            id: loc.id || loc.location_id,
+            name: loc.name || loc.address || "관측 포인트",
+            address: loc.address || "-",
+            regionId: loc.region_id ?? loc.regionId,
+            regionName: loc.region_name ?? loc.regionName,
+            lat: loc.latitude ?? loc.lat,
+            lng: loc.longitude ?? loc.lng,
+            count: loc.detectionCount ?? loc.count ?? loc.detection_count ?? 0,
           })),
         };
 

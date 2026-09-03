@@ -1,196 +1,240 @@
 // src/components/climateanalytics/ClimateCharts.jsx
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
   Legend,
-} from "chart.js";
-import { Chart, Doughnut } from "react-chartjs-2";
+} from "recharts";
 
-// Chart.js 모듈 등록
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-);
-
-const PALETTE = [
-  "#3b82f6", // Blue
-  "#10b981", // Green
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#8b5cf6", // Purple
-  "#ec4899", // Pink
-  "#06b6d4", // Cyan
+// 차트 시각화용 테마 색상 팔레트
+const COLORS = [
+  "#8b5cf6",
+  "#38bdf8",
+  "#2563eb",
+  "#3b82f6",
+  "#6366f1",
+  "#ec4899",
+  "#10b981",
 ];
+
+/**
+ * 날짜 문자열(YYYY-MM-DD 등)을 'M/D' 포맷(예: 9/1)으로 변환하는 유틸 함수
+ */
+const formatShortDate = (dateStr) => {
+  if (!dateStr) return "";
+  const parts = String(dateStr).split("-");
+  if (parts.length >= 3) {
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    return `${month}/${day}`;
+  }
+  return dateStr;
+};
 
 export default function ClimateCharts({
   trends = [],
   distribution = [],
-  query,
+  query = {},
 }) {
-  // 1. 좌측 이중축 차트 데이터 가공 (Bar: 탐지건수, Line: 강수량)
-  // 날짜를 "M/D" 형식(예: 9/1, 8/25)으로 변환하는 유틸
-  const formatShortDate = (dateStr) => {
-    if (!dateStr) return "";
-    const parts = dateStr.split("-");
-    if (parts.length >= 3) {
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-      return `${month}/${day}`;
-    }
-    return dateStr;
-  };
+  const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // 1. 좌측 이중축 차트 데이터 가공
-  const trendsChartData = useMemo(() => {
-    const labels = trends.map((t) => formatShortDate(t.date));
-    const detectionCounts = trends.map((t) => t.detections || 0);
-    const rainfalls = trends.map((t) => t.rainfall || 0);
-
-    return {
-      labels,
-      datasets: [
-        {
-          type: "bar",
-          label: "폐기물 탐지",
-          data: detectionCounts,
-          backgroundColor: "rgba(59, 130, 246, 0.6)",
-          borderColor: "#3b82f6",
-          borderWidth: 1,
-          borderRadius: 4,
-          yAxisID: "yDetections",
-          order: 2,
-        },
-        {
-          type: "line",
-          label: "일일 강수량",
-          data: rainfalls,
-          borderColor: "#06b6d4",
-          backgroundColor: "rgba(6, 182, 212, 0.2)",
-          borderWidth: 2,
-          pointRadius: 3,
-          tension: 0.3,
-          yAxisID: "yRainfall",
-          order: 1,
-        },
-      ],
+  // 화면 리사이즈 감지를 통한 모바일 레이아웃 상태 관리
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
     };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // 좌측 이중축 차트 데이터 가공 (최근 7일치 슬라이싱, M/D 날짜 포맷팅, 수치 정규화)
+  const chartTrends = useMemo(() => {
+    return (trends || []).slice(-7).map((item) => {
+      // 1. 원본 날짜(YYYY-MM-DD) 확보
+      const originDate = item.rawDate || item.date || "";
+
+      // 2. M/D 포맷 안전 생성 ('-' 또는 '/' 둘 다 대응)
+      let displayDate = originDate;
+      if (originDate.includes("-")) {
+        displayDate = formatShortDate(originDate);
+      } else if (originDate.includes("/")) {
+        const [m, d] = originDate.split("/");
+        displayDate = `${parseInt(m, 10)}/${parseInt(d, 10)}`;
+      }
+
+      return {
+        ...item,
+        rawDate: originDate,
+        date: displayDate,
+        count: Number(item.detections ?? item.count ?? 0),
+        rainfall: Number(item.rainfall ?? item.precipitation ?? 0),
+      };
+    });
   }, [trends]);
 
-  // 좌측 차트 옵션 (이중 y축 설정)
-  const trendsOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: "index",
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: "top",
-        labels: { boxWidth: 12, font: { size: 12 } },
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const unit = context.dataset.yAxisID === "yRainfall" ? "mm" : "건";
-            return ` ${context.dataset.label}: ${context.parsed.y.toLocaleString()} ${unit}`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 11 } },
-      },
-      yDetections: {
-        type: "linear",
-        position: "left",
-        beginAtZero: true,
-        title: { display: true, text: "탐지 건수 (건)", font: { size: 11 } },
-        grid: { color: "rgba(0, 0, 0, 0.05)" },
-      },
-      yRainfall: {
-        type: "linear",
-        position: "right",
-        beginAtZero: true,
-        title: { display: true, text: "강수량 (mm)", font: { size: 11 } },
-        grid: { display: false }, // 격자선 겹침 방지
-      },
-    },
-  };
+  // 기간 내 탐지 건수 최대값 계산 (피크 막대 강조용)
+  const maxCount = Math.max(...chartTrends.map((item) => item.count), 0);
 
-  // 2. 우측 도넛 차트 데이터 가공 (폐기물 유형별 점유율)
-  const distributionChartData = useMemo(() => {
-    return {
-      labels: distribution.map((d) => d.label || "미지정"),
-      datasets: [
-        {
-          data: distribution.map((d) => d.count || 0),
-          backgroundColor: PALETTE.slice(0, distribution.length),
-          borderWidth: 2,
-          borderColor: "#ffffff",
-        },
-      ],
-    };
+  // 우측 도넛 차트 데이터 정규화 (유효 수량 필터링 및 탐지 수량 기준 내림차순 정렬)
+  const normalizedDistribution = useMemo(() => {
+    return (distribution || [])
+      .map((item) => {
+        const value = Number(
+          item.value ?? item.count ?? item.cnt ?? item.total ?? 0,
+        );
+        const name =
+          item.name ??
+          item.label ??
+          item.wasteType ??
+          item.waste_type ??
+          "기타";
+        return { ...item, name, value };
+      })
+      .filter((item) => item.value > 0)
+      .sort((a, b) => b.value - a.value);
   }, [distribution]);
 
-  const distributionOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "right",
-        labels: { boxWidth: 12, font: { size: 12 } },
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const val = context.parsed || 0;
-            const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-            return ` ${context.label}: ${val.toLocaleString()}건 (${pct}%)`;
-          },
-        },
-      },
-    },
-    cutout: "68%", // 도넛 두께 조절
+  // 전체 탐지 폐기물 총합 계산
+  const totalWaste = normalizedDistribution.reduce(
+    (sum, item) => sum + item.value,
+    0,
+  );
+
+  // 막대그래프(날짜) 클릭 이벤트
+  const handleBarClick = (data) => {
+    if (!data) return;
+
+    let targetDate = data.rawDate;
+    if (!targetDate && data.date) {
+      const [m, d] = data.date.split("/");
+      const yyyy = new Date().getFullYear();
+      targetDate = `${yyyy}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+
+    if (!targetDate) return;
+
+    const formattedDate = targetDate.replace(/-/g, ".");
+    const params = new URLSearchParams();
+    params.set("startDate", formattedDate);
+    params.set("endDate", formattedDate);
+    params.set("hasWaste", "true");
+
+    if (query?.locationId) params.set("locationId", String(query.locationId));
+    if (query?.season && query.season !== "ALL")
+      params.set("season", query.season);
+    if (query?.weatherEvent && query.weatherEvent !== "ALL")
+      params.set("weatherEvent", query.weatherEvent);
+
+    router.push(`/histories?${params.toString()}`);
   };
 
-  const hasTrends = trends && trends.length > 0;
-  const hasDistribution = distribution && distribution.length > 0;
+  // 도넛그래프(폐기물 항목) 클릭 이벤트
+  const handlePieClick = (entry) => {
+    if (!entry || !entry.name) return;
+
+    const params = new URLSearchParams();
+    params.set("waste", entry.name);
+    params.set("hasWaste", "true");
+
+    if (query?.locationId) params.set("locationId", String(query.locationId));
+    if (query?.startDate)
+      params.set("startDate", query.startDate.replace(/-/g, "."));
+    if (query?.endDate) params.set("endDate", query.endDate.replace(/-/g, "."));
+    if (query?.season && query.season !== "ALL")
+      params.set("season", query.season);
+    if (query?.weatherEvent && query.weatherEvent !== "ALL")
+      params.set("weatherEvent", query.weatherEvent);
+
+    router.push(`/histories?${params.toString()}`);
+  };
+
+  // 도넛 차트 중앙 텍스트 렌더링 (총 탐지량 표시)
+  const renderCenterLabel = ({ cx, cy, index }) => {
+    if (index !== 0) return null;
+
+    return (
+      <g>
+        <text
+          x={cx}
+          y={cy - 8}
+          textAnchor="middle"
+          dominantBaseline="central"
+          style={{
+            fontSize: isMobile ? "11px" : "12px",
+            fill: "#64748b",
+            fontWeight: "500",
+          }}
+        >
+          총 탐지량
+        </text>
+        <text
+          x={cx}
+          y={cy + 10}
+          textAnchor="middle"
+          dominantBaseline="central"
+          style={{
+            fontSize: isMobile ? "15px" : "18px",
+            fill: "#0f172a",
+            fontWeight: "bold",
+          }}
+        >
+          {totalWaste}개
+        </text>
+      </g>
+    );
+  };
+
+  // 기본 텍스트 포맷터
+  const renderLegendText = (value, entry) => {
+    const itemValue = entry.payload?.value ?? 0;
+    const percentage =
+      totalWaste > 0 ? ((itemValue / totalWaste) * 100).toFixed(1) : 0;
+
+    return (
+      <span
+        style={{
+          color: "#334155",
+          fontSize: isMobile ? "11px" : "13px",
+          marginLeft: "4px",
+        }}
+      >
+        {value} <strong style={{ color: "#0f172a" }}>{itemValue}개</strong> (
+        {percentage}%)
+      </span>
+    );
+  };
+
+  const hasTrends = chartTrends.length > 0;
+  const hasDistribution = normalizedDistribution.length > 0;
 
   return (
     <div
+      id="climate-charts-area"
+      className="grid grid-2"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1.8fr) minmax(0, 1.2fr)",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
         gap: "22px",
-        marginBottom: "22px",
+        marginBottom: "24px",
       }}
     >
-      {/* 좌측: 강수량/풍속 vs 탐지 추이 이중축 차트 */}
-      <div
-        className="card card-pad"
-        style={{ display: "flex", flexDirection: "column", minHeight: "380px" }}
-      >
+      {/* 좌측 차트: 강수량 및 폐기물 탐지 추이 */}
+
+      <div className="card card-pad">
         <div
           style={{
             display: "flex",
@@ -199,22 +243,142 @@ export default function ClimateCharts({
             marginBottom: "16px",
           }}
         >
-          <h2 className="section-title" style={{ margin: 0 }}>
+          <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0 }}>
             강수량에 따른 폐기물 탐지 추이
           </h2>
-          {/* <span className="badge draft">이중 축 그래프 (Dual-Axis)</span> */}
         </div>
 
-        <div style={{ flex: 1, minHeight: "300px", position: "relative" }}>
+        <div style={{ width: "100%", height: isMobile ? "260px" : "320px" }}>
           {hasTrends ? (
-            <Chart type="bar" data={trendsChartData} options={trendsOptions} />
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={chartTrends}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient
+                    id="primaryBarGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#4f46e5" stopOpacity={1} />
+                  </linearGradient>
+
+                  {/* 피크(최고치) 막대 */}
+                  <linearGradient
+                    id="peakBarGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="0%" stopColor="#ec4899" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#f43f5e" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+
+                {/* 차트 배경 가로 보조선 */}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+
+                {/* X축: 일자 (M/D 형식) */}
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#94a3b8"
+                  tick={{ fontSize: 12 }}
+                />
+
+                {/* 좌측 Y축: 폐기물 탐지 건수 */}
+                <YAxis
+                  yAxisId="left"
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#94a3b8"
+                  unit="건"
+                  tick={{ fontSize: 12 }}
+                />
+
+                {/* 우측 Y축: 일일 강수량 */}
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#06b6d4"
+                  unit="mm"
+                  tick={{ fontSize: 12 }}
+                />
+
+                {/* 툴팁: 마우스 오버 시 데이터 표시 */}
+                <Tooltip
+                  formatter={(val, name) => {
+                    if (name === "일일 강수량") return [`${val} mm`, name];
+                    return [`${val} 건`, "폐기물 탐지"];
+                  }}
+                  contentStyle={{
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                  }}
+                />
+
+                {/* 폐기물 탐지 건수 막대 */}
+                <Bar
+                  yAxisId="left"
+                  dataKey="count"
+                  name="폐기물 탐지"
+                  radius={[6, 6, 0, 0]}
+                  style={{ cursor: "pointer" }}
+                >
+                  {chartTrends.map((entry, index) => {
+                    const isPeak = maxCount > 0 && entry.count === maxCount;
+                    return (
+                      <Cell
+                        key={`bar-cell-${index}`}
+                        fill={
+                          isPeak
+                            ? "url(#peakBarGradient)"
+                            : "url(#primaryBarGradient)"
+                        }
+                        onClick={() => handleBarClick(entry)}
+                      />
+                    );
+                  })}
+                </Bar>
+
+                {/* 일일 강수량 꺾은선 */}
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="rainfall"
+                  name="일일 강수량"
+                  stroke="#06b6d4"
+                  strokeWidth={2.5}
+                  dot={{
+                    r: 3,
+                    fill: "#06b6d4",
+                    strokeWidth: 1,
+                    stroke: "#fff",
+                  }}
+                  activeDot={{ r: 5 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
           ) : (
             <div
               style={{
                 height: "100%",
                 display: "grid",
                 placeItems: "center",
-                color: "var(--text-3)",
+                color: "#94a3b8",
                 fontSize: "14px",
               }}
             >
@@ -224,40 +388,123 @@ export default function ClimateCharts({
         </div>
       </div>
 
-      {/* 우측: 폐기물 유형별 도넛 차트 */}
-      <div
-        className="card card-pad"
-        style={{ display: "flex", flexDirection: "column", minHeight: "380px" }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <h2 className="section-title" style={{ margin: 0 }}>
-            기상 조건별 폐기물 분포
-          </h2>
-          {/* <span style={{ fontSize: "12px", color: "var(--text-3)" }}>
-            점유율 (%)
-          </span> */}
-        </div>
+      {/* 우측 차트: 기상 조건별 폐기물 분포 */}
 
-        <div style={{ flex: 1, minHeight: "300px", position: "relative" }}>
+      <div className="card card-pad">
+        <h2
+          style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "16px" }}
+        >
+          기상 조건별 폐기물 분포
+        </h2>
+
+        <div style={{ width: "100%", height: isMobile ? "360px" : "320px" }}>
           {hasDistribution ? (
-            <Doughnut
-              data={distributionChartData}
-              options={distributionOptions}
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                {/* 도넛 그래프 (12시 방향 시작, 시계 방향 회전) */}
+                <Pie
+                  data={normalizedDistribution}
+                  cx={isMobile ? "50%" : "40%"}
+                  cy={isMobile ? "35%" : "50%"}
+                  innerRadius={isMobile ? 50 : 65}
+                  outerRadius={isMobile ? 75 : 95}
+                  paddingAngle={4}
+                  dataKey="value"
+                  nameKey="name"
+                  startAngle={90}
+                  endAngle={-270}
+                  label={renderCenterLabel}
+                  labelLine={false}
+                >
+                  {normalizedDistribution.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handlePieClick(entry)}
+                    />
+                  ))}
+                </Pie>
+
+                {/* 툴팁 */}
+                <Tooltip
+                  formatter={(val) => [`${val}개`, "수량"]}
+                  contentStyle={{
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                />
+
+                {/* 커스텀 범례: 수량 내림차순 정렬을 유지하는 우측 리스트 */}
+                <Legend
+                  layout={isMobile ? "horizontal" : "vertical"}
+                  align={isMobile ? "center" : "right"}
+                  verticalAlign={isMobile ? "bottom" : "middle"}
+                  content={() => (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: isMobile ? "row" : "column",
+                        flexWrap: isMobile ? "wrap" : "nowrap",
+                        gap: isMobile ? "8px 12px" : "8px",
+                        maxHeight: isMobile ? "none" : "280px",
+                        overflowY: isMobile ? "visible" : "auto",
+                        paddingLeft: isMobile ? "0" : "10px",
+                        paddingTop: isMobile ? "12px" : "0",
+                      }}
+                    >
+                      {normalizedDistribution.map((item, index) => {
+                        const itemColor = COLORS[index % COLORS.length];
+                        const percentage =
+                          totalWaste > 0
+                            ? ((item.value / totalWaste) * 100).toFixed(1)
+                            : 0;
+
+                        return (
+                          <div
+                            key={`legend-item-${index}`}
+                            onClick={() => handlePieClick(item)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              cursor: "pointer",
+                              fontSize: isMobile ? "11px" : "13px",
+                              lineHeight: "1.4",
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: "10px",
+                                height: "10px",
+                                borderRadius: "2px",
+                                backgroundColor: itemColor,
+                                marginRight: "6px",
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span style={{ color: "#334155" }}>
+                              {item.name}{" "}
+                              <strong style={{ color: "#0f172a" }}>
+                                {item.value}개
+                              </strong>{" "}
+                              ({percentage}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           ) : (
             <div
               style={{
                 height: "100%",
                 display: "grid",
                 placeItems: "center",
-                color: "var(--text-3)",
+                color: "#94a3b8",
                 fontSize: "14px",
               }}
             >
