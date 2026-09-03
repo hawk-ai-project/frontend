@@ -156,7 +156,7 @@ export default function ClimateAnalyticsHeader({
             onChange={(e) => setLocationId(e.target.value)}
             style={inputStyle}
           >
-            <option value="">전체 지역</option>
+            <option value="">전체 장소</option>
             {regions.map((region) => (
               <option key={region.id} value={region.id}>
                 {region.name}
