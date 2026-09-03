@@ -135,8 +135,8 @@ export default function ClimateAnalyticsClient() {
           trends: (res.trends || []).map((t) => ({
             date: t.date,
             detections: t.count,
-            rainfall: 0,
-            windSpeed: 0,
+            rainfall: t.rainfall || 0,
+            windSpeed: t.windSpeed || 0,
           })),
           distribution: (res.distribution || []).map((d) => ({
             label: d.name,
