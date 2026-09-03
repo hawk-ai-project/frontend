@@ -54,7 +54,7 @@ export default function ClimateAnalyticsHeader({
         </div>
       </div>
 
-      {/* 서브타이틀 & 엑셀 내보내기 버튼 */}
+      {/* 서브타이틀 */}
       <div
         style={{
           display: "flex",
@@ -66,8 +66,8 @@ export default function ClimateAnalyticsHeader({
         }}
       >
         <p className="subtitle" style={{ margin: 0 }}>
-          태풍, 장마, 폭염, 한파 등 기상 조건 및 계절별 폐기물 유입 패턴을
-          분석합니다.
+          맑음, 눈, 비 등 일상 날씨 및 태풍, 호우, 폭염 등 극한 기상 조건에 따른
+          폐기물 유입 패턴을 분석합니다.
         </p>
       </div>
 
@@ -103,18 +103,18 @@ export default function ClimateAnalyticsHeader({
             style={inputStyle}
           >
             <option value="ALL">전체 계절</option>
-            <option value="SPRING">봄 (3~5월)</option>
-            <option value="SUMMER">여름 (6~8월)</option>
-            <option value="FALL">가을 (9~11월)</option>
-            <option value="WINTER">겨울 (12~2월)</option>
+            <option value="SPRING">🌸 봄 (3~5월)</option>
+            <option value="SUMMER">🏖️ 여름 (6~8월)</option>
+            <option value="FALL">🍁 가을 (9~11월)</option>
+            <option value="WINTER">⛄ 겨울 (12~2월)</option>
           </select>
         </div>
 
-        {/* 기상 조건 선택 */}
+        {/* 기상 조건 선택 (세분화 및 그룹화) */}
         <div
           style={{
             flex: isMobile ? "none" : "1",
-            minWidth: isMobile ? "100%" : "150px",
+            minWidth: isMobile ? "100%" : "160px",
             width: "100%",
           }}
         >
@@ -124,10 +124,22 @@ export default function ClimateAnalyticsHeader({
             style={inputStyle}
           >
             <option value="ALL">전체 기상 조건</option>
-            <option value="HEAVY_RAIN">집중호우/장마</option>
-            <option value="TYPHOON">태풍 경보</option>
-            <option value="HEAT_WAVE">폭염/혹서</option>
-            <option value="COLD_WAVE">한파/혹한</option>
+
+            <optgroup label="일상 기상 상태">
+              <option value="CLEAR">☀️ 맑음</option>
+              <option value="CLOUDY">⛅ 흐림</option>
+              <option value="RAIN">🌧️ 비</option>
+              <option value="SNOW">❄️ 눈</option>
+              <option value="RAIN_SNOW">🌨️ 진눈깨비</option>
+            </optgroup>
+
+            <optgroup label="기상 특보 및 재해">
+              <option value="HEAVY_RAIN">🌊 집중호우 / 장마</option>
+              <option value="TYPHOON">🌀 태풍 경보</option>
+              <option value="STRONG_WIND">💨 강풍 주의보</option>
+              <option value="HEAT_WAVE">🔥 폭염 / 혹서</option>
+              <option value="COLD_WAVE">🧊 한파 / 혹한</option>
+            </optgroup>
           </select>
         </div>
 
