@@ -362,6 +362,8 @@ export default function BoardForm({ boardId }) {
         }
       }
       const category = CATEGORIES.find((item) => item.id === form.categoryId);
+
+      // 기존 점검 데이터를 활용해 AI 게시글 생성 요청
       const job = await boardService.generateDraft({
         location: aiInput.location.trim(),
         wasteSummary: aiInput.wasteSummary.trim(),

@@ -24,9 +24,16 @@ const NAVIGATION_LABELS = {
 };
 
 function responseActions(result) {
-  if (Array.isArray(result.actions) && result.actions.length) return result.actions;
+  if (Array.isArray(result.actions) && result.actions.length) {
+    return result.actions;
+  }
+
   const action = result.action;
-  if (action?.type !== "NAVIGATE" || !NAVIGATION_LABELS[action.path]) return [];
+
+  // 허용된 Navigation Action만 화면 이동 버튼으로 노출
+  if (action?.type !== "NAVIGATE" || !NAVIGATION_LABELS[action.path]) {
+    return [];
+  }
   return [{ label: NAVIGATION_LABELS[action.path], href: action.path }];
 }
 
@@ -65,6 +72,7 @@ export default function Chatbot() {
     try {
       const history = buildChatHistory(messages, message);
       const result = await chatService.ask(message, history);
+
       setMessages((current) => [
         ...current,
         {

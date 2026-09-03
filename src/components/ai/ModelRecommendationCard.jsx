@@ -2,7 +2,7 @@
 
 import styles from "./ModelRecommendationCard.module.css";
 
-const list = (value) => Array.isArray(value) ? value : [];
+const list = (value) => (Array.isArray(value) ? value : []);
 
 function RecommendationDetails({ item }) {
   const sections = [["강점",list(item.strengths)],["적합한 상황",list(item.bestFor)],["고려사항",list(item.tradeoffs)]];
@@ -10,18 +10,46 @@ function RecommendationDetails({ item }) {
 }
 
 export default function ModelRecommendationCard({
-  recommendation, loading = false, error = "", title = "AI 추천 모델",
-  description = "현재 데이터 기준 추천입니다.", unavailable = "", stale = false,
-  onRefresh, onSelectModel, selectedModelId, selectableModels = [], selectingModelId = "",
+  recommendation,
+  loading = false,
+  error = "",
+  title = "AI 추천 모델",
+  description = "현재 데이터 기준 추천입니다.",
+  unavailable = "",
+  stale = false,
+  onRefresh,
+  onSelectModel,
+  selectedModelId,
+  selectableModels = [],
+  selectingModelId = "",
 }) {
-  const legacyRecommendation = recommendation?.recommendedModelId || recommendation?.recommendedModelName ? [{
-    rank:1, modelId:recommendation.recommendedModelId, modelName:recommendation.recommendedModelName,
-    label:"AI 추천", summary:recommendation.summary, strengths:list(recommendation.reasons), bestFor:[], tradeoffs:[],
-  }] : [];
-  const rankedRecommendations = Array.isArray(recommendation?.recommendations) && recommendation.recommendations.length > 0 ? recommendation.recommendations : legacyRecommendation;
+  // 단일 추천 응답도 Top 3 카드와 같은 구조로 표시해 하위 호환을 유지
+  const legacyRecommendation =
+    recommendation?.recommendedModelId || recommendation?.recommendedModelName
+      ? [
+          {
+            rank: 1,
+            modelId: recommendation.recommendedModelId,
+            modelName: recommendation.recommendedModelName,
+            label: "AI 추천",
+            summary: recommendation.summary,
+            strengths: list(recommendation.reasons),
+            bestFor: [],
+            tradeoffs: [],
+          },
+        ]
+      : [];
+  const rankedRecommendations =
+    Array.isArray(recommendation?.recommendations) &&
+    recommendation.recommendations.length > 0
+      ? recommendation.recommendations
+      : legacyRecommendation;
   const currentModelId = selectedModelId || recommendation?.currentModelId;
-  const selectableById = new Map(selectableModels.map((model)=>[model.id,model]));
-  const primaryDiffers = currentModelId && rankedRecommendations[0]?.modelId !== currentModelId;
+  const selectableById = new Map(
+    selectableModels.map((model) => [model.id, model]),
+  );
+  const primaryDiffers =
+    currentModelId && rankedRecommendations[0]?.modelId !== currentModelId;
   const action = (item) => {
     if (!onSelectModel) return null;
     const model = selectableById.get(item.modelId);
